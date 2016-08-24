@@ -1,0 +1,65 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use File::Basename;
+
+my $HELP = <<HELP;
+
+  Generate the initial settings.txt file for a specified genome.
+
+  usage: generate-settings genome
+  * genome = name (hg19, mm10, etc.) or exact dir (contains genome.fa and genes.gtf)
+
+HELP
+
+if (!$ARGV[0]) {
+	die $HELP;
+}
+
+main();
+
+# main subroutine
+sub main {
+	my $genome_arg = $ARGV[0];
+
+	# pipeline directory (the directory that this file is in)
+	my $pipeline_dir = dirname(__FILE__);
+
+	# settings file
+	my $settings_file = "settings.txt";
+
+	# set genome setting
+	my $genome_dir_setting;
+	if ($genome_arg =~ m/\//) {
+		# use directory if given
+		$genome_dir_setting = "GENOME-DIR|${genome_arg}\n";
+	}
+	else {
+		# use id460 dir as reference if genome name is provided
+		$genome_dir_setting = "GENOME-DIR|/ifs/home/id460/ref/${genome_arg}\n";
+	}
+
+	# save genome setting
+	open(my $fh, ">", $settings_file);
+	# print $fh $genome_setting;
+	print $fh $genome_dir_setting;
+	close $fh;
+
+	# set fasta to test genome dir setting
+	# system("bash ${pipeline_dir}/scripts/get-set-setting.sh $settings_file REF-FASTA");
+
+	# get values to make sure they were set properly
+	my $settings_genome = `bash ${pipeline_dir}/scripts/get-set-setting.sh $settings_file GENOME-DIR`;
+	my $settings_fasta = `bash ${pipeline_dir}/scripts/get-set-setting.sh $settings_file REF-FASTA`;
+
+	# print values
+	print STDERR "\n";
+	print STDERR " REF DIR : $settings_genome \n";
+	print STDERR " REF FASTA : $settings_fasta \n";
+
+}
+
+
+
+# end
