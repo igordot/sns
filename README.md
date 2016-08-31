@@ -1,7 +1,4 @@
-# Seq-N-Slide
-## pipelines for illumina sequencing data analysis
-
-***
+# Seq-N-Slide: illumina sequencing data analysis pipelines
 
 ## Usage overview
 
@@ -40,8 +37,6 @@ Check for any errors when it's done running or while it's still running.
 grep -i "err" logs-qsub/*
 ```
 
-***
-
 ## Routes
 
 Routes are different analysis types. Generic routes are sample-based (same analysis is repeated for each sample). Available routes:
@@ -54,8 +49,6 @@ Routes are different analysis types. Generic routes are sample-based (same analy
 There are also comparison routes for comparing multiple samples. Unlike sample names, group designations are difficult to determine automatically. You must modify the `samples.groups.csv` file with proper group names. Available comparison routes:
 - `comp-rna-star-dge` - Differential gene expression using DESeq2 using the `rna-star` results.
 
-***
-
 ## Output
 
 - Directories for different output types (such as BAMs or bigWigs) containing files for each sample.
@@ -63,8 +56,6 @@ There are also comparison routes for comparing multiple samples. Unlike sample n
 - `summary.*.csv` - Most segments will generate a results summary file. This lets you know if the step completed and some relevant statistics.
 - `summary-combined.*.csv` - Combined segment summaries.
 - `samples.*.csv` - Most segments that generate large files will also generate a separate segment-specific sample sheet. If the files referenced in the sample sheet are missing, the route will not attempt to generate them. For example, this can be useful if the files were deleted to save space, but you want to add more samples to the same analysis without reprocessing the previous samples.
-
-***
 
 ## About
 
@@ -77,8 +68,6 @@ If there is a problem with any of the results, delete the broken files and re-ru
 Most output and sample sheets are in a CSV format for Mac OS X Quick Look (spacebar file preview) compatibility.
 
 There is a separate copy of the code in each project directory for reproducibility. If you modify the code, the changes will not affect other projects. If you repeat the analysis with more samples in the future, same code will be used.
-
-***
 
 ## FAQs
 
