@@ -71,22 +71,30 @@ fi
 
 # run BWA-MEM alignment
 segment_align="fastq-bam-bwa-mem"
-bam=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_align}.csv" | cut -d ',' -f 2)
+bam_bwa=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_align}.csv" | cut -d ',' -f 2)
 if [ -z "$bam_bwa" ] ; then
 	bash_cmd="bash ${code_dir}/segments/${segment_align}.sh $proj_dir $sample $threads $fastq_R1_trimmed $fastq_R2_trimmed"
 	($bash_cmd)
-	bam=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_align}.csv" | cut -d ',' -f 2)
+	bam_bwa=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_align}.csv" | cut -d ',' -f 2)
 fi
 
 # remove duplicates
 segment_dedup="bam-bam-dd-sambamba"
 bam_dd=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_dedup}.csv" | cut -d ',' -f 2)
 if [ -z "$bam_dd" ] ; then
-	bash_cmd="bash ${code_dir}/segments/${segment_dedup}.sh $proj_dir $sample $threads $bam"
+	bash_cmd="bash ${code_dir}/segments/${segment_dedup}.sh $proj_dir $sample $threads $bam_bwa"
 	($bash_cmd)
 	bam_dd=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_dedup}.csv" | cut -d ',' -f 2)
 fi
 
+# realign and recalibrate
+segment_gatk="bam-bam-ra-rc-gatk"
+bam_gatk=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_gatk}.csv" | cut -d ',' -f 2)
+if [ -z "$bam_gatk" ] ; then
+	bash_cmd="bash ${code_dir}/segments/${segment_gatk}.sh $proj_dir $sample $threads $bam_dd"
+	($bash_cmd)
+	bam_gatk=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_gatk}.csv" | cut -d ',' -f 2)
+fi
 
 
 
