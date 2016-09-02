@@ -48,7 +48,7 @@ rm -f ${qsub_dir}/sns.*.po*
 # segments
 
 # rename and/or merge raw input FASTQs
-segment_fastq_clean="fastq-fastq-clean"
+segment_fastq_clean="fastq-clean"
 fastq_R1=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_clean}.csv" | cut -d ',' -f 2)
 fastq_R2=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_clean}.csv" | cut -d ',' -f 3)
 if [ -z "$fastq_R1" ] ; then
@@ -59,7 +59,7 @@ if [ -z "$fastq_R1" ] ; then
 fi
 
 # trim FASTQs with Trimmomatic
-segment_fastq_trim="fastq-fastq-trim-trimmomatic"
+segment_fastq_trim="fastq-trim-trimmomatic"
 fastq_R1_trimmed=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_trim}.csv" | cut -d ',' -f 2)
 fastq_R2_trimmed=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_trim}.csv" | cut -d ',' -f 3)
 if [ -z "$fastq_R1_trimmed" ] ; then
@@ -70,7 +70,7 @@ if [ -z "$fastq_R1_trimmed" ] ; then
 fi
 
 # run BWA-MEM alignment
-segment_align="fastq-bam-bwa-mem"
+segment_align="align-bwa-mem"
 bam_bwa=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_align}.csv" | cut -d ',' -f 2)
 if [ -z "$bam_bwa" ] ; then
 	bash_cmd="bash ${code_dir}/segments/${segment_align}.sh $proj_dir $sample $threads $fastq_R1_trimmed $fastq_R2_trimmed"
@@ -79,7 +79,7 @@ if [ -z "$bam_bwa" ] ; then
 fi
 
 # remove duplicates
-segment_dedup="bam-bam-dd-sambamba"
+segment_dedup="bam-dedup-sambamba"
 bam_dd=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_dedup}.csv" | cut -d ',' -f 2)
 if [ -z "$bam_dd" ] ; then
 	bash_cmd="bash ${code_dir}/segments/${segment_dedup}.sh $proj_dir $sample $threads $bam_bwa"
@@ -88,7 +88,7 @@ if [ -z "$bam_dd" ] ; then
 fi
 
 # realign and recalibrate
-segment_gatk="bam-bam-ra-rc-gatk"
+segment_gatk="bam-ra-rc-gatk"
 bam_gatk=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_gatk}.csv" | cut -d ',' -f 2)
 if [ -z "$bam_gatk" ] ; then
 	bash_cmd="bash ${code_dir}/segments/${segment_gatk}.sh $proj_dir $sample $threads $bam_dd"

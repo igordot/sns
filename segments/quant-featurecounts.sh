@@ -199,6 +199,7 @@ rm -fv $counts_raw
 # generate summary
 
 counts_assigned=$(cat $counts_summary_raw | grep -m 1 "^Assigned" | cut -f 2)
+echo "COUNTS ASSIGNED: $counts_assigned"
 
 # header for summary file
 echo "#SAMPLE,ASSIGNED COUNTS ${strand}" > "$summary_csv"

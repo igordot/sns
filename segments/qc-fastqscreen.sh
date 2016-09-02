@@ -81,7 +81,7 @@ fastqscreen_bin="/ifs/home/id460/software/fastq_screen_v0.5.2/fastq_screen"
 echo " * fastq_screen: $fastqscreen_bin "
 echo " * fastq_screen version: $($fastqscreen_bin --version) "
 echo " * bowtie2: $bowtie2_bin "
-echo " * bowtie2 version: $($bowtie2_bin --version | head -1) "
+echo " * bowtie2 version: $($bowtie2_bin --version 2>&1 | head -1) "
 echo " * FASTQ: $fastq "
 echo " * OUT TXT: $FASTQ_SCREEN_TXT "
 

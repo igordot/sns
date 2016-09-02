@@ -13,7 +13,7 @@ script_name=$(basename "${BASH_SOURCE[0]}")
 # check for correct number of arguments
 if [ $# -lt 3 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
-	echo -e "\n USAGE: $script_name field_separator missing_field_char in1.txt in2.txt in3.txt ... > merged.txt \n" >&2
+	echo -e "\n USAGE: $script_name field_separator missing_field_char in1.txt [in2.txt in3.txt ...] > merged.txt \n" >&2
 	exit 1
 fi
 

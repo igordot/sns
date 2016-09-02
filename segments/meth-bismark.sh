@@ -280,11 +280,11 @@ combined_summary_csv="${proj_dir}/summary-combined.bs-bismark-${analysis_type}.c
 # combine all summaries
 bash_cmd="
 bash ${code_dir}/scripts/join-many.sh , X \
-${proj_dir}/summary.fastq-fastq-clean.csv \
-${proj_dir}/summary.fastq-fastq-trim-trimgalore.csv \
-${proj_dir}/summary.fastq-fastq-trim-trimmomatic.csv \
-${proj_dir}/summary.fastq-bam-bismark.csv \
-${proj_dir}/summary.bam-bam-dd-bismark.csv \
+${proj_dir}/summary.fastq-clean.csv \
+${proj_dir}/summary.fastq-trim-trimgalore.csv \
+${proj_dir}/summary.fastq-trim-trimmomatic.csv \
+${proj_dir}/summary.align-bismark.csv \
+${proj_dir}/summary.align-dedup-bismark.csv \
 ${proj_dir}/summary.${segment_name}.csv \
 > $combined_summary_csv
 "

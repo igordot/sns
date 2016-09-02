@@ -48,7 +48,7 @@ rm -f ${qsub_dir}/sns.*.po*
 # segments
 
 # rename and/or merge raw input FASTQs
-segment_fastq_clean="fastq-fastq-clean"
+segment_fastq_clean="fastq-clean"
 fastq_R1=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_clean}.csv" | cut -d ',' -f 2)
 fastq_R2=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_clean}.csv" | cut -d ',' -f 3)
 if [ -z "$fastq_R1" ] ; then
@@ -59,11 +59,11 @@ if [ -z "$fastq_R1" ] ; then
 fi
 
 # fastq_screen
-bash_cmd="bash ${code_dir}/segments/fastq-qc-fastqscreen.sh $proj_dir $sample $fastq_R1"
+bash_cmd="bash ${code_dir}/segments/qc-fastqscreen.sh $proj_dir $sample $fastq_R1"
 ($bash_cmd)
 
 # run STAR
-segment_align="fastq-bam-star"
+segment_align="align-star"
 bam_star=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.bam-star.csv" | cut -d ',' -f 2)
 if [ -z "$bam_star" ] ; then
 	bash_cmd="bash ${code_dir}/segments/${segment_align}.sh $proj_dir $sample $threads $fastq_R1 $fastq_R2"
@@ -72,19 +72,19 @@ if [ -z "$bam_star" ] ; then
 fi
 
 # generate BigWig (deeptools)
-segment_bigwig_deeptools="bam-bigwig-deeptools"
+segment_bigwig_deeptools="bigwig-deeptools"
 bash_cmd="bash ${code_dir}/segments/${segment_bigwig_deeptools}.sh $proj_dir $sample 4 $bam_star"
 qsub_cmd="qsub -N sns.${segment_bigwig_deeptools}.${sample} -M ${USER}@nyumc.org -m a -j y -cwd -pe threaded 4 -b y ${bash_cmd}"
 $qsub_cmd
 
 # generate BigWig (bedtools)
-segment_bigwig_bedtools="bam-bigwig-bedtools"
+segment_bigwig_bedtools="bigwig-bedtools"
 bash_cmd="bash ${code_dir}/segments/${segment_bigwig_bedtools}.sh $proj_dir $sample $bam_star"
 qsub_cmd="qsub -N sns.${segment_bigwig_bedtools}.${sample} -M ${USER}@nyumc.org -m a -j y -cwd -b y ${bash_cmd}"
 $qsub_cmd
 
 # Picard CollectRnaSeqMetrics
-segment_qc_picard="bam-qc-picard-rnaseqmetrics"
+segment_qc_picard="qc-picard-rnaseqmetrics"
 bash_cmd="bash ${code_dir}/segments/${segment_qc_picard}.sh $proj_dir $sample $bam_star"
 ($bash_cmd)
 
@@ -99,7 +99,7 @@ fi
 exp_strand=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-STRAND);
 
 # generate counts
-segment_quant="bam-quant-featurecounts"
+segment_quant="quant-featurecounts"
 bash_cmd="bash ${code_dir}/segments/${segment_quant}.sh $proj_dir $sample $threads $bam_star $run_type $exp_strand"
 ($bash_cmd)
 
@@ -140,7 +140,7 @@ samples_groups_csv="${proj_dir}/samples.groups.csv"
 
 if [ ! -s "$samples_groups_csv" ] ; then
 	echo "#SAMPLE,group" > $samples_groups_csv
-	sed 's/\,.*/,NA/g' samples.fastq-raw.csv | LC_ALL=C sort -u >> $samples_groups_csv
+	sed 's/\,.*/,NA/g' ${proj_dir}/samples.fastq-raw.csv | LC_ALL=C sort -u >> $samples_groups_csv
 fi
 
 

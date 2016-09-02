@@ -132,7 +132,7 @@ reads_duplicates_pct=$(echo "(${reads_duplicates}/${reads_mapped})*100" | bc -l 
 reads_duplicates_pct="${reads_duplicates_pct}%"
 
 # header for summary file
-echo "#SAMPLE,MAPPED READS (MQ10),DEDUPLICATED READS,DUPLICATES %" > "$summary_csv"
+echo "#SAMPLE,MAPPED READS,DEDUPLICATED READS,DUPLICATES %" > "$summary_csv"
 
 # summarize log file
 echo "${sample},${reads_mapped},${reads_dedup},${reads_duplicates_pct}" >> "$summary_csv"

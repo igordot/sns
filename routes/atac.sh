@@ -2,7 +2,7 @@
 
 
 ##
-## RRBS using Bismark
+## ATAC-seq using Bowtie 2
 ##
 
 
@@ -58,37 +58,42 @@ if [ -z "$fastq_R1" ] ; then
 	fastq_R2=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_clean}.csv" | cut -d ',' -f 3)
 fi
 
-# trim FASTQs with Trim Galore
-segment_fastq_trim="fastq-trim-trimgalore"
-fastq_R1_trimmed=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_trim}.csv" | cut -d ',' -f 2)
-fastq_R2_trimmed=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_trim}.csv" | cut -d ',' -f 3)
-if [ -z "$fastq_R1_trimmed" ] ; then
-	bash_cmd="bash ${code_dir}/segments/${segment_fastq_trim}.sh $proj_dir $sample rrbs $fastq_R1 $fastq_R2"
+# run alignment
+segment_align="align-bowtie2-atac"
+bam_bt2=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_align}.csv" | cut -d ',' -f 2)
+if [ -z "$bam_bt2" ] ; then
+	bash_cmd="bash ${code_dir}/segments/${segment_align}.sh $proj_dir $sample $threads $fastq_R1 $fastq_R2"
 	($bash_cmd)
-	fastq_R1_trimmed=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_trim}.csv" | cut -d ',' -f 2)
-	fastq_R2_trimmed=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_trim}.csv" | cut -d ',' -f 3)
+	bam_bt2=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_align}.csv" | cut -d ',' -f 2)
 fi
 
-# run Bismark alignment
-segment_align="align-bismark"
-bam_bismark=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_align}.csv" | cut -d ',' -f 2)
-if [ -z "$bam_bismark" ] ; then
-	bash_cmd="bash ${code_dir}/segments/${segment_align}.sh $proj_dir $sample $threads $fastq_R1_trimmed $fastq_R2_trimmed"
+# remove duplicates
+segment_dedup="bam-dedup-sambamba"
+bam_dd=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_dedup}.csv" | cut -d ',' -f 2)
+if [ -z "$bam_dd" ] ; then
+	bash_cmd="bash ${code_dir}/segments/${segment_dedup}.sh $proj_dir $sample $threads $bam_bt2"
 	($bash_cmd)
-	bam_bismark=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_align}.csv" | cut -d ',' -f 2)
+	bam_dd=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_dedup}.csv" | cut -d ',' -f 2)
 fi
 
-# run Bismark methylation extractor
-segment_meth="meth-bismark"
-if [ -n "$fastq_R2" ] ; then
-	#
-	echo "pe"
-else
-	bash_cmd="bash ${code_dir}/segments/${segment_meth}.sh $proj_dir $sample $threads $bam_bismark se"
-	($bash_cmd)
-	bash_cmd="bash ${code_dir}/segments/${segment_meth}.sh $proj_dir $sample $threads $bam_bismark se-ignore-r1-3"
-	($bash_cmd)
-fi
+
+#########################
+
+
+# combine summary from each step
+
+sleep 30
+
+summary_csv="${proj_dir}/summary-combined.wes.csv"
+
+bash_cmd="
+bash ${code_dir}/scripts/join-many.sh , X \
+${proj_dir}/summary.${segment_fastq_clean}.csv \
+${proj_dir}/summary.${segment_align}.csv \
+${proj_dir}/summary.${segment_dedup}.csv \
+> $summary_csv
+"
+(eval $bash_cmd)
 
 
 #########################

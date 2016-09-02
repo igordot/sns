@@ -48,7 +48,7 @@ rm -f ${qsub_dir}/sns.*.po*
 # segments
 
 # rename and/or merge raw input FASTQs
-segment_fastq_clean="fastq-fastq-clean"
+segment_fastq_clean="fastq-clean"
 fastq_R1=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_clean}.csv" | cut -d ',' -f 2)
 fastq_R2=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_clean}.csv" | cut -d ',' -f 3)
 if [ -z "$fastq_R1" ] ; then
@@ -59,32 +59,13 @@ if [ -z "$fastq_R1" ] ; then
 fi
 
 # fastq_screen
-bash_cmd="bash ${code_dir}/segments/fastq-qc-fastqscreen.sh $proj_dir $sample $fastq_R1"
+bash_cmd="bash ${code_dir}/segments/qc-fastqscreen.sh $proj_dir $sample $fastq_R1"
 ($bash_cmd)
 
 # RSEM
-segment_quant="fastq-quant-rsem"
+segment_quant="quant-rsem"
 bash_cmd="bash ${code_dir}/segments/${segment_quant}.sh $proj_dir $sample $threads unstr $fastq_R1 $fastq_R2"
 ($bash_cmd)
-
-
-#########################
-
-
-# combine summary from each step
-
-sleep 30
-
-summary_csv="${proj_dir}/summary-combined.rna-rsem.csv"
-
-bash_cmd="
-bash ${code_dir}/scripts/join-many.sh , X \
-${proj_dir}/summary.${segment_fastq_clean}.csv \
-${proj_dir}/summary.x.csv \
-${proj_dir}/summary.x.csv \
-> $summary_csv
-"
-(eval $bash_cmd)
 
 
 #########################
