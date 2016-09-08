@@ -12,15 +12,15 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 # check for correct number of arguments
 if [ ! $# == 4 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
-	echo -e "\n USAGE: $script_name [project dir] [sample] [threads] [BAM] \n" >&2
+	echo -e "\n USAGE: $script_name project_dir sample_name num_threads BAM \n" >&2
 	exit 1
 fi
 
 # arguments
-PROJ_DIR=$1
-SAMPLE=$2
-THREADS=$3
-BAM=$4
+proj_dir=$1
+sample=$2
+threads=$3
+bam=$4
 
 
 #########################
@@ -28,13 +28,13 @@ BAM=$4
 
 # check that inputs exist
 
-if [ ! -d "$PROJ_DIR" ] || [ ! "$PROJ_DIR" ] ; then
-	echo -e "\n $script_name ERROR: DIR $PROJ_DIR DOES NOT EXIST \n" >&2
+if [ ! -d "$proj_dir" ] ; then
+	echo -e "\n $script_name ERROR: DIR $proj_dir DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
-if [ ! -s "$BAM" ] || [ ! "$BAM" ] ; then
-	echo -e "\n $script_name ERROR: BAM $BAM DOES NOT EXIST \n" >&2
+if [ ! -s "$bam" ] ; then
+	echo -e "\n $script_name ERROR: BAM $bam DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
@@ -42,11 +42,11 @@ fi
 #########################
 
 
-# output
+# settings and files
 
-BIGWIG_DIR="${PROJ_DIR}/BIGWIG"
-mkdir -p "$BIGWIG_DIR"
-BIGWIG="${BIGWIG_DIR}/${SAMPLE}.bin1.rpkm.bw"
+bigwig_dir="${proj_dir}/BIGWIG"
+mkdir -p "$bigwig_dir"
+bigwig="${bigwig_dir}/${sample}.bin1.rpkm.bw"
 
 # BIGWIG_RPKM_BIN1=${BIGWIG_RPKM_DIR}/${ID}.bin1.rpkm.bw
 # BIGWIG_RPKM_BIN10=${BIGWIG_RPKM_DIR}/${ID}.bin10.smooth50.rpkm.bw
@@ -57,8 +57,8 @@ BIGWIG="${BIGWIG_DIR}/${SAMPLE}.bin1.rpkm.bw"
 
 # exit if output exits already
 
-if [ -s "$BIGWIG" ] ; then
-	echo -e "\n $script_name SKIP SAMPLE $SAMPLE \n" >&2
+if [ -s "$bigwig" ] ; then
+	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	exit 1
 fi
 
@@ -74,21 +74,21 @@ module load deeptools/2.2.4
 module load kentutils/329
 
 echo " * bamCoverage: $(readlink -f $(which bamCoverage)) "
-echo " * BAM: $BAM "
-echo " * BIGWIG: $BIGWIG "
+echo " * BAM: $bam "
+echo " * BIGWIG: $bigwig "
 
-CMD="
+bash_cmd="
 bamCoverage \
 --verbose \
---numberOfProcessors $THREADS \
+--numberOfProcessors $threads \
 --binSize 1 \
 --normalizeUsingRPKM \
 --outFileFormat bigwig \
---bam $BAM \
---outFileName $BIGWIG
+--bam $bam \
+--outFileName $bigwig
 "
-echo "CMD: $CMD"
-eval "$CMD"
+echo "CMD: $bash_cmd"
+eval "$bash_cmd"
 
 # echo " * BIGWIG: $BIGWIG_RPKM_BIN10 "
 
@@ -113,8 +113,8 @@ eval "$CMD"
 
 # check that output generated
 
-if [ ! -s "$BIGWIG" ] ; then
-	echo -e "\n $script_name ERROR: BIGWIG $BIGWIG NOT GENERATED \n" >&2
+if [ ! -s "$bigwig" ] ; then
+	echo -e "\n $script_name ERROR: BIGWIG $bigwig NOT GENERATED \n" >&2
 	exit 1
 fi
 

@@ -71,6 +71,7 @@ bam="${bam_dir}/${sample}.bam"
 logs_dir="${proj_dir}/logs-${segment_name}"
 mkdir -p "$logs_dir"
 unfiltered_sam="${logs_dir}/${sample}.unfiltered.sam"
+bowtie2_txt="${logs_dir}/${sample}.bowtie2.txt"
 flagstat_txt="${logs_dir}/${sample}.flagstat.txt"
 
 
@@ -121,8 +122,8 @@ bowtie2 \
 --threads $threads \
 -x $ref_bowtie2 \
 -1 $fastq_R1 -2 $fastq_R2 \
-> \
-$unfiltered_sam
+-S $unfiltered_sam \
+2> $bowtie2_txt \
 "
 echo "CMD: $bash_cmd"
 eval "$bash_cmd"
@@ -167,7 +168,7 @@ cat $unfiltered_sam \
 $sambamba_bin view \
 --sam-input \
 --nthreads $threads \
---filter \"mapping_quality >= 30 and ref_name == 'chrM'\" \
+--filter \"mapping_quality >= 30 and ref_name != 'chrM'\" \
 --format bam \
 --compression-level 0 \
 /dev/stdin \
@@ -225,7 +226,7 @@ reads_filtered_pct=$(echo "(${reads_filtered}/${reads_input})*100" | bc -l | cut
 reads_filtered_pct="${reads_filtered_pct}%"
 
 # header for summary file
-echo "#SAMPLE,TOTAL READS,MAPPED %,CHR M %,MAPPED MQ30 %" > "$summary_csv"
+echo "#SAMPLE,TOTAL READS,MAPPED READS %,CHR M READS %,MAPPED READS MQ30 %" > "$summary_csv"
 
 # summarize log file
 echo "${sample},${reads_input},${reads_mapped_pct},${reads_chrM_pct},${reads_filtered_pct}" >> "$summary_csv"

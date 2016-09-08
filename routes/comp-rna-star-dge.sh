@@ -160,7 +160,7 @@ echo -e "\n ========== start analysis ========== \n"
 
 cd "$dge_dir" || exit 1
 
-# test R installation and setting
+# launch the analysis R script
 bash_cmd="Rscript --vanilla ${code_dir}/scripts/dge-deseq2.R $input_counts_table $input_groups_table"
 echo "CMD: $bash_cmd"
 ($bash_cmd)

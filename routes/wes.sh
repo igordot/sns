@@ -106,7 +106,7 @@ fi
 
 sleep 30
 
-summary_csv="${proj_dir}/summary-combined.wes.csv"
+summary_csv="${proj_dir}/summary-combined.${route_name}.csv"
 
 bash_cmd="
 bash ${code_dir}/scripts/join-many.sh , X \

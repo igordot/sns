@@ -21,10 +21,6 @@ proj_dir=$1
 sample=$2
 bam=$3
 
-# strand:
-# fwd | transcript             | cufflinks "fr-secondstrand" | htseq "yes"     | picard "FIRST_READ"
-# rev | rev comp of transcript | cufflinks "fr-firststrand"  | htseq "reverse" | picard "SECOND_READ"
-
 
 #########################
 
@@ -69,18 +65,6 @@ metrics_pdf="${metrics_dir}/${sample}.pdf"
 summary_dir="${proj_dir}/summary"
 summary_csv="${summary_dir}/${sample}.${segment_name}.csv"
 
-# # strand flag
-# if [ "$STRAND" == "unstr" ] ; then
-# 	STRAND_FLAG="0"
-# elif [ "$STRAND" == "fwd" ] ; then
-# 	STRAND_FLAG="1"
-# elif [ "$STRAND" == "rev" ] ; then
-# 	STRAND_FLAG="2"
-# else
-# 	echo -e "\n $script_name ERROR: incorrect strand selected \n" >&2
-# 	exit 1
-# fi
-
 
 #########################
 
@@ -96,16 +80,15 @@ fi
 #########################
 
 
+# run picard CollectRnaSeqMetrics
+
 module unload java
 module load java/1.7
 module load picard-tools/1.88
 
-
-
-
-# STRAND_SPECIFICITY {NONE, FIRST_READ_TRANSCRIPTION_STRAND, SECOND_READ_TRANSCRIPTION_STRAND}
-# STRAND_SPECIFICITY="NONE"
-
+# strand:
+# fwd | transcript             | cufflinks "fr-secondstrand" | htseq "yes"     | picard "FIRST_READ"
+# rev | rev comp of transcript | cufflinks "fr-firststrand"  | htseq "reverse" | picard "SECOND_READ"
 
 echo " * CollectRnaSeqMetrics: ${PICARD_ROOT}/CollectRnaSeqMetrics.jar "
 echo " * BAM: $bam "
@@ -113,8 +96,6 @@ echo " * REF_FLAT: $REFFLAT "
 echo " * RIBOSOMAL_INTERVALS: $RRNA_INTERVAL_LIST "
 echo " * OUT TXT: $metrics_txt "
 echo " * OUT PDF: $metrics_pdf "
-
-# run picard
 
 PICARD_CMD="java -Xms8G -Xmx8G -jar ${PICARD_ROOT}/CollectRnaSeqMetrics.jar \
 VERBOSITY=WARNING QUIET=true VALIDATION_STRINGENCY=LENIENT MAX_RECORDS_IN_RAM=2500000 \
@@ -189,8 +170,8 @@ paste \
 | tr '\t' ',' \
 > $summary_csv
 
-rm -f "${metrics_txt}.1READ"
-rm -f "${metrics_txt}.2READ"
+rm -fv "${metrics_txt}.1READ"
+rm -fv "${metrics_txt}.2READ"
 
 
 # combine charts into a single pdf

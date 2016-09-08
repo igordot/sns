@@ -86,8 +86,9 @@ echo " * BAM OUT: $bam_dd "
 bash_cmd="
 $sambamba_bin markdup \
 --remove-duplicates \
---nthreads=${threads} \
---overflow-list-size=500000 \
+--nthreads $threads \
+--hash-table-size 1500000 \
+--overflow-list-size 1500000 \
 $bam \
 $bam_dd \
 2> $bam_dd_log
