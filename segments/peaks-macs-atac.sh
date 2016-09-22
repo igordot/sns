@@ -47,6 +47,13 @@ if [ ! -d "$genome_dir" ] ; then
 	exit 1
 fi
 
+chrom_sizes=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-CHROMSIZES);
+
+if [ ! -s "$chrom_sizes" ] ; then
+	echo -e "\n $script_name ERROR: CHROM SIZES $chrom_sizes DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
 
 #########################
 
@@ -79,6 +86,12 @@ mkdir -p "$macs_dir"
 peaks_xls="${macs_dir}/${sample}_peaks.xls"
 peaks_narrow="${macs_dir}/${sample}_peaks.narrowPeak"
 peaks_bed="${macs_dir}/${sample}.bed"
+macs_bdg_treat="${macs_dir}/${sample}_treat_pileup.bdg"
+macs_bdg_control="${macs_dir}/${sample}_control_lambda.bdg"
+
+bigwig_dir="${proj_dir}/BIGWIG"
+mkdir -p "$bigwig_dir"
+macs_bw="${bigwig_dir}/${sample}.macs.bw"
 
 
 #########################
@@ -103,10 +116,6 @@ module load python/2.7.3
 
 echo " * MACS: $(readlink -f $(which macs2)) "
 echo " * MACS version: $(macs2 --version 2>&1) "
-echo " * R: $(readlink -f $(which R)) "
-echo " * R version: $(R --version | head -1) "
-echo " * Rscript: $(readlink -f $(which Rscript)) "
-echo " * Rscript version: $(Rscript --version 2>&1) "
 echo " * BAM: $bam "
 echo " * MACS genome: $macs_genome "
 echo " * MACS dir: $macs_dir "
@@ -117,6 +126,7 @@ bash_cmd="
 macs2 callpeak \
 --verbose 2 \
 --nomodel --shift -100 --extsize 200 \
+--bdg --SPMR \
 --keep-dup all \
 --qvalue $qvalue \
 --gsize $macs_genome \
@@ -124,7 +134,7 @@ macs2 callpeak \
 --treatment $bam \
 --outdir $macs_dir
 "
-echo "CMD: $bash_cmd"
+echo -e "\n CMD: $bash_cmd \n"
 $bash_cmd
 
 
@@ -149,9 +159,36 @@ fi
 
 # generate bed file
 
-bash_cmd="cut -f 1,2,3,4,7 $peaks_narrow > $peaks_bed"
-echo "CMD: $bash_cmd"
+bash_cmd="cut -f 1,2,3,4,7 $peaks_narrow | LC_ALL=C sort -k1,1 -k2,2n > $peaks_bed"
+echo -e "\n CMD: $bash_cmd \n"
 eval "$bash_cmd"
+
+
+#########################
+
+
+# generate bigwig file if not already generated
+
+if [ ! -s "$macs_bdg_treat" ] ; then
+	echo -e "\n $script_name ERROR: BEDGRAPH $macs_bdg_treat NOT GENERATED \n" >&2
+	exit 1
+fi
+
+module load kentutils/329
+
+if [ ! -s "$macs_bw" ] ; then
+
+	echo " * MACS BedGraph: $macs_bdg_treat "
+	echo " * MACS BigWig: $macs_bw "
+
+	bw_cmd="bedGraphToBigWig $macs_bdg_treat $chrom_sizes $macs_bw"
+	echo -e "\n CMD: $bw_cmd \n"
+	$bw_cmd
+
+fi
+
+rm -fv "$macs_bdg_treat"
+rm -fv "$macs_bdg_control"
 
 
 #########################
@@ -163,7 +200,7 @@ peaks_num=$(cat "$peaks_narrow" | wc -l)
 echo "total peaks: $peaks_num"
 
 # header for summary file
-echo "#SAMPLE,PEAKS" > "$summary_csv"
+echo "#SAMPLE,PEAKS q ${qvalue}" > "$summary_csv"
 
 # summarize log file
 echo "${sample},${peaks_num}" >> "$summary_csv"

@@ -37,6 +37,11 @@ sizes = unlist(scanned_sizes[[1]]["isize"], use.names = FALSE)
 # make all sizes positive (half should be negative)
 sizes = abs(sizes)
 
+# remove unreasonable values
+sizes = sizes[!is.na(sizes)]
+sizes = sizes[sizes > 0]
+sizes = sizes[sizes < 5000]
+
 # display stats
 message("min: ", min(sizes))
 message("max: ", max(sizes))
@@ -62,14 +67,14 @@ freq_table_file = paste0(sample_name, ".freq.csv")
 write_csv(x = freq_table, path = freq_table_file)
 
 # filter out fragments that will not be plotted (with bin width padding)
-sizes = sizes[sizes < 1210]
+sizes = sizes[sizes < 1010]
 
 # plot
 plot_file = paste0(sample_name, ".png")
 pdf(file = NULL)
 ggplot(melt(sizes, value.name = "size"), aes(size)) +
 geom_freqpoly(binwidth = 10, size = 1.5) +
-scale_x_continuous(limits = c(min(sizes), 1200), breaks = 1:12*100) +
+scale_x_continuous(limits = c(min(sizes), 1000), breaks = 1:10*100) +
 background_grid(major = "x", minor = "none") +
 ggtitle(sample_name) +
 ggsave(plot_file, width = 8, height = 5, units = "in")

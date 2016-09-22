@@ -87,6 +87,16 @@ if [ -z "$bam_dd" ] ; then
 	bam_dd=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_dedup}.csv" | cut -d ',' -f 2)
 fi
 
+# fragment size distribution
+segment_qc_frag_size="qc-fragment-sizes"
+bash_cmd="bash ${code_dir}/segments/${segment_qc_frag_size}.sh $proj_dir $sample $bam_dd"
+($bash_cmd)
+
+# on-target coverage
+segment_target_cov="qc-target-reads-gatk"
+bash_cmd="bash ${code_dir}/segments/${segment_target_cov}.sh $proj_dir $sample $threads $bam_dd"
+($bash_cmd)
+
 # realign and recalibrate
 segment_gatk="bam-ra-rc-gatk"
 bam_gatk=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_gatk}.csv" | cut -d ',' -f 2)
@@ -96,7 +106,15 @@ if [ -z "$bam_gatk" ] ; then
 	bam_gatk=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_gatk}.csv" | cut -d ',' -f 2)
 fi
 
+# final average coverage
+segment_avg_cov="qc-coverage-gatk"
+bash_cmd="bash ${code_dir}/segments/${segment_avg_cov}.sh $proj_dir $sample $bam_gatk"
+($bash_cmd)
 
+# call variants
+segment_gatk_hc="snv-gatk-hc"
+bash_cmd="bash ${code_dir}/segments/${segment_gatk_hc}.sh $proj_dir $sample $threads $bam_gatk"
+($bash_cmd)
 
 
 #########################
@@ -114,6 +132,8 @@ ${proj_dir}/summary.${segment_fastq_clean}.csv \
 ${proj_dir}/summary.${segment_fastq_trim}.csv \
 ${proj_dir}/summary.${segment_align}.csv \
 ${proj_dir}/summary.${segment_dedup}.csv \
+${proj_dir}/summary.${segment_target_cov}.csv \
+${proj_dir}/summary.${segment_avg_cov}.csv \
 > $summary_csv
 "
 (eval $bash_cmd)
