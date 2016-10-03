@@ -2,37 +2,33 @@
 
 ## Usage overview
 
-Navigate to a clean new project directory.
+Navigate to a clean new project directory. This is where all the results will end up.
 ```
 cd <project dir>
 ```
-This is where all the results will end up.
 
-Download the code from the GitHub repository.
+Download the code from the GitHub repository, which will create the `sns` sub-directory with all the code.
 ```
 git clone --depth 1 https://github.com/igordot/sns
 ```
-The project directory should now contain the `sns` sub-directory with all the code.
 
-Find input FASTQ files in a given directory.
+Scan a directory that contains FASTQ files to be used as input (can be run multiple times if there are FASTQs in different directories).
 ```
 sns/gather-fastqs <fastq dir>
 ```
-Can be run multiple times if there are multiple FASTQ directories. All found files will be added to the `samples.fastq-raw.csv` file, which can be modified to adjust sample names or remove samples. The first column is the sample name. The second column is the R1 FASTQ. The third column is the R2 FASTQ (for paired-end reads). Multiple FASTQs for the same sample will be merged.
+All found files will be added to the `samples.fastq-raw.csv` file, which can be modified to adjust sample names or remove samples. The first column is the sample name. The second column is the R1 FASTQ. The third column is the R2 FASTQ (for paired-end reads). Multiple FASTQs for the same sample will be merged.
 
 Specify a genome (only `hg19/mm10/dm3/dm6` are currently guaranteed to work).
 ```
 sns/generate-settings <genome>
 ```
-This will create a `settings.txt` file.
 
 Run the analysis using a specific route (a set of analysis steps).
 ```
 sns/run <route>
 ```
-Progress logs are available in the `logs-*` directories.
 
-Check for any errors when it's done running or while it's still running.
+Check for potential problems.
 ```
 grep -i "err" logs-qsub/*
 ```
