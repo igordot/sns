@@ -42,10 +42,11 @@ grep -i "err" logs-qsub/*
 Routes are different analysis types. Generic routes are sample-based (same analysis is repeated for each sample). Available routes:
 - `rna-star` - RNA-seq using STAR. Generates BAMs, normalized bigWigs, counts matrix, and various QC metrics.
 - `rna-rsem` - RNA-seq using RSEM. Generates FPKM/TPM/counts matrix and various QC metrics.
-- `rrbs` - RRBS using Bismark.
+- `rna-snv` - RNA-seq variant detection using STAR and GATK. Generates BAMs, VCFs, and various QC metrics.
 - `wgbs` - WGBS using Bismark.
-- `wes` - Whole genome/exome/targeted variant discovery using BWA-MEM and GATK.
-- `atac` - ATAC-seq using Bowtie and MACS. Generates BAMs, bigWigs, peaks, and various QC metrics.
+- `rrbs` - RRBS using Bismark.
+- `wes` - Whole genome/exome/targeted variant detection using BWA-MEM and GATK. Generates BAMs, VCFs, and various QC metrics.
+- `atac` - ATAC-seq using Bowtie and MACS. Generates BAMs, bigWigs, peaks, nucleosome positions, and various QC metrics.
 
 There are also comparison routes for comparing multiple samples. Unlike sample names, group designations are difficult to determine automatically. You must modify the `samples.groups.csv` file with proper group names. Available comparison routes:
 - `comp-rna-star-dge` - Differential gene expression using DESeq2 using the `rna-star` results.
