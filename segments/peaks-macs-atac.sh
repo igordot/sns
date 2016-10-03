@@ -178,8 +178,8 @@ module load kentutils/329
 
 if [ ! -s "$macs_bw" ] ; then
 
-	echo " * MACS BedGraph: $macs_bdg_treat "
-	echo " * MACS BigWig: $macs_bw "
+	echo " * MACS bedGraph: $macs_bdg_treat "
+	echo " * MACS bigWig: $macs_bw "
 
 	bw_cmd="bedGraphToBigWig $macs_bdg_treat $chrom_sizes $macs_bw"
 	echo -e "\n CMD: $bw_cmd \n"

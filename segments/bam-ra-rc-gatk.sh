@@ -145,7 +145,10 @@ if [[ "$genome_dir" == */hg19 ]] ; then
 	gatk_ra_known_arg="-known $gatk_indel_vcf_1 -known $gatk_indel_vcf_2"
 	gatk_rc_known_arg="-knownSites $gatk_indel_vcf_1 -knownSites $gatk_indel_vcf_2 -knownSites $gatk_snp_vcf"
 elif [[ "$genome_dir" == */mm10 ]] ; then
-	gatk_ra_known_arg="-known xxxxx"
+	gatk_indel_vcf="${genome_dir}/MGP/mgp.v3.indels.q150.chr.sort.vcf"
+	gatk_snp_vcf="${genome_dir}/dbSNP/snp137Common.snps.vcf"
+	gatk_ra_known_arg="-known $gatk_indel_vcf"
+	gatk_rc_known_arg="-knownSites $gatk_indel_vcf -knownSites $gatk_snp_vcf"
 elif [[ "$genome_dir" == */dm3$ ]] ; then
 	gatk_ra_known_arg="-known xxxxx"
 else

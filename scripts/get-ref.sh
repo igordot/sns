@@ -34,7 +34,7 @@ function find_file {
 	if [ -s "$result" ] && [ "$result" ] ; then
 		echo $(readlink -f "$result")
 	else
-		echo -e "\n $script_name ERROR: RESULT $result DOES NOT EXIST \n" >&2
+		echo -e "\n $script_name ERROR: $file_name RESULT $result DOES NOT EXIST \n" >&2
 		exit 1
 	fi
 
@@ -49,7 +49,7 @@ function find_dir {
 	if [ -s "$result" ] && [ "$result" ] ; then
 		echo $(readlink -f "$result")
 	else
-		echo -e "\n $script_name ERROR: RESULT $result DOES NOT EXIST \n" >&2
+		echo -e "\n $script_name ERROR: $dir_name RESULT $result DOES NOT EXIST \n" >&2
 		exit 1
 	fi
 
@@ -66,7 +66,7 @@ function find_basename {
 		result=$(readlink -f "$result")
 		echo ${result/${suffix}/}
 	else
-		echo -e "\n $script_name ERROR: RESULT $result DOES NOT EXIST \n" >&2
+		echo -e "\n $script_name ERROR: genome${suffix} RESULT $result DOES NOT EXIST \n" >&2
 		exit 1
 	fi
 

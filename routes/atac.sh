@@ -94,6 +94,11 @@ bash_cmd="bash ${code_dir}/segments/${segment_peaks}.sh $proj_dir $sample $bam_d
 bash_cmd="bash ${code_dir}/segments/${segment_peaks}.sh $proj_dir $sample $bam_dd 0.20"
 ($bash_cmd)
 
+# call nucleosomes
+segment_nuc="nucleosomes-nucleoatac"
+bash_cmd="bash ${code_dir}/segments/${segment_nuc}.sh $proj_dir $sample $threads $bam_dd"
+($bash_cmd)
+
 
 #########################
 

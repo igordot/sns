@@ -57,6 +57,7 @@ if [ -z "$fastq_R1" ] ; then
 	fastq_R1=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_clean}.csv" | cut -d ',' -f 2)
 	fastq_R2=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_clean}.csv" | cut -d ',' -f 3)
 fi
+[ "$fastq_R1" ] || exit 1
 
 # fastq_screen
 bash_cmd="bash ${code_dir}/segments/qc-fastqscreen.sh $proj_dir $sample $fastq_R1"
@@ -64,12 +65,13 @@ bash_cmd="bash ${code_dir}/segments/qc-fastqscreen.sh $proj_dir $sample $fastq_R
 
 # run STAR
 segment_align="align-star"
-bam_star=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.bam-star.csv" | cut -d ',' -f 2)
+bam_star=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_align}.csv" | cut -d ',' -f 2)
 if [ -z "$bam_star" ] ; then
 	bash_cmd="bash ${code_dir}/segments/${segment_align}.sh $proj_dir $sample $threads $fastq_R1 $fastq_R2"
 	($bash_cmd)
 	bam_star=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_align}.csv" | cut -d ',' -f 2)
 fi
+[ "$bam_star" ] || exit 1
 
 # generate BigWig (deeptools)
 segment_bigwig_deeptools="bigwig-deeptools"

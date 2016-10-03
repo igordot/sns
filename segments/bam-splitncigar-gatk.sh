@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-# GATK coverage stats
+# Split reads that contain Ns in their CIGAR string with GATK SplitNCigarReads
 
 
 # script filename
@@ -53,11 +53,10 @@ if [ ! -s "$ref_dict" ] ; then
 	exit 1
 fi
 
-found_bed=$(find $proj_dir -maxdepth 1 -type f -name "*.bed" | head -1)
-bed=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-BED $found_bed);
+gtf=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-GTF);
 
-if [ ! -s "$bed" ] ; then
-	echo -e "\n $script_name ERROR: BED $bed DOES NOT EXIST \n" >&2
+if [ ! -s "$gtf" ] || [ ! "$gtf" ] ; then
+	echo -e "\n $script_name ERROR: GTF $gtf DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
@@ -67,17 +66,15 @@ fi
 
 # settings and files
 
-summary_dir="${proj_dir}/summary"
-mkdir -p "$summary_dir"
-summary_csv="${summary_dir}/${sample}.${segment_name}.csv"
+samples_csv="${proj_dir}/samples.${segment_name}.csv"
 
-cov_dir="${proj_dir}/QC-coverage"
-mkdir -p "$cov_dir"
-out_prefix="${cov_dir}/${sample}"
-gatk_sample_summary="${out_prefix}.sample_summary"
+# account for both dedup (.dd.bam) non-dedup (.bam) input BAMs
+bam_base=$(basename "$bam")
+bam_base=${bam_base/%.bam/}
 
-# logs_dir="${proj_dir}/logs-${segment_name}"
-# mkdir -p "$logs_dir"
+bam_split_dir="${proj_dir}/BAM-SPLIT"
+mkdir -p "$bam_split_dir"
+bam_split="${bam_split_dir}/${bam_base}.bam"
 
 
 #########################
@@ -85,7 +82,7 @@ gatk_sample_summary="${out_prefix}.sample_summary"
 
 # exit if output exits already
 
-if [ -s "$gatk_sample_summary" ] ; then
+if [ -s "$bam_split" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	exit 1
 fi
@@ -98,6 +95,7 @@ fi
 
 module unload java
 module load java/1.8
+module load r/3.3.0
 
 # command
 gatk_jar="/ifs/home/id460/software/GenomeAnalysisTK-3.6/GenomeAnalysisTK.jar"
@@ -115,30 +113,22 @@ gatk_log_level_arg="--logging_level ERROR"
 #########################
 
 
-# on-target coverage
+# GATK SplitNCigarReads
 
 echo " * GATK: $(readlink -f $gatk_jar) "
 echo " * GATK version: $($gatk_cmd --version) "
-echo " * BAM: $bam "
-echo " * BED: $bed "
-echo " * output prefix: $out_prefix "
-echo " * sample_summary: $gatk_sample_summary "
+echo " * BAM in: $bam "
+echo " * BAM out: $bam_split "
 
-# using '-nt' with this combination of arguments causes an error
-
-gatk_doc_cmd="
-$gatk_cmd -T DepthOfCoverage -dt NONE $gatk_log_level_arg \
--rf BadCigar \
+gatk_split_cmd="
+$gatk_cmd -T SplitNCigarReads $gatk_log_level_arg \
+--unsafe ALLOW_N_CIGAR_READS
 --reference_sequence $ref_fasta \
---intervals $bed \
---omitDepthOutputAtEachBase \
--ct 10 -ct 50 -ct 100 -ct 500 -mbq 20 -mmq 20 --nBins 999 --start 1 --stop 1000 \
 --input_file $bam \
---outputFormat csv \
---out $out_prefix
+--out $bam_split
 "
-echo "CMD: $gatk_doc_cmd"
-$gatk_doc_cmd
+echo "CMD: $gatk_split_cmd"
+$gatk_split_cmd
 
 
 #########################
@@ -146,8 +136,8 @@ $gatk_doc_cmd
 
 # check that output generated
 
-if [ ! -s "$gatk_sample_summary" ] ; then
-	echo -e "\n $script_name ERROR: sample_summary $gatk_sample_summary NOT GENERATED \n" >&2
+if [ ! -s "$bam_split" ] ; then
+	echo -e "\n $script_name ERROR: BAM $bam_split NOT GENERATED \n" >&2
 	exit 1
 fi
 
@@ -155,27 +145,41 @@ fi
 #########################
 
 
-# generate summary
+# exons BED file (needed for future steps)
 
-# summarize log file
-cat "$gatk_sample_summary" \
-| head -2 \
-| cut -d ',' -f 1,3,5,7-99 \
-| sed 's/sample_id,mean,granular_median/#SAMPLE,MEAN COVERAGE,MEDIAN COVERAGE/' \
-> "$summary_csv"
+found_bed=$(find $proj_dir -maxdepth 1 -type f -name "*.bed" | head -1)
+bed=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-BED $found_bed);
 
-sleep 30
+# generate exons BED file if doesn't exist already
+if [ ! -s "$bed" ] ; then
 
-# combine all sample summaries
-cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.${segment_name}.csv"
+	module load bedtools/2.26.0
+
+	cat "$gtf" \
+	| awk -F $'\t' '$3 == "exon" && $5 > $4' \
+	| cut -f 1,4,5 \
+	| LC_ALL=C sort -u -k1,1 -k2,2n \
+	| bedtools merge \
+	> "${proj_dir}/exons.bed"
+
+	found_bed=$(find $proj_dir -maxdepth 1 -type f -name "*.bed" | head -1)
+	bed=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-BED $found_bed);
+
+fi
 
 
 #########################
 
 
-# delete files that are not needed
-rm -fv "${out_prefix}.sample_statistics"
-rm -fv "${out_prefix}.sample_interval_statistics"
+# add sample and BAM to sample sheet
+echo "${sample},${bam_split}" >> "$samples_csv"
+
+sleep 30
+
+# sort and remove duplicates in place in sample sheet
+LC_ALL=C sort -t ',' -k1,1 -u -o "$samples_csv" "$samples_csv"
+
+sleep 30
 
 
 #########################

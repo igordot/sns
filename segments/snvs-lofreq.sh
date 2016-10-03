@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-# call variants with GATK HaplotypeCaller
+# call variants with LoFreq
 
 
 # script filename
@@ -39,6 +39,7 @@ if [ ! -s "$bam" ] ; then
 fi
 
 code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
+
 ref_fasta=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-FASTA);
 
 if [ ! -s "$ref_fasta" ] ; then
@@ -46,7 +47,13 @@ if [ ! -s "$ref_fasta" ] ; then
 	exit 1
 fi
 
-found_bed=$(find $proj_dir -maxdepth 1 -type f -name "*.bed" | head -1)
+chrom_sizes=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-CHROMSIZES);
+
+if [ ! -s "$chrom_sizes" ] ; then
+	echo -e "\n $script_name ERROR: CHROM SIZES $chrom_sizes DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
 bed=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-BED $found_bed);
 
 if [ ! -s "$bed" ] ; then
@@ -64,13 +71,10 @@ fi
 # mkdir -p "$summary_dir"
 # summary_csv="${summary_dir}/${sample}.${segment_name}.csv"
 
-vcf_dir="${proj_dir}/VCF-GATK-HC"
+vcf_dir="${proj_dir}/VCF-LoFreq"
 mkdir -p "$vcf_dir"
 vcf_original="${vcf_dir}/${sample}.original.vcf"
 vcf_fixed="${vcf_dir}/${sample}.vcf"
-
-# logs_dir="${proj_dir}/logs-${segment_name}"
-# mkdir -p "$logs_dir"
 
 
 #########################
@@ -78,7 +82,7 @@ vcf_fixed="${vcf_dir}/${sample}.vcf"
 
 # exit if output exits already
 
-if [ -s "$gatk_sample_summary" ] ; then
+if [ -s "$vcf_fixed" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	exit 1
 fi
@@ -87,20 +91,18 @@ fi
 #########################
 
 
-# GATK settings
+# create padded bed if needed
 
-module unload java
-module load java/1.8
+bed_padded="${bed}.pad10"
 
-# command
-gatk_jar="/ifs/home/id460/software/GenomeAnalysisTK-3.6/GenomeAnalysisTK.jar"
-gatk_cmd="java -Xms16G -Xmx16G -jar ${gatk_jar}"
+if [ ! -s $bed_padded ] ; then
+	module load bedtools/2.26.0
+	bedtools slop -i $bed -g $chrom_sizes -b 10 > $bed_padded
+	sleep 30
+fi
 
-# error log (blank for troubleshooting)
-gatk_log_level_arg="--logging_level ERROR"
-
-if [ ! -s "$gatk_jar" ] ; then
-	echo -e "\n $script_name ERROR: GATK $gatk_jar DOES NOT EXIST \n" >&2
+if [ ! -s $bed_padded ] ; then
+	echo -e "\n $script_name ERROR: BED $bed_padded DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
@@ -108,29 +110,27 @@ fi
 #########################
 
 
-# GATK HaplotypeCaller
+# LoFreq
 
-echo " * GATK: $(readlink -f $gatk_jar) "
-echo " * GATK version: $($gatk_cmd --version) "
-echo " * BAM IN: $bam "
-echo " * INTERVALS: $bed "
+lofreq_bin="/ifs/home/id460/bin/lofreq"
+
+echo " * LoFreq: $(readlink -f $(which $lofreq_bin)) "
+echo " * LoFreq version: $($lofreq_bin version 2>&1 | head -1) "
+echo " * BAM: $bam "
+echo " * BED: $bed_padded "
 echo " * VCF original: $vcf_original "
 echo " * VCF fixed: $vcf_fixed "
 
-gatk_hc_cmd="
-$gatk_cmd -T HaplotypeCaller -dt NONE $gatk_log_level_arg \
--nct $threads \
---max_alternate_alleles 3 \
--stand_call_conf 50 \
--stand_emit_conf 50 \
---reference_sequence $ref_fasta \
---intervals $bed \
---interval_padding 10 \
---input_file $bam \
---out $vcf_original
+lofreq_cmd="
+$lofreq_bin call-parallel --call-indels \
+--pp-threads $threads \
+--ref $ref_fasta \
+--bed $bed_padded \
+--out $vcf_original \
+$bam
 "
-echo "CMD: $gatk_hc_cmd"
-$gatk_hc_cmd
+echo "CMD: $lofreq_cmd"
+$lofreq_cmd
 
 
 #########################
@@ -152,22 +152,33 @@ fi
 module unload samtools
 module load samtools/1.3
 
-# 1) GATK HC is defining the AD field as "Number=." (VCF 4.1 specification) rather than "Number=R" (VCF 4.2 specification)
-# CMD: sed 's/AD,Number=./AD,Number=R/g' $vcf_original
-# fixed in GATK 3.6
+# create indexed VCF file
+# warnings: "contig 'chr1' is not defined in the header. (Quick workaround: index the file with tabix.)"
+
+# bgzip VCF file so it can be indexed
+bgzip_cmd="bgzip -c $vcf_original > ${vcf_original}.bgz"
+echo "CMD: $bgzip_cmd"
+eval "$bgzip_cmd"
+
+# index VCF file
+bcf_index_cmd="bcftools index ${vcf_original}.bgz"
+echo "CMD: $bcf_index_cmd"
+eval "$bcf_index_cmd"
 
 # 1) split multi-allelic variants calls into separate lines (uses VCF 4.2 specification)
 # 2) perform indel left-normalization (start position of a variant should be shifted to the left until it is no longer possible to do so)
 # 3) depth filter
 
 fix_vcf_cmd="
-cat $vcf_original \
-| bcftools norm --multiallelics -both --output-type v - \
+bcftools norm --multiallelics -both --output-type v ${vcf_original}.bgz \
 | bcftools norm --fasta-ref $ref_fasta --output-type v - \
-| bcftools view --exclude 'DP<10' --output-type v > $vcf_fixed
+| bcftools view --exclude 'DP<5' --output-type v > $vcf_fixed
 "
 echo "CMD: $fix_vcf_cmd"
 eval "$fix_vcf_cmd"
+
+# add FORMAT and sample ID columns so VCF is compatible with some other scripts
+sed -i "s/FILTER\tINFO/FILTER\tINFO\tFORMAT\t${sample}/g" $vcf_fixed
 
 
 #########################
