@@ -255,7 +255,4 @@ sleep 30
 
 
 
-date
-
-
 # end

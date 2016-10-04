@@ -57,6 +57,7 @@ if [ -z "$fastq_R1" ] ; then
 	fastq_R1=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_clean}.csv" | cut -d ',' -f 2)
 	fastq_R2=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_clean}.csv" | cut -d ',' -f 3)
 fi
+[ "$fastq_R1" ] || exit 1
 
 # run alignment
 segment_align="align-bowtie2-atac"
@@ -66,6 +67,7 @@ if [ -z "$bam_bt2" ] ; then
 	($bash_cmd)
 	bam_bt2=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_align}.csv" | cut -d ',' -f 2)
 fi
+[ "$bam_bt2" ] || exit 1
 
 # remove duplicates
 segment_dedup="bam-dedup-sambamba"
@@ -75,6 +77,7 @@ if [ -z "$bam_dd" ] ; then
 	($bash_cmd)
 	bam_dd=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_dedup}.csv" | cut -d ',' -f 2)
 fi
+[ "$bam_dd" ] || exit 1
 
 # generate BigWig (deeptools)
 segment_bigwig_deeptools="bigwig-deeptools"

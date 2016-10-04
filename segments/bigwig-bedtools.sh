@@ -12,7 +12,7 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 # check for correct number of arguments
 if [ ! $# == 3 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
-	echo -e "\n USAGE: $script_name project_dir sample BAM \n" >&2
+	echo -e "\n USAGE: $script_name project_dir sample_name BAM \n" >&2
 	exit 1
 fi
 
