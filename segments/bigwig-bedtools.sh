@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-# bedtools generate BigWig from BAM
+# bedtools generate bigWig from BAM
 
 
 # script filename
@@ -12,14 +12,14 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 # check for correct number of arguments
 if [ ! $# == 3 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
-	echo -e "\n USAGE: $script_name [project dir] [sample] [BAM] \n" >&2
+	echo -e "\n USAGE: $script_name project_dir sample BAM \n" >&2
 	exit 1
 fi
 
 # arguments
-PROJ_DIR=$1
-SAMPLE=$2
-BAM=$3
+proj_dir=$1
+sample=$2
+bam=$3
 
 
 #########################
@@ -27,21 +27,21 @@ BAM=$3
 
 # check that inputs exist
 
-if [ ! -d "$PROJ_DIR" ] || [ ! "$PROJ_DIR" ] ; then
-	echo -e "\n $script_name ERROR: DIR $PROJ_DIR DOES NOT EXIST \n" >&2
+if [ ! -d "$proj_dir" ] || [ ! "$proj_dir" ] ; then
+	echo -e "\n $script_name ERROR: DIR $proj_dir DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
-if [ ! -s "$BAM" ] || [ ! "$BAM" ] ; then
-	echo -e "\n $script_name ERROR: BAM $BAM DOES NOT EXIST \n" >&2
+if [ ! -s "$bam" ] || [ ! "$bam" ] ; then
+	echo -e "\n $script_name ERROR: BAM $bam DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
-CODE_DIR=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
-REF_CHROMSIZES=$(bash ${CODE_DIR}/scripts/get-set-setting.sh "${PROJ_DIR}/settings.txt" REF-CHROMSIZES);
+code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
+chrom_sizes=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-CHROMSIZES);
 
-if [ ! -s "$REF_CHROMSIZES" ] ; then
-	echo -e "\n $script_name ERROR: CHROMSIZES $REF_CHROMSIZES DOES NOT EXIST \n" >&2
+if [ ! -s "$chrom_sizes" ] ; then
+	echo -e "\n $script_name ERROR: CHROM SIZES $chrom_sizes DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
@@ -51,10 +51,10 @@ fi
 
 # output
 
-BIGWIG_DIR="${PROJ_DIR}/BIGWIG"
+BIGWIG_DIR="${proj_dir}/BIGWIG"
 mkdir -p "$BIGWIG_DIR"
-BEDGRAPH="${BIGWIG_DIR}/${SAMPLE}.norm.bedgraph"
-BIGWIG="${BIGWIG_DIR}/${SAMPLE}.norm.bw"
+bedgraph="${BIGWIG_DIR}/${sample}.norm.bedgraph"
+bigwig="${BIGWIG_DIR}/${sample}.norm.bw"
 
 
 #########################
@@ -62,8 +62,8 @@ BIGWIG="${BIGWIG_DIR}/${SAMPLE}.norm.bw"
 
 # exit if output exits already
 
-if [ -s "$BIGWIG" ] ; then
-	echo -e "\n $script_name SKIP SAMPLE $SAMPLE \n" >&2
+if [ -s "$bigwig" ] ; then
+	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	exit 1
 fi
 
@@ -71,31 +71,33 @@ fi
 #########################
 
 
-# BAM to BedGraph with bedtools
+# bam to BedGraph with bedtools
 
-module unload gcc
 module load samtools/1.3
-module load bedtools/2.22.0
+module load bedtools/2.26.0
 module load kentutils/329
 
 # determine normalization scaling factor
-MAPPED_READS=$(samtools view -c $BAM)
-SCALE=`echo "10000000/${MAPPED_READS}" | bc -l`
-SCALE=${SCALE:0:8}
+mapped_reads=$(samtools view -c $bam)
+scale=$(echo "10000000/${mapped_reads}" | bc -l)
+scale=${scale:0:8}
 
 echo " * samtools: $(readlink -f $(which samtools)) "
 echo " * bedtools: $(readlink -f $(which bedtools)) "
 echo " * bedGraphToBigWig: $(readlink -f $(which bedGraphToBigWig)) "
-echo " * CHROM SIZES: $REF_CHROMSIZES "
-echo " * BAM: $BAM "
-echo " * MAPPED READS: $MAPPED_READS "
-echo " * SCALING FACTOR: $SCALE "
-echo " * BEDGRAPH: $BEDGRAPH "
-echo " * BIGWIG: $BIGWIG "
+echo " * chrom sizes: $chrom_sizes "
+echo " * BAM: $bam "
+echo " * mapped reads: $mapped_reads "
+echo " * scaling factor: $scale "
+echo " * BedGraph: $bedgraph "
+echo " * bigWig: $bigwig "
 
-CMD="bedtools genomecov -split -bg -g $REF_CHROMSIZES -ibam $BAM -scale $SCALE > $BEDGRAPH"
-echo "CMD: $CMD"
-eval $CMD
+# bedGraphToBigWig error:
+# ".bedgraph is not case-sensitive sorted at line 2771141.  Please use "sort -k1,1 -k2,2n" with LC_COLLATE=C,  or bedSort and try again."
+
+bg_cmd="bedtools genomecov -split -bg -g $chrom_sizes -ibam $bam -scale $scale | LC_ALL=C sort -k1,1 -k2,2n > $bedgraph"
+echo -e "\n CMD: $bg_cmd \n"
+eval "$bg_cmd"
 
 
 #########################
@@ -103,8 +105,8 @@ eval $CMD
 
 # check that output generated
 
-if [ ! -s "$BEDGRAPH" ] ; then
-	echo -e "\n $script_name ERROR: BEDGRAPH $BEDGRAPH NOT GENERATED \n" >&2
+if [ ! -s "$bedgraph" ] ; then
+	echo -e "\n $script_name ERROR: BEDGRAPH $bedgraph NOT GENERATED \n" >&2
 	exit 1
 fi
 
@@ -114,12 +116,12 @@ fi
 
 # BadGraph to BigWig with UCSC tools
 
-CMD="bedGraphToBigWig $BEDGRAPH $REF_CHROMSIZES $BIGWIG"
-echo "CMD: $CMD"
-eval $CMD
+bw_cmd="bedGraphToBigWig $bedgraph $chrom_sizes $bigwig"
+echo -e "\n CMD: $bw_cmd \n"
+eval "$bw_cmd"
 
 # delete bedgraph
-rm -f $BEDGRAPH
+rm -fv $bedgraph
 
 
 #########################
@@ -127,8 +129,8 @@ rm -f $BEDGRAPH
 
 # check that output generated
 
-if [ ! -s "$BIGWIG" ] ; then
-	echo -e "\n $script_name ERROR: BIGWIG $BIGWIG NOT GENERATED \n" >&2
+if [ ! -s "$bigwig" ] ; then
+	echo -e "\n $script_name ERROR: BIGWIG $bigwig NOT GENERATED \n" >&2
 	exit 1
 fi
 
