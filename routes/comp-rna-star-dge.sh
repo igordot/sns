@@ -134,6 +134,8 @@ sleep 3
 echo -e "\n ========== test R ========== \n"
 
 # load relevant modules
+module unload java
+module load java/1.8
 module unload r
 module load r/3.3.0
 module unload zlib
