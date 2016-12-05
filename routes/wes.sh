@@ -2,7 +2,7 @@
 
 
 ##
-## whole genome/exome/targeted variant discovery using BWA-MEM and GATK
+## whole genome/exome/targeted sequencing variant discovery using BWA-MEM and GATK
 ##
 
 
@@ -147,6 +147,19 @@ ${proj_dir}/summary.${segment_avg_cov}.csv \
 > $summary_csv
 "
 (eval $bash_cmd)
+
+
+#########################
+
+
+# generate pairs sample sheet template
+
+samples_pairs_csv="${proj_dir}/samples.pairs.csv"
+
+if [ ! -s "$samples_pairs_csv" ] ; then
+	echo "#SAMPLE-T,#SAMPLE-N" > $samples_pairs_csv
+	sed 's/\,.*/,NA/g' ${proj_dir}/samples.fastq-raw.csv | LC_ALL=C sort -u >> $samples_pairs_csv
+fi
 
 
 #########################

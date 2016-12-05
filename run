@@ -28,26 +28,27 @@ sub main {
 
 	my $route = $ARGV[0];
 
-	# get current dir (should be the project dir)
+	# current dir (should be the project dir)
 	my $project_dir = getcwd();
 	print "project dir: $project_dir \n";
 
-	# pipeline dir (where this file is)
+	# code ("sns") dir (where this file is)
 	my $code_dir = File::Spec->rel2abs(__FILE__);
 	$code_dir = dirname($code_dir);
 	chomp($code_dir);
 	print "code dir: $code_dir \n";
-
-	# check that settings file exists
-	my $settings_txt = "${project_dir}/settings.txt";
-	unless ( -e $settings_txt ) {
-		die "\n\n ERROR: $settings_txt DOES NOT EXIST \n\n";
-	}
+	sleep(1);
 
 	# check that the specified route exists
 	my $route_script = "${code_dir}/routes/${route}.sh";
 	unless ( -e $route_script ) {
 		die "\n\n ERROR: $route DOES NOT EXIST \n\n";
+	}
+
+	# check that settings file exists
+	my $settings_txt = "${project_dir}/settings.txt";
+	unless ( -e $settings_txt ) {
+		die "\n\n ERROR: $settings_txt DOES NOT EXIST \n\n";
 	}
 
 	# move to qsub logs dir so the qsub output ends up there
@@ -56,104 +57,155 @@ sub main {
 	print "logs dir: $qsub_logs_dir \n";
 	chdir($qsub_logs_dir);
 
-	# check if standard route (run for each sample) or comparison route (compare samples)
-	if ($route =~ "comp-") {
+	# determine sample sheet depending on route type
+	my $samples_csv = get_sample_sheet($project_dir, $code_dir, $route);
+	print "sample sheet: $samples_csv \n";
+	sleep(1);
 
-		# comparison route
-
-		# sample sheet specifying groups
-		my $samples_groups_csv = abs_path("${project_dir}/samples.groups.csv");
-		print "sample sheet: $samples_groups_csv \n";
-
-		# check that sample sheet exists
-		unless ( -e $samples_groups_csv ) {
-			die "\n\n ERROR: $samples_groups_csv DOES NOT EXIST \n\n";
-		}
-
-		system("bash ${code_dir}/scripts/fix-csv.sh $samples_groups_csv");
-
-		print "\n process comparison $route \n";
-
-		# route command
-		my $cmd = "bash $route_script $project_dir";
-
-		system($cmd);
-
+	if ($route =~ "-groups-") {
+		# grouped samples route (all samples processed together)
+		run_groups($project_dir, $route_script);
 	}
 	else {
+		# generic single-sample route or paired samples route (each sample or pair processed separately)
+		run_samples($project_dir, $code_dir, $route, $route_script, $samples_csv);
+	}
 
-		# standard route
+}
 
-		# remove problematic characters from any existing samples sheets
-		my @sample_csvs = `ls -1 ${project_dir}/samples.*.csv`;
-		chomp(@sample_csvs);
-		while (my $csv = shift(@sample_csvs)) {
-			print "sample sheet: $csv \n";
+# get the sample sheet depending on the route type
+sub get_sample_sheet {
+	my $project_dir = $_[0];
+	my $code_dir = $_[1];
+	my $route = $_[2];
+
+	my $samples_csv;
+
+	if ($route =~ "-groups-") {
+		$samples_csv = abs_path("${project_dir}/samples.groups.csv");
+	}
+	elsif ($route =~ "-pairs-") {
+		$samples_csv = abs_path("${project_dir}/samples.pairs.csv");
+	}
+	else {
+		$samples_csv = abs_path("${project_dir}/samples.fastq-raw.csv");
+
+		# remove problematic characters from all existing samples sheets
+		my @all_samples_csvs = `ls -1 ${project_dir}/samples.*.csv`;
+		chomp(@all_samples_csvs);
+		while (my $csv = shift(@all_samples_csvs)) {
 			system("bash ${code_dir}/scripts/fix-csv.sh $csv");
 		}
 
-		# check that raw fastq sample sheet exists
-		my $samples_fastq_csv = abs_path("${project_dir}/samples.fastq-raw.csv");
-		unless ( -e $samples_fastq_csv ) {
-			die "\n\n ERROR: $samples_fastq_csv DOES NOT EXIST \n\n";
+		sleep(1);
+	}
+
+	# check that sample sheet exists
+	unless ( -e $samples_csv ) {
+		die "\n\n ERROR: SAMPLE SHEET $samples_csv DOES NOT EXIST \n\n";
+	}
+
+	system("bash ${code_dir}/scripts/fix-csv.sh $samples_csv");
+
+	return($samples_csv);
+
+}
+
+# process samples and submit a job for each
+sub run_samples {
+	my $project_dir = $_[0];
+	my $code_dir = $_[1];
+	my $route = $_[2];
+	my $route_script = $_[3];
+	my $samples_csv = $_[4];
+
+	# find unique samples based on the sample sheet
+	my @unique_samples = `cat $samples_csv | cut -d ',' -f 1 | LC_ALL=C sort | uniq`;
+	if ($route =~ "-pairs-") {
+		@unique_samples = `cat $samples_csv | grep -v "#SAMPLE" | tr ',' ':' | LC_ALL=C sort | uniq`;
+	}
+	chomp(@unique_samples);
+
+	# check that pairs are valid (default sample sheet has normals as "NA")
+	if ($route =~ "-pairs-") {
+		my @invalid_pairs = grep(/:NA$/, @unique_samples);
+		if (@invalid_pairs) {
+			die "\n\n ERROR: @invalid_pairs CONTAINS MISSING SAMPLES (LABELED NA) \n\n";
+		}
+	}
+
+	# adjust number of requested threads per sample depending on total number of samples
+	my $num_samples = @unique_samples;
+	my $threads;
+	if ($num_samples < 15) {
+		$threads = "8-16";
+	}
+	elsif ($num_samples < 50) {
+		$threads = "4-8";
+	}
+	else {
+		$threads = "4";
+	}
+
+	# process each sample
+	my $current_sample = 1;
+	while (my $sample = shift(@unique_samples)) {
+
+		print "\n process sample $sample \n";
+
+		# route command
+		my $cmd = "bash $route_script $project_dir $sample";
+
+		# split paired samples for command (needs two samples)
+		if ($route =~ "-pairs-") {
+			$sample =~ s/:/-/;
+			$cmd =~ s/:/ /;
 		}
 
-		# find unique samples based on the sample sheet
-		my @unique_samples = `cat $samples_fastq_csv | cut -d ',' -f 1 | uniq`;
-		chomp(@unique_samples);
-
-		# adjust number of requested threads per sample depending on total number of samples
-		my $num_samples = @unique_samples;
-		my $threads;
-		if ($num_samples < 15) {
-			$threads = "8-16";
-		}
-		elsif ($num_samples < 50) {
-			$threads = "4-8";
-		}
-		else {
-			$threads = "4";
+		# check for "test" argument to test one sample without qsub (for troubleshooting)
+		if (defined($ARGV[1]) && $ARGV[1] eq "test") {
+			print "\n\n test run started \n\n";
+			system("export NSLOTS=4 && $cmd");
+			print "\n\n test run finished \n\n";
+			exit;
 		}
 
-		# process each sample
-		my $current_sample = 1;
-		while (my $sample = shift(@unique_samples)) {
+		# qsub command (run as binary bash script to keep all environment variables)
+		my $email = '${USER}@nyumc.org';
+		$email = `echo $email`;
+		chomp($email);
+		my $qsub_name = "sns.${route}.${sample}";
+		my $qsub_cmd = "qsub -N $qsub_name -M $email -m a -j y -cwd -pe threaded $threads -b y $cmd";
 
-			print "\n process sample $sample \n";
-
-			# route command
-			my $cmd = "bash $route_script $project_dir $sample";
-
-			# check for "test" argument to test one sample without qsub
-			if (defined($ARGV[1]) && $ARGV[1] eq "test") {
-				print "\n\n test run started \n\n";
-				system("export NSLOTS=4 && $cmd");
-				print "\n\n test run finished \n\n";
-				exit;
-			}
-
-			# qsub command (run as binary bash script to keep all environment variables)
-			my $email = '${USER}@nyumc.org';
-			$email = `echo $email`;
-			chomp($email);
-			my $qsub_name = "sns.${route}.${sample}";
-			my $qsub_cmd = "qsub -N $qsub_name -M $email -m a -j y -cwd -pe threaded $threads -b y $cmd";
-			print "\n CMD: $qsub_cmd \n";
-			system($qsub_cmd);
-
-			# pause between samples (sometimes job scheduler gets overwhelmed)
-			sleep(5);
-
-			# extra pause for the first few samples so it's easier to fix obvious errors
-			if ($current_sample < 4) {
-				sleep(15);
-			}
-
-			$current_sample++;
-
+		# paired command is single-threaded (at least for now)
+		if ($route =~ "-pairs-") {
+			$qsub_cmd = "qsub -N $qsub_name -M $email -m a -j y -cwd -b y $cmd";
 		}
+
+		print "\n CMD: $qsub_cmd \n";
+		system($qsub_cmd);
+
+		# pause between samples (sometimes job scheduler gets overwhelmed)
+		sleep(5);
+
+		# extra pause for the first few samples so it's easier to fix obvious errors
+		if ($current_sample < 4) {
+			sleep(15);
+		}
+
+		$current_sample++;
 
 	}
+}
+
+# process sample groups (all samples processed together)
+sub run_groups {
+	my $project_dir = $_[0];
+	my $route_script = $_[1];
+
+	# route command
+	my $cmd = "bash $route_script $project_dir";
+	system($cmd);
 
 }
 

@@ -48,13 +48,6 @@ if [ ! -d "$proj_dir" ] ; then
 	exit 1
 fi
 
-gene_info_table="${proj_dir}/genes.featurecounts.txt"
-
-if [ ! -s "$gene_info_table" ] ; then
-	echo -e "\n $script_name ERROR: GENE INFO $gene_info_table DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
 groups_table="${proj_dir}/samples.groups.csv"
 
 if [ ! -s "$groups_table" ] ; then
@@ -66,6 +59,13 @@ num_samples=$(cat "$groups_table" | grep -v "#SAMPLE" | wc -l)
 
 if [ "$num_samples" -lt 3 ] ; then
 	echo -e "\n $script_name ERROR: $num_samples is too few samples \n" >&2
+	exit 1
+fi
+
+gene_info_table="${proj_dir}/genes.featurecounts.txt"
+
+if [ ! -s "$gene_info_table" ] ; then
+	echo -e "\n $script_name ERROR: GENE INFO $gene_info_table DOES NOT EXIST \n" >&2
 	exit 1
 fi
 

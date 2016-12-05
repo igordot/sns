@@ -87,6 +87,7 @@ peaks_xls="${macs_dir}/${sample}_peaks.xls"
 peaks_narrow="${macs_dir}/${sample}_peaks.narrowPeak"
 peaks_bed="${macs_dir}/${sample}.bed"
 macs_bdg_treat="${macs_dir}/${sample}_treat_pileup.bdg"
+macs_bdg_treat_sort="${macs_dir}/${sample}_treat_pileup.sort.bdg"
 macs_bdg_control="${macs_dir}/${sample}_control_lambda.bdg"
 
 bigwig_dir="${proj_dir}/BIGWIG"
@@ -178,12 +179,20 @@ module load kentutils/329
 
 if [ ! -s "$macs_bw" ] ; then
 
-	echo " * MACS bedGraph: $macs_bdg_treat "
+	echo " * bedGraphToBigWig: $(readlink -f $(which bedGraphToBigWig)) "
+	echo " * MACS bedGraph original: $macs_bdg_treat "
+	echo " * MACS bedGraph sorted: $macs_bdg_treat_sort "
 	echo " * MACS bigWig: $macs_bw "
 
-	bw_cmd="bedGraphToBigWig $macs_bdg_treat $chrom_sizes $macs_bw"
+	bdg_sort_cmd="cat $macs_bdg_treat | LC_ALL=C sort -k1,1 -k2,2n > $macs_bdg_treat_sort"
+	echo -e "\n CMD: $bdg_sort_cmd \n"
+	eval "$bdg_sort_cmd"
+
+	bw_cmd="bedGraphToBigWig $macs_bdg_treat_sort $chrom_sizes $macs_bw"
 	echo -e "\n CMD: $bw_cmd \n"
-	$bw_cmd
+	eval "$bw_cmd"
+
+	rm -fv "$macs_bdg_treat_sort"
 
 fi
 

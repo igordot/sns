@@ -78,16 +78,20 @@ save(vsd, file = "deseq2.vsd.RData")
 # export counts
 write.csv(counts(dds, normalized = FALSE), file = "counts.raw.csv")
 write.csv(round(counts(dds, normalized = TRUE), digits = 3), file = "counts.norm.csv")
-write.xlsx2(x=round(counts(dds, normalized = TRUE), digits = 3), file = "counts.norm.xlsx", sheetName = "normalized counts")
+write.xlsx2(x = round(counts(dds, normalized = TRUE), digits = 3), file = "counts.norm.xlsx", sheetName = "normalized counts")
 
 message(" ========== QC ========== ")
 
-pdf("plot.sparsity.pdf", width=7, height=7, family="Palatino", pointsize=10)
+png("plot.sparsity.png", width = 6, height = 6, units = "in", res = 300)
 print(plotSparsity(dds, normalized = TRUE))
 dev.off()
 
-pdf("plot.pca.pdf", width=7, height=7, family="Palatino", pointsize=10)
-deseq2_pca(vsd, intgroup=c("group"), ntop=1000)
+pdf("plot.pca.pdf", width = 7, height = 5, family = "Palatino", pointsize = 10)
+deseq2_pca(vsd, intgroup = c("group"), ntop = 1000)
+dev.off()
+
+png("plot.pca.png", width = 7, height = 5, units = "in", res = 300)
+deseq2_pca(vsd, intgroup = c("group"), ntop = 1000)
 dev.off()
 
 message(" ========== differential expression ========== ")

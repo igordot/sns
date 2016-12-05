@@ -55,7 +55,7 @@ fi
 # mkdir -p "$summary_dir"
 # summary_csv="${summary_dir}/${sample}.${segment_name}.csv"
 
-centrifuge_dir="${proj_dir}/species"
+centrifuge_dir="${proj_dir}/species-centrifuge"
 mkdir -p "$centrifuge_dir"
 report_csv="${centrifuge_dir}/${sample}.csv"
 

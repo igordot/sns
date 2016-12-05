@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-# call variants with GATK HaplotypeCaller
+# call variants with MuTect2 (part of GATK)
 
 
 # script filename
@@ -10,17 +10,18 @@ segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
 # check for correct number of arguments
-if [ ! $# == 4 ] ; then
+if [ ! $# == 5 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
-	echo -e "\n USAGE: $script_name project_dir sample_name threads BAM \n" >&2
+	echo -e "\n USAGE: $script_name project_dir tumor_sample_name tumor_bam normal_sample_name normal_bam \n" >&2
 	exit 1
 fi
 
 # arguments
 proj_dir=$1
-sample=$2
-threads=$3
-bam=$4
+sample_t=$2
+bam_t=$3
+sample_n=$4
+bam_n=$5
 
 
 #########################
@@ -33,12 +34,24 @@ if [ ! -d "$proj_dir" ] ; then
 	exit 1
 fi
 
-if [ ! -s "$bam" ] ; then
-	echo -e "\n $script_name ERROR: BAM $bam DOES NOT EXIST \n" >&2
+if [ ! -s "$bam_t" ] ; then
+	echo -e "\n $script_name ERROR: BAM $bam_t DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+if [ ! -s "$bam_n" ] ; then
+	echo -e "\n $script_name ERROR: BAM $bam_n DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
 code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
+
+genome_dir=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" GENOME-DIR);
+
+if [ ! -d "$genome_dir" ] ; then
+	echo -e "\n $script_name ERROR: GENOME DIR $genome_dir DOES NOT EXIST \n" >&2
+	exit 1
+fi
 
 ref_fasta=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-FASTA);
 
@@ -64,10 +77,12 @@ fi
 # mkdir -p "$summary_dir"
 # summary_csv="${summary_dir}/${sample}.${segment_name}.csv"
 
-vcf_dir="${proj_dir}/VCF-GATK-HC"
+sample="${sample_t}:${sample_n}"
+
+vcf_dir="${proj_dir}/VCF-MuTect2"
 mkdir -p "$vcf_dir"
-vcf_original="${vcf_dir}/${sample}.original.vcf"
-vcf_fixed="${vcf_dir}/${sample}.vcf"
+vcf_original="${vcf_dir}/${sample_t}-${sample_n}.original.vcf"
+vcf_fixed="${vcf_dir}/${sample_t}-${sample_n}.vcf"
 
 
 #########################
@@ -98,41 +113,67 @@ module load java/1.8
 gatk_jar="/ifs/home/id460/software/GenomeAnalysisTK-3.6/GenomeAnalysisTK.jar"
 gatk_cmd="java -Xms16G -Xmx16G -jar ${gatk_jar}"
 
-# error log (DEBUG, INFO (default), WARN, ERROR, FATAL, OFF)
-gatk_log_level_arg="--logging_level ERROR"
-
 if [ ! -s "$gatk_jar" ] ; then
 	echo -e "\n $script_name ERROR: GATK $gatk_jar DOES NOT EXIST \n" >&2
 	exit 1
+fi
+
+# error log (DEBUG, INFO (default), WARN, ERROR, FATAL, OFF)
+gatk_log_level_arg="--logging_level WARN"
+
+# known variants (may vary greatly for each genome)
+if [[ "$genome_dir" == */hg19 ]] ; then
+	cosmic_vcf="${genome_dir}/CosmicCodingMuts_v73.hg19.vcf"
+	dbsnp_vcf="${genome_dir}/gatk-bundle/dbsnp_138.hg19.vcf"
+	mt_var_arg="--dbsnp $dbsnp_vcf --cosmic $cosmic_vcf"
+elif [[ "$genome_dir" == */mm10 ]] ; then
+	dbsnp_vcf="${genome_dir}/dbSNP/dbsnp.146.vcf"
+	mt_var_arg="--dbsnp $dbsnp_vcf"
+else
+	mt_var_arg=""
 fi
 
 
 #########################
 
 
-# GATK HaplotypeCaller
+# GATK MuTect2
 
 echo " * GATK: $(readlink -f $gatk_jar) "
 echo " * GATK version: $($gatk_cmd --version) "
-echo " * BAM: $bam "
+echo " * sample T : $sample_t "
+echo " * BAM T : $bam_t "
+echo " * sample N : $sample_n "
+echo " * BAM N : $bam_n "
 echo " * INTERVALS: $bed "
+echo " * DBSNP VCF: $dbsnp_vcf "
+echo " * COSMIC VCF: $cosmic_vcf "
 echo " * VCF original: $vcf_original "
 echo " * VCF fixed: $vcf_fixed "
 
-gatk_hc_cmd="
-$gatk_cmd -T HaplotypeCaller -dt NONE $gatk_log_level_arg \
--nct $threads \
---max_alternate_alleles 3 \
--stand_call_conf 50 \
--stand_emit_conf 50 \
+# single-threaded (multi-threading with -nct was much slower)
+
+# --max_alt_allele_in_normal_fraction - threshold for maximum alternate allele fraction in normal [0.03]
+# --max_alt_alleles_in_normal_count - threshold for maximum alternate allele counts in normal [1]
+# --max_alt_alleles_in_normal_qscore_sum - threshold for maximum alternate allele quality score sum in normal [20]
+
+mutect_cmd="
+$gatk_cmd -T MuTect2 -dt NONE $gatk_log_level_arg \
+--standard_min_confidence_threshold_for_calling 30 \
+--standard_min_confidence_threshold_for_emitting 30 \
+--max_alt_alleles_in_normal_count 10 \
+--max_alt_allele_in_normal_fraction 0.05 \
+--max_alt_alleles_in_normal_qscore_sum 40 \
 --reference_sequence $ref_fasta \
+$mt_var_arg \
 --intervals $bed \
 --interval_padding 10 \
---input_file $bam \
+--input_file:tumor $bam_t \
+--input_file:normal $bam_n \
 --out $vcf_original
 "
-echo -e "\n CMD: $gatk_hc_cmd \n"
-$gatk_hc_cmd
+echo -e "\n CMD: $mutect_cmd \n"
+$mutect_cmd
 
 
 #########################
@@ -149,24 +190,21 @@ fi
 #########################
 
 
-# adjust the vcf for annovar compatibility (http://www.openbioinformatics.org/annovar/annovar_vcf.html)
+# adjust VCF for ANNOVAR compatibility (http://annovar.openbioinformatics.org/en/latest/articles/VCF/)
 
 module unload samtools
 module load samtools/1.3
 
-# 1) GATK HC is defining the AD field as "Number=." (VCF 4.1 specification) rather than "Number=R" (VCF 4.2 specification)
-# CMD: sed 's/AD,Number=./AD,Number=R/g' $vcf_original
-# fixed in GATK 3.6
-
-# 1) split multi-allelic variants calls into separate lines (uses VCF 4.2 specification)
-# 2) perform indel left-normalization (start position of a variant should be shifted to the left until it is no longer possible to do so)
-# 3) depth filter
+# 1) keep header and only passing variants
+# 2) split multi-allelic variants calls into separate lines (uses VCF 4.2 specification)
+# 3) perform indel left-normalization (start position of a variant should be shifted to the left until it is no longer possible to do so)
 
 fix_vcf_cmd="
 cat $vcf_original \
+| grep -E '^#|PASS' \
 | bcftools norm --multiallelics -both --output-type v - \
 | bcftools norm --fasta-ref $ref_fasta --output-type v - \
-| bcftools view --exclude 'DP<5' --output-type v > $vcf_fixed
+> $vcf_fixed
 "
 echo -e "\n CMD: $fix_vcf_cmd \n"
 eval "$fix_vcf_cmd"

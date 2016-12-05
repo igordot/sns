@@ -46,6 +46,9 @@ bismark_mbias_report="${bismark_meth_dir}/${sample}.M-bias.txt"
 bismark_bedgraph="${bismark_meth_dir}/${sample}.bedGraph"
 bismark_bedgraph_gz="${bismark_bedgraph}.gz"
 
+bismark_cov="${bismark_meth_dir}/${sample}.bismark.cov"
+bismark_cov_gz="${bismark_cov}.gz"
+
 bismark_cpg_report_gz="${bismark_meth_dir}/${sample}.CpG_report.txt.gz"
 
 # BISMARK_METHYLKIT_REPORT="${bismark_meth_dir}/${sample}.methylkit.txt"
@@ -155,7 +158,7 @@ bismark_methylation_extractor \
 $bismark_flags \
 $bismark_bam
 "
-echo "CMD: $bash_cmd"
+echo -e "\n CMD: $bash_cmd \n"
 eval "$bash_cmd"
 
 
@@ -164,9 +167,18 @@ eval "$bash_cmd"
 
 # check that output generated
 
-if [ ! -s $bismark_report ] || [ ! $bismark_report ]
-then
+if [ ! -s $bismark_report ] ; then
 	printf "\n\n ERROR! REPORT $bismark_report NOT GENERATED \n\n"
+	exit 1
+fi
+
+if [ ! -s $bismark_bedgraph_gz ] ; then
+	printf "\n\n ERROR! BEDGRAPH $bismark_bedgraph_gz NOT GENERATED \n\n"
+	exit 1
+fi
+
+if [ ! -s $bismark_cov_gz ] ; then
+	printf "\n\n ERROR! COV $bismark_cov_gz NOT GENERATED \n\n"
 	exit 1
 fi
 
@@ -215,6 +227,7 @@ $CMD
 
 
 # convert cytosine report to methylkit-compatible format and remove uncovered bases
+# no longer needed with methylKit 0.99
 
 # cytosine report:
 # <chromosome> <position> <strand> <count methylated> <count unmethylated> <C-context> <trinucleotide context>
@@ -227,6 +240,8 @@ $CMD
 
 # convert bedgraph to bigwig
 
+module load kentutils/329
+
 bigwig_dir="${proj_dir}/BIGWIG-Bismark"
 bigwig="${bigwig_dir}/${sample}.bw"
 
@@ -234,11 +249,28 @@ mkdir -p "$bigwig_dir"
 
 ref_chromsizes=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-CHROMSIZES);
 
+echo " * bedGraphToBigWig: $(readlink -f $(which bedGraphToBigWig)) "
+echo " * chrom sizes: $ref_chromsizes "
+echo " * BedGraph gz: $bismark_bedgraph_gz "
+echo " * cov gz: $bismark_cov_gz "
+echo " * BedGraph: $bismark_bedgraph "
+echo " * bigWig: $bigwig "
+
 # bedgraph is gzipped by default
-gunzip -cv $bismark_bedgraph_gz > $bismark_bedgraph
+# gunzip -cv $bismark_bedgraph_gz | grep -v "track" | LC_ALL=C sort -k1,1 -k2,2n > $bismark_bedgraph
+
+# bismark2bedGraph also writes out a coverage file (using 1-based genomic genomic coordinates):
+# <chromosome> <start pos> <end pos> <methylation percentage> <count methylated> <count unmethylated>
+
+# using coverage file instead of bedGraph to filter out low quality CpGs
+gunzip -c $bismark_cov_gz \
+| grep -v 'track' \
+| awk -F $'\t' 'BEGIN {OFS=FS} ($5+$6 >= 5) {print $1,$2-1,$3,$4}' \
+| LC_ALL=C sort -k1,1 -k2,2n \
+> $bismark_bedgraph
 
 bash_cmd="bedGraphToBigWig $bismark_bedgraph $ref_chromsizes $bigwig"
-echo "CMD: $bash_cmd"
+echo -e "\n CMD: $bash_cmd \n"
 eval "$bash_cmd"
 
 # delete bedgraph
@@ -284,7 +316,7 @@ ${proj_dir}/summary.fastq-clean.csv \
 ${proj_dir}/summary.fastq-trim-trimgalore.csv \
 ${proj_dir}/summary.fastq-trim-trimmomatic.csv \
 ${proj_dir}/summary.align-bismark.csv \
-${proj_dir}/summary.align-dedup-bismark.csv \
+${proj_dir}/summary.bam-dedup-bismark.csv \
 ${proj_dir}/summary.${segment_name}.csv \
 > $combined_summary_csv
 "
@@ -313,6 +345,13 @@ montage -geometry +20+20 -tile 4x -label %t -pointsize 18 -font Nimbus-Sans-Regu
 
 
 # bismark html report
+
+# bismark 0.16.3 does not properly generate the report
+# https://github.com/FelixKrueger/Bismark/issues/61
+module unload bismark
+module unload bowtie2
+module unload samtools
+module load bismark/0.16.0
 
 cd "$bismark_report_dir"
 

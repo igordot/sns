@@ -7,7 +7,7 @@
 ##
 
 
-deseq2_pca = function(x, intgroup, ntop=500)
+deseq2_pca = function(x, intgroup, ntop = 500)
 {
   library(RColorBrewer)
   library(genefilter)
@@ -15,18 +15,18 @@ deseq2_pca = function(x, intgroup, ntop=500)
 
   # pca
   rv = rowVars(assay(x))
-  select = order(rv, decreasing=TRUE)[seq_len(min(ntop, length(rv)))]
+  select = order(rv, decreasing = TRUE)[seq_len(min(ntop, length(rv)))]
   pca = prcomp(t(assay(x)[select,]))
 
   # proportion of variance
-  variance = pca$sdev^2 / sum(pca$sdev^2)
+  variance = (pca$sdev ^ 2) / (sum(pca$sdev ^ 2))
   variance = round(variance, 3) * 100
 
   # sample names
   names = colnames(x)
 
   # factor of groups
-  fac = factor(apply(as.data.frame(colData(x)[, intgroup, drop=FALSE]), 1, paste, collapse=" : "))
+  fac = factor(apply(as.data.frame(colData(x)[, intgroup, drop = FALSE]), 1, paste, collapse = " : "))
 
   # colors
   if( nlevels(fac) > 24 ) {
@@ -43,22 +43,23 @@ deseq2_pca = function(x, intgroup, ntop=500)
 
   # plot
   xyplot(
-    PC2 ~ PC1, groups=fac, data=as.data.frame(pca$x), pch=16, cex=1.5,
-    aspect = "fill",
+    PC2 ~ PC1, groups = fac, data = as.data.frame(pca$x), pch = 16, cex = 1.5,
+    aspect = 1,
     col = colors,
-    xlab = list(paste("PC1 (", variance[1], "%)", sep=""), cex=0.8),
-    ylab = list(paste("PC2 (", variance[2], "%)", sep=""), cex=0.8),
+    xlab = list(paste0("PC1 (", variance[1], "%)"), cex = 0.8),
+    ylab = list(paste0("PC2 (", variance[2], "%)"), cex = 0.8),
     panel = function(x, y, ...) {
       panel.xyplot(x, y, ...);
-      ltext(x=x, y=y, labels=names, pos=1, offset=0.8, cex=0.7)
+      ltext(x = x, y = y, labels = names, pos = 1, offset = 0.8, cex = 0.7)
     },
-    main = draw.key(
-      key = list(
-        rect = list(col = colors),
-        text = list(levels(fac)),
-        rep = FALSE
-      )
-    )
+    main = paste0("PCA - ", nlevels(fac), " groups - ", length(names), " samples"),
+    key = list(
+      space = "right",
+      rect = list(col = colors),
+      text = list(levels(fac)),
+      rep = FALSE
+    ),
+    par.settings = list(par.main.text = list(cex = 0.8))
   )
 }
 

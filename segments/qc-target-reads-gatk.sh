@@ -220,7 +220,7 @@ pct_bed="${pct_bed}%"
 echo "bed %: $pct_bed"
 
 # header for summary file
-echo "#SAMPLE,ON-TARGET %,ON-TARGET +/- 100BP %,ON-TARGET +/- 500BP %" > "$summary_csv"
+echo "#SAMPLE,ON-TARGET,ON-TARGET 100BP PAD,ON-TARGET 500BP PAD" > "$summary_csv"
 
 # summarize log file
 echo "${sample},${pct_bed},${pct_pad100},${pct_pad500}" >> "$summary_csv"

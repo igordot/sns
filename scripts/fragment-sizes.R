@@ -50,11 +50,9 @@ message("median: ", median(sizes))
 
 # stats table
 stats_table = data.frame(SAMPLE = sample_name,
-                        MIN = min(sizes),
-                        MAX = max(sizes),
-                        MEAN = round(mean(sizes), digits = 1),
-                        MEDIAN = median(sizes),
-                        SD = round(sd(sizes), digits = 1))
+                         MEAN = round(mean(sizes), digits = 1),
+                         MEDIAN = median(sizes),
+                         SD = round(sd(sizes), digits = 1))
 stats_table_file = paste0(sample_name, ".stats.csv")
 write_csv(x = stats_table, path = stats_table_file)
 

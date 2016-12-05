@@ -82,6 +82,11 @@ vcf_fixed="${vcf_dir}/${sample}.vcf"
 
 # exit if output exits already
 
+if [ -s "$vcf_original" ] ; then
+	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
+	exit 1
+fi
+
 if [ -s "$vcf_fixed" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	exit 1
@@ -93,11 +98,23 @@ fi
 
 # create padded bed if needed
 
+# two steps in case orginal BED file does not end in ".bed"
 bed_padded="${bed}.pad10"
+bed_padded=${bed_padded/%.bed.pad10/.pad10.bed}
+
+bed_pad_cmd="
+cat $bed \
+| LC_ALL=C sort -k1,1 -k2,2n \
+| bedtools slop -g $chrom_sizes -b 10 \
+| bedtools merge -d 5 \
+> $bed_padded
+"
 
 if [ ! -s $bed_padded ] ; then
 	module load bedtools/2.26.0
-	bedtools slop -i $bed -g $chrom_sizes -b 10 > $bed_padded
+	# bedtools slop -i $bed -g $chrom_sizes -b 10 > $bed_padded
+	echo -e "\n CMD: $bed_pad_cmd \n"
+	eval "$bed_pad_cmd"
 	sleep 30
 fi
 
@@ -129,7 +146,7 @@ $lofreq_bin call-parallel --call-indels \
 --out $vcf_original \
 $bam
 "
-echo "CMD: $lofreq_cmd"
+echo -e "\n CMD: $lofreq_cmd \n"
 $lofreq_cmd
 
 
@@ -157,12 +174,12 @@ module load samtools/1.3
 
 # bgzip VCF file so it can be indexed
 bgzip_cmd="bgzip -c $vcf_original > ${vcf_original}.bgz"
-echo "CMD: $bgzip_cmd"
+echo -e "\n CMD: $bgzip_cmd \n"
 eval "$bgzip_cmd"
 
 # index VCF file
 bcf_index_cmd="bcftools index ${vcf_original}.bgz"
-echo "CMD: $bcf_index_cmd"
+echo -e "\n CMD: $bcf_index_cmd \n"
 eval "$bcf_index_cmd"
 
 # 1) split multi-allelic variants calls into separate lines (uses VCF 4.2 specification)
@@ -174,7 +191,7 @@ bcftools norm --multiallelics -both --output-type v ${vcf_original}.bgz \
 | bcftools norm --fasta-ref $ref_fasta --output-type v - \
 | bcftools view --exclude 'DP<5' --output-type v > $vcf_fixed
 "
-echo "CMD: $fix_vcf_cmd"
+echo -e "\n CMD: $fix_vcf_cmd \n"
 eval "$fix_vcf_cmd"
 
 # add FORMAT and sample ID columns so VCF is compatible with some other scripts
@@ -190,6 +207,16 @@ if [ ! -s "$vcf_fixed" ] ; then
 	echo -e "\n $script_name ERROR: VCF $vcf_fixed NOT GENERATED \n" >&2
 	exit 1
 fi
+
+
+#########################
+
+
+# annotate
+
+annot_cmd="bash ${code_dir}/segments/annot-annovar.sh $proj_dir $sample $vcf_fixed"
+echo -e "\n CMD: $annot_cmd \n"
+($annot_cmd)
 
 
 #########################

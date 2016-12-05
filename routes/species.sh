@@ -59,7 +59,12 @@ if [ -z "$fastq_R1" ] ; then
 fi
 [ "$fastq_R1" ] || exit 1
 
-# species contents
+# species using fastqscreen (quick and simple scan)
+segment_species="species-fastqscreen"
+bash_cmd="bash ${code_dir}/segments/${segment_species}.sh $proj_dir $sample $fastq_R1"
+($bash_cmd)
+
+# species using centrifuge
 segment_species="species-centrifuge"
 bash_cmd="bash ${code_dir}/segments/${segment_species}.sh $proj_dir $sample $threads $fastq_R1"
 ($bash_cmd)

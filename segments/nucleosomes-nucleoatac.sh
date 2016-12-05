@@ -100,7 +100,7 @@ nuc_dir="${proj_dir}/nucleosomes"
 mkdir -p "$nuc_dir"
 peaks_bed="${nuc_dir}/${sample}.peaks.bed"
 nucleoatac_occ_bw="${nuc_dir}/${sample}.occ.bw"
-nucleoatac_nuc_smooth_bw="${nuc_dir}/${sample}.nucleoatac_signal.smooth.bw"
+nucleoatac_nuc_smooth_bw="${nuc_dir}/${sample}.nucleoatac.smooth.bw"
 
 
 #########################
@@ -271,11 +271,11 @@ mv -v ${nucleoatac_basename}.*.eps ${nuc_dir}/
 gunzip ${nucleoatac_basename}.*.bed.gz
 
 # positions of nucleosomes estimated from the *.occ.bedgraph.gz (low resolution)
-mv -v "${nucleoatac_basename}.occpeaks.bed" "${nuc_dir}/"
+mv -v "${nucleoatac_basename}.occpeaks.bed" "${nuc_dir}/${sample}.occ.bed"
 # positions of nucleosomes estimated from the *.nucleoatac_signal.bedgraph.gz track (higher resolution)
-mv -v "${nucleoatac_basename}.nucpos.bed" "${nuc_dir}/"
+mv -v "${nucleoatac_basename}.nucpos.bed" "${nuc_dir}/${sample}.nucleoatac.bed"
 # merge of the other two, with the positions from the nucleoatac_signal favored when there is an overlap
-mv -v "${nucleoatac_basename}.nucmap_combined.bed" "${nuc_dir}/"
+mv -v "${nucleoatac_basename}.nucmap_combined.bed" "${nuc_dir}/${sample}.combined.bed"
 
 # delete files that are not needed
 rm -rfv ${nucleoatac_basename}.*.bed.gz.tbi

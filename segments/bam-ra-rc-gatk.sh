@@ -134,10 +134,10 @@ if [ ! -s "$gatk_jar" ] ; then
 	exit 1
 fi
 
-# error log (blank for troubleshooting)
+# error log (DEBUG, INFO (default), WARN, ERROR, FATAL, OFF)
 gatk_log_level_arg="--logging_level ERROR"
 
-# strand flag
+# known variants (may vary greatly for each genome)
 if [[ "$genome_dir" == */hg19 ]] ; then
 	gatk_indel_vcf_1="${genome_dir}/gatk-bundle/1000G_phase1.indels.hg19.vcf"
 	gatk_indel_vcf_2="${genome_dir}/gatk-bundle/Mills_and_1000G_gold_standard.indels.hg19.vcf"
@@ -145,8 +145,8 @@ if [[ "$genome_dir" == */hg19 ]] ; then
 	gatk_ra_known_arg="-known $gatk_indel_vcf_1 -known $gatk_indel_vcf_2"
 	gatk_rc_known_arg="-knownSites $gatk_indel_vcf_1 -knownSites $gatk_indel_vcf_2 -knownSites $gatk_snp_vcf"
 elif [[ "$genome_dir" == */mm10 ]] ; then
-	gatk_indel_vcf="${genome_dir}/MGP/mgp.v3.indels.q150.chr.sort.vcf"
-	gatk_snp_vcf="${genome_dir}/dbSNP/snp137Common.snps.vcf"
+	gatk_indel_vcf="${genome_dir}/MGP/mgp.v5.indels.pass.chr.sort.vcf"
+	gatk_snp_vcf="${genome_dir}/dbSNP/dbsnp.146.vcf"
 	gatk_ra_known_arg="-known $gatk_indel_vcf"
 	gatk_rc_known_arg="-knownSites $gatk_indel_vcf -knownSites $gatk_snp_vcf"
 elif [[ "$genome_dir" == */dm3$ ]] ; then
@@ -191,6 +191,8 @@ $gatk_ra_known_arg \
 "
 echo "CMD: $gatk_ra2_cmd"
 $gatk_ra2_cmd
+
+sleep 30
 
 
 #########################
@@ -264,6 +266,8 @@ $gatk_cmd -T PrintReads $gatk_log_level_arg \
 echo "CMD: $gatk_rc4_cmd"
 $gatk_rc4_cmd
 
+sleep 30
+
 
 #########################
 
@@ -279,8 +283,12 @@ fi
 #########################
 
 
-# delete files that are no longer needed
+# clean up
 
+# move .bai to .bam.bai (some tools expect that)
+mv -v "$bai_ra_rc" "${bam_ra_rc}.bai"
+
+# delete files that are no longer needed
 rm -fv "$bam_ra"
 rm -fv "$bai_ra"
 rm -fv "$gatk_ra_intervals"

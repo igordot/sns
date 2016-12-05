@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-# run fastq_screen
+# run fastq_screen (more generic version of qc-fastqscreen.sh)
 
 
 # script filename
@@ -37,8 +37,7 @@ if [ ! -s "$fastq" ] ; then
 	exit 1
 fi
 
-code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
-fastqscreen_conf=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-FASTQSCREEN);
+fastqscreen_conf="/ifs/home/id460/software/fastq_screen_v0.5.2/fastq_screen.species.conf"
 
 if [ ! -s "$fastqscreen_conf" ] ; then
 	echo -e "\n $script_name ERROR: CONF $fastqscreen_conf DOES NOT EXIST \n" >&2
@@ -51,7 +50,7 @@ fi
 
 # settings and files
 
-fastqscreen_dir="${proj_dir}/QC-fastqscreen"
+fastqscreen_dir="${proj_dir}/species-fastqscreen"
 mkdir -p "$fastqscreen_dir"
 
 fastqscreen_txt="${fastqscreen_dir}/${fastq/*\//}_screen.txt"

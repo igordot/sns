@@ -124,7 +124,7 @@ montage -geometry +20+20 -tile 4x "${frag_sizes_dir}/*.png" "$combined_png_4w"
 
 
 # header for summary file
-echo "#SAMPLE,MIN,MAX,MEAN,MEDIAN,SD" > "$summary_csv"
+echo "#SAMPLE,MEAN FRAGMENT,MEDIAN FRAGMENT,SD FRAGMENT" > "$summary_csv"
 
 # summarize log file
 grep -v "^SAMPLE" "$frag_sizes_stats_csv" >> "$summary_csv"
