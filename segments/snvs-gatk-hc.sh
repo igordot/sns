@@ -95,7 +95,7 @@ module unload java
 module load java/1.8
 
 # command
-gatk_jar="/ifs/home/id460/software/GenomeAnalysisTK-3.6/GenomeAnalysisTK.jar"
+gatk_jar="/ifs/home/id460/software/GenomeAnalysisTK-3.7/GenomeAnalysisTK.jar"
 gatk_cmd="java -Xms16G -Xmx16G -jar ${gatk_jar}"
 
 # error log (DEBUG, INFO (default), WARN, ERROR, FATAL, OFF)
@@ -123,8 +123,7 @@ gatk_hc_cmd="
 $gatk_cmd -T HaplotypeCaller -dt NONE $gatk_log_level_arg \
 -nct $threads \
 --max_alternate_alleles 3 \
--stand_call_conf 50 \
--stand_emit_conf 50 \
+--standard_min_confidence_threshold_for_calling 50 \
 --reference_sequence $ref_fasta \
 --intervals $bed \
 --interval_padding 10 \

@@ -110,7 +110,7 @@ module unload java
 module load java/1.8
 
 # command
-gatk_jar="/ifs/home/id460/software/GenomeAnalysisTK-3.6/GenomeAnalysisTK.jar"
+gatk_jar="/ifs/home/id460/software/GenomeAnalysisTK-3.7/GenomeAnalysisTK.jar"
 gatk_cmd="java -Xms16G -Xmx16G -jar ${gatk_jar}"
 
 if [ ! -s "$gatk_jar" ] ; then
@@ -160,7 +160,6 @@ echo " * VCF fixed: $vcf_fixed "
 mutect_cmd="
 $gatk_cmd -T MuTect2 -dt NONE $gatk_log_level_arg \
 --standard_min_confidence_threshold_for_calling 30 \
---standard_min_confidence_threshold_for_emitting 30 \
 --max_alt_alleles_in_normal_count 10 \
 --max_alt_allele_in_normal_fraction 0.05 \
 --max_alt_alleles_in_normal_qscore_sum 40 \

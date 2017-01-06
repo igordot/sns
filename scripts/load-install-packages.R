@@ -7,7 +7,7 @@ load_install_packages = function(package_list) {
 
   for (p in package_list) {
 
-    message("test loading package: ", p)
+    message("loading package: ", p)
 
     # create personal library
     dir.create(path = Sys.getenv("R_LIBS_USER"), showWarnings = FALSE, recursive = TRUE)

@@ -99,6 +99,9 @@ nucleoatac_nuc_smooth_bg="${logs_dir}/${sample}.nucleoatac_signal.smooth.bedgrap
 nuc_dir="${proj_dir}/nucleosomes"
 mkdir -p "$nuc_dir"
 peaks_bed="${nuc_dir}/${sample}.peaks.bed"
+nucleoatac_occ_bed="${nuc_dir}/${sample}.occ.bed"
+nucleoatac_nuc_bed="${nuc_dir}/${sample}.nucleoatac.bed"
+nucleoatac_combined_bed="${nuc_dir}/${sample}.combined.bed"
 nucleoatac_occ_bw="${nuc_dir}/${sample}.occ.bw"
 nucleoatac_nuc_smooth_bw="${nuc_dir}/${sample}.nucleoatac.smooth.bw"
 
@@ -271,11 +274,11 @@ mv -v ${nucleoatac_basename}.*.eps ${nuc_dir}/
 gunzip ${nucleoatac_basename}.*.bed.gz
 
 # positions of nucleosomes estimated from the *.occ.bedgraph.gz (low resolution)
-mv -v "${nucleoatac_basename}.occpeaks.bed" "${nuc_dir}/${sample}.occ.bed"
+mv -v "${nucleoatac_basename}.occpeaks.bed" "$nucleoatac_occ_bed"
 # positions of nucleosomes estimated from the *.nucleoatac_signal.bedgraph.gz track (higher resolution)
-mv -v "${nucleoatac_basename}.nucpos.bed" "${nuc_dir}/${sample}.nucleoatac.bed"
+mv -v "${nucleoatac_basename}.nucpos.bed" "$nucleoatac_nuc_bed"
 # merge of the other two, with the positions from the nucleoatac_signal favored when there is an overlap
-mv -v "${nucleoatac_basename}.nucmap_combined.bed" "${nuc_dir}/${sample}.combined.bed"
+mv -v "${nucleoatac_basename}.nucmap_combined.bed" "$nucleoatac_combined_bed"
 
 # delete files that are not needed
 rm -rfv ${nucleoatac_basename}.*.bed.gz.tbi
@@ -292,17 +295,20 @@ rm -fv ${nucleoatac_nuc_smooth_bg}.gz.tbi
 
 # generate summary
 
-nucleosomes_occ=$(cat "${nuc_dir}/${sample}.occpeaks.bed" | wc -l)
-echo "nucleosomes occ: $nucleosomes_occ"
+nucleosomes_occ_num=$(cat "$nucleoatac_occ_bed" | wc -l)
+echo "nucleosomes occ: $nucleosomes_occ_num"
 
-nucleosomes_nuc=$(cat "${nuc_dir}/${sample}.nucpos.bed" | wc -l)
-echo "nucleosomes nuc: $nucleosomes_nuc"
+nucleosomes_nuc_num=$(cat "$nucleoatac_nuc_bed" | wc -l)
+echo "nucleosomes nuc: $nucleosomes_nuc_num"
+
+nucleosomes_combined_num=$(cat "$nucleoatac_combined_bed" | wc -l)
+echo "nucleosomes combined: $nucleosomes_combined_num"
 
 # header for summary file
-echo "#SAMPLE,nucleosomes occ,nucleosomes nuc" > "$summary_csv"
+echo "#SAMPLE,nucleosomes occ,nucleosomes nuc,nucleosomes combined" > "$summary_csv"
 
 # summarize log file
-echo "${sample},${nucleosomes_occ},${nucleosomes_nuc}" >> "$summary_csv"
+echo "${sample},${nucleosomes_occ_num},${nucleosomes_nuc_num},${nucleosomes_combined_num}" >> "$summary_csv"
 
 sleep 30
 

@@ -113,9 +113,9 @@ fi
 
 # adjust for single/paired end
 if [ -n "$fastq_R2" ] ; then
-	trim_galore_flags="$trim_galore_flag --paired $fastq_R1 $fastq_R2"
+	trim_galore_flags="$trim_galore_flags --paired $fastq_R1 $fastq_R2"
 else
-	trim_galore_flags="$trim_galore_flag $fastq_R1"
+	trim_galore_flags="$trim_galore_flags $fastq_R1"
 fi
 
 # trim_galore

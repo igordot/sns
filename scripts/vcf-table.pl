@@ -294,7 +294,7 @@ sub format_mutect2 {
 
 	# do not report if frequency is less than 3%
 	# "we recommend applying post-processing filters, e.g. by hard-filtering calls with low minor allele frequencies"
-	if ( ($t_freq > 0.03) && ($n_freq < 0.05) && ($t_ad_cols[1] >= 3) ) {
+	if ( ($t_freq > 0.03) && ($n_freq < 0.05) && ($t_ad_cols[1] >= 5) ) {
 		($pos, $ref, $alt) = fix_indels($pos, $ref, $alt);
 		$t_freq = sprintf("%.3f", $t_freq);
 		$n_freq = sprintf("%.3f", $n_freq);
