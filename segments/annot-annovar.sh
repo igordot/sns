@@ -103,12 +103,14 @@ if [[ "$genome_build" == "hg19" ]] ; then
 	annovar_buildver="hg19"
 	annovar_protocol="refGene,snp138,snp138NonFlagged,exac03,esp6500siv2_all,1000g2015aug_all,cosmic70"
 	annovar_operation="g,f,f,f,f,f,f"
+	annovar_argument="'--splicing_threshold 10',,,,,,"
 	annovar_multianno="${annovar_out_prefix}.hg19_multianno.txt"
 	annovar_keep_cols="1,5-14,22,23,24"
 elif [[ "$genome_build" == "mm10" ]] ; then
 	annovar_buildver="mm10"
 	annovar_protocol="refGene,snp142,snp142Common"
 	annovar_operation="g,f,f"
+	annovar_argument="'--splicing_threshold 10',,"
 	annovar_multianno="${annovar_out_prefix}.mm10_multianno.txt"
 	annovar_keep_cols="1,5-13"
 else
@@ -165,7 +167,7 @@ perl ${annovar_path}/table_annovar.pl $annovar_input ${annovar_db_path}/${annova
 --buildver $annovar_buildver \
 --protocol $annovar_protocol \
 --operation $annovar_operation \
---argument '--splicing_threshold 10',,,,,, \
+--argument $annovar_argument \
 --nastring . \
 --remove
 "

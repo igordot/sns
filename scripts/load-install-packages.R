@@ -9,13 +9,14 @@ load_install_packages = function(package_list) {
 
     message("loading package: ", p)
 
-    # create personal library
+    # create local user library path (not present by default)
     dir.create(path = Sys.getenv("R_LIBS_USER"), showWarnings = FALSE, recursive = TRUE)
 
     # try to install from CRAN if package is not already installed
+    # use require() instead of installed.packages() to check that package is both installed and usable
     if (!require(p, character.only = TRUE, quietly = TRUE)) {
       message("try installing package from CRAN: ", p)
-      # install.packages(p, quiet = TRUE, repos = "https://cran.rstudio.com/")
+      # install to local user library path (destination needs to be specified the first time)
       install.packages(p, lib = Sys.getenv("R_LIBS_USER"), repos = "https://cran.rstudio.com/", quiet = TRUE)
     }
 

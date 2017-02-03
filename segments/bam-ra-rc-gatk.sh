@@ -258,7 +258,6 @@ $gatk_cmd -T PrintReads $gatk_log_level_arg \
 -nct $threads \
 -rf BadCigar \
 --reference_sequence $ref_fasta \
---intervals $bed --interval_padding 10 \
 -BQSR $gatk_rc_table1 \
 --input_file $bam_ra \
 --out $bam_ra_rc

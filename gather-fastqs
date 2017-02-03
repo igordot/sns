@@ -59,7 +59,7 @@ sub main {
 
 		# generate R2 filename
 		my $fastq_r2 = $fastq_r1;
-		$fastq_r2 =~ s/(.*)_R1_00(.*.fastq.gz)/${1}_R2_00${2}/;
+		$fastq_r2 =~ s/(.*)_R1_0([0-9]+.fastq.gz)/${1}_R2_0${2}/;
 		$fastq_r2 =~ s/(.*)_R1.fastq.gz/${1}_R2.fastq.gz/;
 		$fastq_r2 =~ s/(.*)_1.fastq.gz/${1}_2.fastq.gz/;
 
