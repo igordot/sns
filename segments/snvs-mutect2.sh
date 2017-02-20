@@ -88,14 +88,18 @@ vcf_fixed="${vcf_dir}/${sample_t}-${sample_n}.vcf"
 #########################
 
 
-# exit if output exits already
+# skip to annotation if output exits already
 
-if [ -s "$vcf_original" ] ; then
+annot_cmd="bash ${code_dir}/segments/annot-annovar.sh $proj_dir $sample $vcf_fixed"
+
+if [ -s "$vcf_fixed" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
+	echo -e "\n CMD: $annot_cmd \n"
+	($annot_cmd)
 	exit 1
 fi
 
-if [ -s "$vcf_fixed" ] ; then
+if [ -s "$vcf_original" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	exit 1
 fi

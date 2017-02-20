@@ -128,12 +128,11 @@ sub format_haplotypecaller {
 
 	# do not report if
 	# there are not any quality reads (reported depth 0)
-	# less than 5 variant calls
+	# less than 5 variant call supporting reads
 	if ( ($depth > 0) && ($ad_cols[1] >= 5) ) {
 		($pos, $ref, $alt) = fix_indels($pos, $ref, $alt);
 		my $qual = (sprintf "%.1f", $cols[5]);
 		my $freq = sprintf("%.3f", ( $ad_cols[1] / $depth ));
-
 		$out = join("\t", "${chr}:${pos}:${ref}:${alt}", $sample, $chr, $pos, $qual, $depth, $freq);
 	}
 
@@ -292,9 +291,13 @@ sub format_mutect2 {
 	my $t_freq = $t_ad_cols[1] / $t_depth;
 	my $n_freq = $n_ad_cols[1] / $n_depth;
 
-	# do not report if frequency is less than 3%
+	# do not report if
+	# T frequency is less than 3%
+	# N frequency is more than 5%
+	# less than 5 variant call supporting reads
+	# T frequency is sufficiently higher than N frequency
 	# "we recommend applying post-processing filters, e.g. by hard-filtering calls with low minor allele frequencies"
-	if ( ($t_freq > 0.03) && ($n_freq < 0.05) && ($t_ad_cols[1] >= 5) ) {
+	if ( ($t_freq > 0.03) && ($n_freq < 0.05) && ($t_ad_cols[1] >= 5) && ($t_freq > $n_freq * 5) ) {
 		($pos, $ref, $alt) = fix_indels($pos, $ref, $alt);
 		$t_freq = sprintf("%.3f", $t_freq);
 		$n_freq = sprintf("%.3f", $n_freq);
