@@ -82,12 +82,12 @@ fi
 segment_meth="meth-bismark"
 if [ -n "$fastq_R2" ] ; then
 	#
-	echo "pe"
+	echo "ERROR: PE not currently supported"
 else
 	bash_cmd="bash ${code_dir}/segments/${segment_meth}.sh $proj_dir $sample $threads $bam_bismark se"
 	($bash_cmd)
-	bash_cmd="bash ${code_dir}/segments/${segment_meth}.sh $proj_dir $sample $threads $bam_bismark se-ignore-r1-3"
-	($bash_cmd)
+	# bash_cmd="bash ${code_dir}/segments/${segment_meth}.sh $proj_dir $sample $threads $bam_bismark se-ignore-r1-3"
+	# ($bash_cmd)
 fi
 
 

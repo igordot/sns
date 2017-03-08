@@ -116,14 +116,14 @@ segment_avg_cov="qc-coverage-gatk"
 bash_cmd="bash ${code_dir}/segments/${segment_avg_cov}.sh $proj_dir $sample $bam_gatk"
 ($bash_cmd)
 
-# call variants with GATK
-segment_gatk_hc="snvs-gatk-hc"
-bash_cmd="bash ${code_dir}/segments/${segment_gatk_hc}.sh $proj_dir $sample $threads $bam_gatk"
-($bash_cmd)
-
 # call variants with LoFreq
 segment_lofreq="snvs-lofreq"
 bash_cmd="bash ${code_dir}/segments/${segment_lofreq}.sh $proj_dir $sample $threads $bam_gatk"
+($bash_cmd)
+
+# call variants with GATK
+segment_gatk_hc="snvs-gatk-hc"
+bash_cmd="bash ${code_dir}/segments/${segment_gatk_hc}.sh $proj_dir $sample $threads $bam_gatk"
 ($bash_cmd)
 
 
