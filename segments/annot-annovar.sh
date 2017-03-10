@@ -101,11 +101,11 @@ genome_build=$(basename "$genome_dir")
 
 if [[ "$genome_build" == "hg19" ]] ; then
 	annovar_buildver="hg19"
-	annovar_protocol="refGene,snp138,snp138NonFlagged,exac03,esp6500siv2_all,1000g2015aug_all,cosmic70,cadd13gt20"
-	annovar_operation="g,f,f,f,f,f,f,f"
-	annovar_argument="'--splicing_threshold 10',,,,,,,"
+	annovar_protocol="refGene,snp138,snp138NonFlagged,exac03,esp6500siv2_all,1000g2015aug_all,cosmic70,cadd13gt10,fathmm"
+	annovar_operation="g,f,f,f,f,f,f,f,f"
+	annovar_argument="'--splicing_threshold 10',,,,,,,,"
 	annovar_multianno="${annovar_out_prefix}.hg19_multianno.txt"
-	annovar_keep_cols="1,5-14,22,23,24,26"
+	annovar_keep_cols="1,5-14,22,23,24,26,27,28"
 elif [[ "$genome_build" == "mm10" ]] ; then
 	annovar_buildver="mm10"
 	annovar_protocol="refGene,snp142,snp142Common"
@@ -206,6 +206,7 @@ fi
 # 23 - 1000g
 # 24 - cosmic
 # 26 - cadd
+# 27-28 - fathmm
 
 # mm10 columns:
 # 12-13 - snp
