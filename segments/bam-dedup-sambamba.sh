@@ -53,6 +53,7 @@ samples_csv="${proj_dir}/samples.${segment_name}.csv"
 bam_dd_dir="${proj_dir}/BAM-DD"
 mkdir -p "$bam_dd_dir"
 bam_dd="${bam_dd_dir}/${sample}.dd.bam"
+bai_dd="${bam_dd}.bai"
 
 dedup_logs_dir="${proj_dir}/logs-${segment_name}"
 mkdir -p "$dedup_logs_dir"
@@ -102,10 +103,17 @@ sleep 30
 #########################
 
 
-# check that output generated
+# check that sambamba markdup output generated
 
 if [ ! -s "$bam_dd" ] ; then
 	echo -e "\n $script_name ERROR: BAM $bam_dd NOT GENERATED \n" >&2
+	exit 1
+fi
+
+if [ ! -s "$bai_dd" ] ; then
+	echo -e "\n $script_name ERROR: BAI $bai_dd NOT GENERATED \n" >&2
+	# delete BAM since something went wrong and it might be corrupted
+	rm -fv "$bam_dd"
 	exit 1
 fi
 
@@ -118,6 +126,22 @@ fi
 bash_cmd="$sambamba_bin flagstat $bam_dd > $bam_dd_flagstat"
 echo "CMD: $bash_cmd"
 eval "$bash_cmd"
+
+sleep 30
+
+
+#########################
+
+
+# check that flagstat output generated
+
+if [ ! -s "$bam_dd_flagstat" ] ; then
+	echo -e "\n $script_name ERROR: FLAGSTAT $bam_dd_flagstat NOT GENERATED \n" >&2
+	# delete BAM and BAI since something went wrong and they might be corrupted
+	rm -fv "$bam_dd"
+	rm -fv "$bai_dd"
+	exit 1
+fi
 
 
 #########################

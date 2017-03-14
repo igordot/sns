@@ -62,6 +62,7 @@ samples_csv="${proj_dir}/samples.${segment_name}.csv"
 bwa_bam_dir="${proj_dir}/BAM-BWA"
 mkdir -p "$bwa_bam_dir"
 bam="${bwa_bam_dir}/${sample}.bam"
+bai="${bam}.bai"
 
 bwa_logs_dir="${proj_dir}/logs-${segment_name}"
 mkdir -p "$bwa_logs_dir"
@@ -132,13 +133,10 @@ sleep 30
 #########################
 
 
-# check that output generated
+# check that bwa/sambamba output generated
 
-# check that bam file size above 10 kb
-du -s $bam
-bam_size=$(du -s --apparent-size $bam | cut -f 1)
-if [ $bam_size -lt 10 ] ; then
-	echo -e "\n $script_name ERROR: BAM $bam TOO SMALL \n" >&2
+if [ ! -s "$bam" ] ; then
+	echo -e "\n $script_name ERROR: BAM $bam NOT GENERATED \n" >&2
 	exit 1
 fi
 
@@ -151,6 +149,22 @@ fi
 bash_cmd="$sambamba_bin flagstat $bam > $bwa_flagstat"
 echo "CMD: $bash_cmd"
 eval "$bash_cmd"
+
+sleep 30
+
+
+#########################
+
+
+# check that flagstat output generated
+
+if [ ! -s "$bwa_flagstat" ] ; then
+	echo -e "\n $script_name ERROR: FLAGSTAT $bwa_flagstat NOT GENERATED \n" >&2
+	# delete BAM and BAI since something went wrong and they might be corrupted
+	rm -fv "$bam"
+	rm -fv "$bai"
+	exit 1
+fi
 
 
 #########################

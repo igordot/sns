@@ -122,8 +122,10 @@ fi
 # GATK settings
 
 module unload java
+module unload r
 module load java/1.8
 module load r/3.3.0
+module unload zlib
 
 # command
 gatk_jar="/ifs/home/id460/software/GenomeAnalysisTK-3.6/GenomeAnalysisTK.jar"
@@ -156,6 +158,22 @@ else
 	echo -e "\n $script_name ERROR: genome $genome_dir not supported \n" >&2
 	exit 1
 fi
+
+
+#########################
+
+
+# test R (GATK uses R for plotting)
+
+echo " * R: $(readlink -f $(which R)) "
+echo " * R version: $(R --version | head -1) "
+echo " * Rscript: $(readlink -f $(which Rscript)) "
+echo " * Rscript version: $(Rscript --version 2>&1) "
+
+# test R settings and install missing packages if needed
+test_r_cmd="Rscript --vanilla ${code_dir}/scripts/test-packages.R"
+echo "CMD: $test_r_cmd"
+($test_r_cmd)
 
 
 #########################

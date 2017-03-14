@@ -101,7 +101,7 @@ genome_build=$(basename "$genome_dir")
 
 if [[ "$genome_build" == "hg19" ]] ; then
 	annovar_buildver="hg19"
-	annovar_protocol="refGene,snp138,snp138NonFlagged,exac03,esp6500siv2_all,1000g2015aug_all,cosmic70,cadd13gt10,fathmm"
+	annovar_protocol="refGene,snp138,snp138NonFlagged,exac03,esp6500siv2_all,1000g2015aug_all,cosmic80,cadd13gt10,fathmm"
 	annovar_operation="g,f,f,f,f,f,f,f,f"
 	annovar_argument="'--splicing_threshold 10',,,,,,,,"
 	annovar_multianno="${annovar_out_prefix}.hg19_multianno.txt"

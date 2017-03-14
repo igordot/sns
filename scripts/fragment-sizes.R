@@ -11,6 +11,11 @@
 # increase output width
 options(width = 150)
 
+# get scripts directory (directory of this file) and load relevant functions
+args_all = commandArgs(trailingOnly = FALSE)
+scripts_dir = normalizePath(dirname(sub("^--file=", "", args_all[grep("^--file=", args_all)])))
+source(paste0(scripts_dir, "/load-install-packages.R"))
+
 # relevent arguments
 args = commandArgs(trailingOnly = TRUE)
 sample_name = args[1]
@@ -20,11 +25,11 @@ bam_file = args[2]
 if (!file.exists(bam_file)) stop("file does not exist: ", bam_file)
 
 # load relevant packages
-library(Rsamtools, quietly = TRUE)
-library(readr, quietly = TRUE)
-library(reshape2, quietly = TRUE)
-library(ggplot2, quietly = TRUE)
-library(cowplot, quietly = TRUE)
+load_install_packages("Rsamtools")
+load_install_packages("readr")
+load_install_packages("reshape2")
+load_install_packages("ggplot2")
+load_install_packages("cowplot")
 
 # import fragment size for only one mate of paired reads (other mate will be opposite)
 scan_flag = scanBamFlag(isPaired = TRUE, isFirstMateRead = TRUE, isSecondMateRead = FALSE)
@@ -43,10 +48,9 @@ sizes = sizes[sizes > 0]
 sizes = sizes[sizes < 5000]
 
 # display stats
-message("min: ", min(sizes))
-message("max: ", max(sizes))
 message("mean: ", round(mean(sizes), digits = 1))
 message("median: ", median(sizes))
+message("sd: ", round(sd(sizes), digits = 1))
 
 # stats table
 stats_table = data.frame(SAMPLE = sample_name,
@@ -69,14 +73,12 @@ sizes = sizes[sizes < 1010]
 
 # plot
 plot_file = paste0(sample_name, ".png")
-pdf(file = NULL)
-ggplot(melt(sizes, value.name = "size"), aes(size)) +
+freq_plot = ggplot(melt(sizes, value.name = "size"), aes(size)) +
 geom_freqpoly(binwidth = 10, size = 1.5) +
 scale_x_continuous(limits = c(min(sizes), 1000), breaks = 1:10*100) +
 background_grid(major = "x", minor = "none") +
-ggtitle(sample_name) +
-ggsave(plot_file, width = 8, height = 5, units = "in")
-dev.off()
+ggtitle(sample_name)
+ggsave(filename = plot_file, plot = freq_plot, width = 8, height = 5, units = "in")
 
 
 

@@ -175,7 +175,9 @@ sub run_samples {
 		$email = `echo $email`;
 		chomp($email);
 		my $qsub_name = "sns.${route}.${sample}";
-		my $qsub_cmd = "qsub -N $qsub_name -M $email -m a -j y -cwd -pe threaded $threads -b y $cmd";
+		my $qsub_thread = "-pe threaded ${threads}";
+		my $qsub_mem = "-hard -l mem_free=64G";
+		my $qsub_cmd = "qsub -N $qsub_name -M $email -m a -j y -cwd $qsub_thread $qsub_mem -b y $cmd";
 
 		# paired command is single-threaded (at least for now)
 		if ($route =~ "-pairs-") {
