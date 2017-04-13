@@ -77,7 +77,7 @@ fi
 
 # sambamba markdup
 
-sambamba_bin="/ifs/home/id460/bin/sambamba"
+sambamba_bin="/ifs/home/id460/software/sambamba/sambamba_v0.6.6"
 
 echo " * sambamba: $(readlink -f $(which $sambamba_bin)) "
 echo " * sambamba version: $($sambamba_bin 2>&1 | head -1) "
@@ -88,8 +88,8 @@ bash_cmd="
 $sambamba_bin markdup \
 --remove-duplicates \
 --nthreads $threads \
---hash-table-size 1500000 \
---overflow-list-size 1500000 \
+--hash-table-size 525000 \
+--overflow-list-size 525000 \
 $bam \
 $bam_dd \
 2> $bam_dd_log

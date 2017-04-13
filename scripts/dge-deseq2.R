@@ -9,7 +9,7 @@
 
 
 # increase output width
-options(width = 150)
+options(width = 120)
 
 # java heap size
 options(java.parameters = "-Xmx8G")

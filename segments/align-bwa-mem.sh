@@ -87,7 +87,7 @@ fi
 
 module load bwa/0.7.13
 
-sambamba_bin="/ifs/home/id460/bin/sambamba"
+sambamba_bin="/ifs/home/id460/software/sambamba/sambamba_v0.6.6"
 
 echo " * bwa: $(readlink -f $(which bwa)) "
 echo " * bwa version: $(bwa 2>&1 | grep -m 1 'Version') "
