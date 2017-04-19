@@ -113,8 +113,17 @@ elif [[ "$genome_build" == "mm10" ]] ; then
 	annovar_argument="'--splicing_threshold 10',,"
 	annovar_multianno="${annovar_out_prefix}.mm10_multianno.txt"
 	annovar_keep_cols="1,5-13"
+elif [[ "$genome_build" == "sacCer3" ]] ; then
+	annovar_buildver="sacCer3"
+	annovar_protocol="sgdGene,ensGene"
+	annovar_operation="g,g"
+	annovar_argument="'--splicing_threshold 10','--splicing_threshold 10'"
+	annovar_multianno="${annovar_out_prefix}.sacCer3_multianno.txt"
+	annovar_keep_cols="1,5-99"
 else
 	annovar_buildver=""
+	echo -e "\n $script_name ERROR: UNKNOWN GENOME $genome_build \n" >&2
+	exit 1
 fi
 
 
