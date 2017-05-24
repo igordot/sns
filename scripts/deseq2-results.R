@@ -4,8 +4,8 @@
 
 
 
-deseq2_results = function(deseq_dataset, contrast = NULL, name = NULL)
-{
+deseq2_results = function(deseq_dataset, contrast = NULL, name = NULL) {
+
   library(DESeq2)
   library(xlsx)
 
@@ -68,7 +68,7 @@ deseq2_results = function(deseq_dataset, contrast = NULL, name = NULL)
   message("save filtered results xlsx: ", res_padj005_xlsx)
 
   # heatmap values matrix
-  rld = assay(rlog(deseq_dataset))
+  vsd = assay(varianceStabilizingTransformation(dds, blind = TRUE))
 
   # all samples and the subset used for the comparison
   samples_all = colnames(deseq_dataset)
@@ -98,14 +98,17 @@ deseq2_results = function(deseq_dataset, contrast = NULL, name = NULL)
     if (length(hmg[[i]]$genes) > 5 && length(hmg[[i]]$genes) < 3000) {
 
       # generate heatmap using all samples
-      deseq2_heatmap(mat = rld, genes = hmg[[i]]$genes, samples = samples_all, title = hm_title, file_suffix = hm_file_suffix)
+      deseq2_heatmap(mat = vsd, genes = hmg[[i]]$genes, samples = samples_all, title = hm_title, file_suffix = hm_file_suffix)
 
       # generate heatmap using a subset of samples used for the comparison
       if (length(samples_comp) < length(samples_all)) {
-        deseq2_heatmap(mat = rld, genes = hmg[[i]]$genes, samples = samples_comp, title = hm_title, file_suffix = hm_file_suffix)
+        deseq2_heatmap(mat = vsd, genes = hmg[[i]]$genes, samples = samples_comp, title = hm_title, file_suffix = hm_file_suffix)
       }
+
     }
+
   }
+
 }
 
 

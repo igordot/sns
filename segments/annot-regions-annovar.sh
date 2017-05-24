@@ -1,7 +1,8 @@
 #!/bin/bash
 
 
-# annotate VCF using ANNOVAR
+# annotate regions with cytoband and overlapping genes using ANNOVAR
+# expects tab-delimited input file with header row and first 3 columns being chr, start, end
 
 
 # script filename
@@ -12,14 +13,14 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 # check for correct number of arguments
 if [ ! $# == 3 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
-	echo -e "\n USAGE: $script_name project_dir sample_name VCF_file \n" >&2
+	echo -e "\n USAGE: $script_name project_dir sample_name regions_table \n" >&2
 	exit 1
 fi
 
 # arguments
 proj_dir=$1
 sample=$2
-vcf_file=$3
+regions_table=$3
 
 
 #########################
@@ -27,13 +28,13 @@ vcf_file=$3
 
 # settings and files
 
-vcf_type=$(basename "$(dirname "$vcf_file")")
+input_type=$(basename "$(dirname "$regions_table")")
 
-segment_name="${vcf_type}-annot"
+segment_name="${input_type}-annot"
 
-summary_dir="${proj_dir}/summary"
-mkdir -p "$summary_dir"
-summary_csv="${summary_dir}/${sample}.${segment_name}.csv"
+# summary_dir="${proj_dir}/summary"
+# mkdir -p "$summary_dir"
+# summary_csv="${summary_dir}/${sample}.${segment_name}.csv"
 
 annovar_dir="${proj_dir}/${segment_name}"
 mkdir -p "$annovar_dir"
@@ -45,7 +46,7 @@ annovar_input="${annovar_dir}/${sample_clean}.avinput"
 annovar_out_prefix="${annovar_dir}/${sample_clean}"
 annovar_out_fixed="${annovar_out_prefix}.annot.txt"
 annovar_combined="${annovar_out_prefix}.combined.txt"
-vcf_table="${annovar_out_prefix}.vcf.txt"
+regions_table_fixed="${annovar_out_prefix}.in.txt"
 
 
 #########################
@@ -69,8 +70,8 @@ if [ ! -d "$proj_dir" ] ; then
 	exit 1
 fi
 
-if [ ! -s "$vcf_file" ] ; then
-	echo -e "\n $script_name ERROR: VCF $vcf_file DOES NOT EXIST \n" >&2
+if [ ! -s "$regions_table" ] ; then
+	echo -e "\n $script_name ERROR: REGIONS TABLE $regions_table DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
@@ -101,25 +102,10 @@ genome_build=$(basename "$genome_dir")
 
 if [[ "$genome_build" == "hg19" ]] ; then
 	annovar_buildver="hg19"
-	annovar_protocol="refGene,snp138,snp138NonFlagged,exac03,esp6500siv2_all,1000g2015aug_all,cosmic80,cadd13gt10,fathmm"
-	annovar_operation="g,f,f,f,f,f,f,f,f"
-	annovar_argument="'--splicing_threshold 10',,,,,,,,"
+	annovar_protocol="cytoBand,refGene"
+	annovar_operation="r,g"
 	annovar_multianno="${annovar_out_prefix}.hg19_multianno.txt"
-	annovar_keep_cols="1,5-14,22,23,24,26,27,28"
-elif [[ "$genome_build" == "mm10" ]] ; then
-	annovar_buildver="mm10"
-	annovar_protocol="refGene,snp142,snp142Common"
-	annovar_operation="g,f,f"
-	annovar_argument="'--splicing_threshold 10',,"
-	annovar_multianno="${annovar_out_prefix}.mm10_multianno.txt"
-	annovar_keep_cols="1,5-13"
-elif [[ "$genome_build" == "sacCer3" ]] ; then
-	annovar_buildver="sacCer3"
-	annovar_protocol="sgdGene,ensGene"
-	annovar_operation="g,g"
-	annovar_argument="'--splicing_threshold 10','--splicing_threshold 10'"
-	annovar_multianno="${annovar_out_prefix}.sacCer3_multianno.txt"
-	annovar_keep_cols="1,5-99"
+	annovar_keep_cols="1,7-10"
 else
 	annovar_buildver=""
 	echo -e "\n $script_name ERROR: UNKNOWN GENOME $genome_build \n" >&2
@@ -133,14 +119,18 @@ fi
 # ANNOVAR convert2annovar - convert VCF to ANNOVAR input format
 
 echo " * convert2annovar path: $(readlink -f ${annovar_path}/convert2annovar.pl) "
+echo " * regions table : $regions_table "
 echo " * ANNOVAR out dir: $annovar_dir "
 echo " * convert2annovar out : $annovar_input "
 
-# 8/2013: vcf4 changed behavior (only first sample processed) and vcf4old introduced
-# 7/2014: annovar can take vcf files as input, but output will be vcf
-
 convert_cmd="
-perl ${annovar_path}/convert2annovar.pl --format vcf4old --includeinfo $vcf_file > $annovar_input
+cat $regions_table \
+| grep -v 'start.*end' \
+| cut -f 1-3 \
+| sort -k1,1 -k2,2n \
+| uniq \
+| awk -F $'\t' 'BEGIN {OFS=FS} {print \$0,\"0\",\"0\"}' \
+> "$annovar_input"
 "
 echo -e "\n CMD: $convert_cmd \n"
 eval "$convert_cmd"
@@ -176,7 +166,6 @@ perl ${annovar_path}/table_annovar.pl $annovar_input ${annovar_db_path}/${annova
 --buildver $annovar_buildver \
 --protocol $annovar_protocol \
 --operation $annovar_operation \
---argument $annovar_argument \
 --nastring . \
 --remove
 "
@@ -206,26 +195,15 @@ fi
 # 1 - mutation identifier
 # 2-4 - Chr,Start,End
 # 5-6 - Ref,Alt
-# 7-11 - refGene
-
-# hg19 columns:
-# 12-13 - snp
-# 14-21 - exac
-# 22 - esp6500
-# 23 - 1000g
-# 24 - cosmic
-# 26 - cadd
-# 27-28 - fathmm
-
-# mm10 columns:
-# 12-13 - snp
+# 7 - cytoBand
+# 8-12 - refGene
 
 # backslashes in awk to prevent variable expansion and retain quotes
 bash_cmd="
 cat $annovar_multianno \
-| awk -F $'\t' 'BEGIN {OFS=FS} {print \$1 \":\" \$2 \":\" \$4 \":\" \$5, \$0}' \
+| awk -F $'\t' 'BEGIN {OFS=FS} {print \$1 \":\" \$2 \"-\" \$3 , \$0}' \
 | cut -f $annovar_keep_cols \
-| sed 's/Chr:Start:Ref:Alt/#MUT/g' \
+| sed 's/Chr:Start-End/#ID/g' \
 | LC_ALL=C sort -k1,1 \
 > $annovar_out_fixed
 "
@@ -249,13 +227,17 @@ fi
 #########################
 
 
-# convert VCF to a table format
+# convert regions table to a format for joining
 
-vcf_table_cmd="
-perl ${code_dir}/scripts/vcf-table.pl $vcf_file $sample | LC_ALL=C sort -k1,1 > $vcf_table
-"
-echo -e "\n CMD: $vcf_table_cmd \n"
-eval "$vcf_table_cmd"
+# new header (with ID and sample name)
+regions_table_cols=$(cat $regions_table | grep 'start.*end' | head -1)
+echo -e "#ID\tSAMPLE\t${regions_table_cols}" > "$regions_table_fixed"
+
+# table contents
+cat $regions_table | grep -v 'start.*end' \
+| awk -v sample="$sample" -F $'\t' 'BEGIN {OFS=FS} {print $1":"$2"-"$3,sample,$0}' \
+| LC_ALL=C sort -k1,1 \
+>> "$regions_table_fixed"
 
 sleep 30
 
@@ -265,8 +247,8 @@ sleep 30
 
 # check that table_annovar completed
 
-if [ ! -s "$vcf_table" ] ; then
-	echo -e "\n $script_name ERROR: $vcf_table IS EMPTY \n" >&2
+if [ ! -s "$regions_table_fixed" ] ; then
+	echo -e "\n $script_name ERROR: $regions_table_fixed IS EMPTY \n" >&2
 	exit 1
 fi
 
@@ -277,7 +259,7 @@ fi
 # merge variant info from VCF with annotations from ANNOVAR
 
 join_cmd="
-LC_ALL=C join -a1 -t $'\t' $vcf_table $annovar_out_fixed > $annovar_combined
+LC_ALL=C join -a1 -t $'\t' $regions_table_fixed $annovar_out_fixed > $annovar_combined
 "
 echo -e "\n CMD: $join_cmd \n"
 eval "$join_cmd"
@@ -308,57 +290,13 @@ rm -fv "$annovar_out_fixed"
 #########################
 
 
-# summary
-
-total_muts=$(cat "$annovar_combined" | grep -v 'refGene' | wc -l)
-echo "total_muts: $total_muts"
-
-coding_muts=$(cat "$annovar_combined" | grep -v 'refGene' | grep 'exon' | wc -l)
-echo "coding_muts: $coding_muts"
-
-# header for summary file
-echo "#SAMPLE,total muts,coding muts" > "$summary_csv"
-
-# summarize log file
-echo "${sample_clean},${total_muts},${coding_muts}" >> "$summary_csv"
-
-sleep 30
-
-# combine all sample summaries
-cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.${segment_name}.csv"
-
-
-#########################
-
-
 # combine annotations for all samples
 
-# all mutations
 combine_all_cmd="
-cat ${annovar_dir}/*.combined.txt | LC_ALL=C sort -k1,1 -k2,2 | uniq > ${annovar_dir}.all.txt
+cat ${annovar_dir}/*.combined.txt | LC_ALL=C sort -k1,1 -k2,2 | uniq > ${annovar_dir}.txt
 "
 echo -e "\n CMD: $combine_all_cmd \n"
 eval "$combine_all_cmd"
-
-sleep 1
-
-# coding mutations
-combine_coding_cmd="
-cat ${annovar_dir}.all.txt | grep -E 'refGene|exon|splicing' > ${annovar_dir}.coding.txt
-"
-echo -e "\n CMD: $combine_coding_cmd \n"
-eval "$combine_coding_cmd"
-
-sleep 1
-
-# consequence mutations
-combine_nonsyn_cmd="
-cat ${annovar_dir}.all.txt | grep -E 'refGene|nonsynonymous|stopgain|splicing|frameshift' > ${annovar_dir}.nonsyn.txt
-"
-echo -e "\n CMD: $combine_nonsyn_cmd \n"
-eval "$combine_nonsyn_cmd"
-
-sleep 1
 
 
 #########################

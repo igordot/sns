@@ -61,6 +61,7 @@ bam_rg="${bam_rg_dir}/${bam_base}.bam"
 
 if [ -s "$bam_rg" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
+	echo "${sample},${bam_rg}" >> "$samples_csv"
 	exit 1
 fi
 

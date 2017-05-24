@@ -57,7 +57,12 @@ if [ -z "$fastq_R1" ] ; then
 	fastq_R1=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_clean}.csv" | cut -d ',' -f 2)
 	fastq_R2=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_clean}.csv" | cut -d ',' -f 3)
 fi
-[ "$fastq_R1" ] || exit 1
+
+# if FASTQ is not set, there was a problem
+if [ -z "$fastq_R1" ] ; then
+	echo -e "\n $script_name ERROR: $segment_fastq_clean DID NOT FINISH \n" >&2
+	exit 1
+fi
 
 # run STAR
 segment_align="align-star"
@@ -69,6 +74,12 @@ if [ -z "$bam_star" ] ; then
 fi
 [ "$bam_star" ] || exit 1
 
+# if STAR BAM is not set, there was a problem
+if [ -z "$bam_star" ] ; then
+	echo -e "\n $script_name ERROR: $segment_align DID NOT FINISH \n" >&2
+	exit 1
+fi
+
 # remove duplicates
 segment_dedup="bam-dedup-sambamba"
 bam_dd=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_dedup}.csv" | cut -d ',' -f 2)
@@ -77,7 +88,12 @@ if [ -z "$bam_dd" ] ; then
 	($bash_cmd)
 	bam_dd=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_dedup}.csv" | cut -d ',' -f 2)
 fi
-[ "$bam_dd" ] || exit 1
+
+# if deduplicated BAM is not set, there was a problem
+if [ -z "$bam_dd" ] ; then
+	echo -e "\n $script_name ERROR: $segment_dedup DID NOT FINISH \n" >&2
+	exit 1
+fi
 
 # add read groups
 segment_rg="bam-rg-picard"
@@ -87,7 +103,12 @@ if [ -z "$bam_rg" ] ; then
 	($bash_cmd)
 	bam_rg=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_rg}.csv" | cut -d ',' -f 2)
 fi
-[ "$bam_rg" ] || exit 1
+
+# if BAM with RGs is not set, there was a problem
+if [ -z "$bam_rg" ] ; then
+	echo -e "\n $script_name ERROR: $segment_rg DID NOT FINISH \n" >&2
+	exit 1
+fi
 
 # split CIGAR strings
 segment_splitncigar="bam-splitncigar-gatk"
@@ -98,6 +119,12 @@ if [ -z "$bam_split" ] ; then
 	bam_split=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_splitncigar}.csv" | cut -d ',' -f 2)
 fi
 [ "$bam_split" ] || exit 1
+
+# if BAM with split CIGAR strings is not set, there was a problem
+if [ -z "$bam_split" ] ; then
+	echo -e "\n $script_name ERROR: $segment_splitncigar DID NOT FINISH \n" >&2
+	exit 1
+fi
 
 # on-target (exons) coverage
 segment_target_cov="qc-target-reads-gatk"
@@ -112,7 +139,12 @@ if [ -z "$bam_gatk" ] ; then
 	($bash_cmd)
 	bam_gatk=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_gatk}.csv" | cut -d ',' -f 2)
 fi
-[ "$bam_gatk" ] || exit 1
+
+# if GATK BAM is not set, there was a problem
+if [ -z "$bam_gatk" ] ; then
+	echo -e "\n $script_name ERROR: $segment_gatk DID NOT FINISH \n" >&2
+	exit 1
+fi
 
 # final average coverage
 segment_avg_cov="qc-coverage-gatk"
@@ -149,6 +181,19 @@ ${proj_dir}/summary.${segment_avg_cov}.csv \
 > $summary_csv
 "
 (eval $bash_cmd)
+
+
+#########################
+
+
+# generate pairs sample sheet template
+
+samples_pairs_csv="${proj_dir}/samples.pairs.csv"
+
+if [ ! -s "$samples_pairs_csv" ] ; then
+	echo "#SAMPLE-T,#SAMPLE-N" > $samples_pairs_csv
+	sed 's/\,.*/,NA/g' ${proj_dir}/samples.fastq-raw.csv | LC_ALL=C sort -u >> $samples_pairs_csv
+fi
 
 
 #########################

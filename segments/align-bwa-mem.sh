@@ -40,7 +40,7 @@ if [ ! -s "$fastq_R1" ] ; then
 fi
 
 code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
-ref_bwa=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-BWA);
+ref_bwa=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-BWA)
 
 if [ ! -s "$ref_bwa" ] || [ ! -n "$ref_bwa" ] ; then
 	echo -e "\n $script_name ERROR: REF $ref_bwa DOES NOT EXIST \n" >&2
@@ -76,6 +76,7 @@ bwa_flagstat="${bwa_logs_dir}/${sample}.flagstat.txt"
 
 if [ -s "$bam" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
+	echo "${sample},${bam}" >> "$samples_csv"
 	exit 1
 fi
 

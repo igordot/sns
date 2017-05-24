@@ -40,29 +40,29 @@ fi
 
 code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
 
-genome_dir=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" GENOME-DIR);
+genome_dir=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" GENOME-DIR)
 
 if [ ! -d "$genome_dir" ] ; then
 	echo -e "\n $script_name ERROR: GENOME DIR $genome_dir DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
-ref_fasta=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-FASTA);
+ref_fasta=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-FASTA)
 
 if [ ! -s "$ref_fasta" ] ; then
 	echo -e "\n $script_name ERROR: FASTA $ref_fasta DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
-ref_dict=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-DICT);
+ref_dict=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-DICT)
 
 if [ ! -s "$ref_dict" ] ; then
 	echo -e "\n $script_name ERROR: DICT $ref_dict DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
-found_bed=$(find $proj_dir -maxdepth 1 -type f -name "*.bed" | head -1)
-bed=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-BED $found_bed);
+found_bed=$(find $proj_dir -maxdepth 1 -type f -iname "*.bed" | grep -v "probes" | sort | head -1)
+bed=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-TARGETS-BED $found_bed)
 
 if [ ! -s "$bed" ] ; then
 	echo -e "\n $script_name ERROR: BED $bed DOES NOT EXIST \n" >&2
@@ -107,6 +107,7 @@ gatk_rc_pdf="${gatk_logs_dir}/${sample}.pdf"
 
 if [ -s "$bam_ra_rc" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
+	echo "${sample},${bam_ra_rc}" >> "$samples_csv"
 	exit 1
 fi
 

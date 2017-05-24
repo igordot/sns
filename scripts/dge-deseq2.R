@@ -75,13 +75,14 @@ dds = DESeqDataSetFromMatrix(countData = counts_table, colData = groups_table, d
 dds = DESeq(dds, parallel = TRUE, BPPARAM = BiocParallel::MulticoreParam(workers = 4))
 save(dds, file = "deseq2.dds.RData")
 
-vsd = varianceStabilizingTransformation(dds, blind = FALSE)
+vsd = varianceStabilizingTransformation(dds, blind = TRUE)
 save(vsd, file = "deseq2.vsd.RData")
 
 # export counts
 write.csv(counts(dds, normalized = FALSE), file = "counts.raw.csv")
 write.csv(round(counts(dds, normalized = TRUE), digits = 3), file = "counts.norm.csv")
 write.xlsx2(x = round(counts(dds, normalized = TRUE), digits = 3), file = "counts.norm.xlsx", sheetName = "normalized counts")
+write.csv(round(assay(vsd), digits = 3), file = "counts.vst.csv")
 
 message(" ========== QC ========== ")
 

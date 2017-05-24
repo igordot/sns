@@ -71,7 +71,12 @@ if [ -z "$bam_star" ] ; then
 	($bash_cmd)
 	bam_star=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_align}.csv" | cut -d ',' -f 2)
 fi
-[ "$bam_star" ] || exit 1
+
+# if STAR BAM is not set, there was a problem
+if [ -z "$bam_star" ] ; then
+	echo -e "\n $script_name ERROR: $segment_align DID NOT FINISH \n" >&2
+	exit 1
+fi
 
 # generate BigWig (deeptools)
 segment_bigwig_deeptools="bigwig-deeptools"

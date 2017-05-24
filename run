@@ -137,14 +137,18 @@ sub run_samples {
 	# adjust number of requested threads per sample depending on total number of samples
 	my $num_samples = @unique_samples;
 	my $threads;
+	my $sample_pause;
 	if ($num_samples < 15) {
 		$threads = "8-16";
+		$sample_pause = 5;
 	}
 	elsif ($num_samples < 50) {
 		$threads = "4-8";
+		$sample_pause = 2;
 	}
 	else {
 		$threads = "4";
+		$sample_pause = 1;
 	}
 
 	# process each sample
@@ -188,7 +192,7 @@ sub run_samples {
 		system($qsub_cmd);
 
 		# pause between samples (sometimes job scheduler gets overwhelmed)
-		sleep(5);
+		sleep($sample_pause);
 
 		# extra pause for the first few samples so it's easier to fix obvious errors
 		if ($current_sample < 4) {

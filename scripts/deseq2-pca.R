@@ -7,8 +7,8 @@
 
 
 
-deseq2_pca = function(object, intgroup, ntop = 500)
-{
+deseq2_pca = function(object, intgroup, ntop = 500) {
+
   library(DESeq2)
   library(genefilter)
   library(RColorBrewer)
@@ -33,36 +33,47 @@ deseq2_pca = function(object, intgroup, ntop = 500)
   intgroup_df = as.data.frame(colData(object)[, intgroup, drop=FALSE])
   if (length(intgroup) > 1) {
     fac = factor(apply( intgroup.df, 1, paste, collapse=" : "))
-  }
-  else {
+  } else {
     fac = colData(object)[[intgroup]]
   }
 
-  # colors
-  if( nlevels(fac) > 24 ) {
+  # set color sheme based on number of groups
+  if (nlevels(fac) > 24) {
     colors = rainbow(nlevels(fac))
-  }
-  else if( nlevels(fac) > 2 ) {
+  } else if (nlevels(fac) > 2) {
     colors = c(brewer.pal(9, "Set1"), brewer.pal(8, "Accent"), brewer.pal(8, "Dark2"))
     colors = unique(colors)
     colors = head(colors, nlevels(fac))
-  }
-  else {
+  } else {
     colors = c("dodgerblue3", "firebrick3")
+  }
+
+  # set text font size based on number of samples (measured in mm, not points)
+  num_samples = ncol(object)
+  if (num_samples > 50) {
+    font_size = 1.5
+  } else if (num_samples > 20) {
+    font_size = 2
+  } else if (num_samples > 10) {
+    font_size = 3
+  } else {
+    font_size = 4
   }
 
   # PCA data frame for plotting
   pca_data = data.frame(PC1 = pca$x[,1], PC2 = pca$x[,2], group = fac)
 
   # plot (returned, not saved)
+  plot_title = paste0("PCA - ", nlevels(fac), " groups - ", num_samples, " samples")
   ggplot(data = pca_data, aes_string(x = "PC1", y = "PC2", color = "group")) +
-  geom_point(size = 3) +
-  scale_colour_manual(values = colors) +
-  ggtitle(paste0("PCA - ", nlevels(fac), " groups - ", length(rownames(pca_data)), " samples")) +
-  xlab(paste0("PC1 (", variance[1], "% variance)")) +
-  ylab(paste0("PC2 (", variance[2], "% variance)")) +
-  geom_text_repel(aes(label = rownames(pca_data)), point.padding = unit(0.5, "lines"), color = "black") +
-  theme(aspect.ratio = 1, axis.text = element_blank(), axis.ticks = element_blank())
+    geom_point(size = 3) +
+    scale_colour_manual(values = colors) +
+    geom_text_repel(aes(label = rownames(pca_data)),
+                    size = font_size, point.padding = unit(0.5, "lines"), color = "black") +
+    xlab(paste0("PC1 (", variance[1], "% variance)")) +
+    ylab(paste0("PC2 (", variance[2], "% variance)")) +
+    ggtitle(plot_title) +
+    theme(aspect.ratio = 1, axis.text = element_blank(), axis.ticks = element_blank())
 
 }
 

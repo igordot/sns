@@ -188,6 +188,14 @@ eval "$bash_cmd"
 
 # NucleoATAC
 
+# activate virtualenv
+unset PYTHONPATH
+source /ifs/home/id460/.virtualenvs/nucleoatac/bin/activate
+
+# cython has issues with gcc 4.4
+module unload gcc
+module load gcc/6.1.0
+
 echo " * NucleoATAC: $(readlink -f $(which nucleoatac)) "
 echo " * NucleoATAC version: $(nucleoatac --version 2>&1 | grep 'version' | grep -v 'Command') "
 echo " * FASTA: $ref_fasta "
@@ -205,6 +213,13 @@ nucleoatac run \
 "
 echo -e "\n CMD: $bash_cmd \n"
 $bash_cmd
+
+# deactivate virtualenv
+deactivate
+
+# return to normal python environment
+module unload python
+module load python/2.7.3
 
 
 #########################

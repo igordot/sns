@@ -84,6 +84,7 @@ bam_split="${bam_split_dir}/${bam_base}.bam"
 
 if [ -s "$bam_split" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
+	echo "${sample},${bam_split}" >> "$samples_csv"
 	exit 1
 fi
 
@@ -148,10 +149,12 @@ fi
 # exons BED file (needed for future steps)
 
 found_bed=$(find $proj_dir -maxdepth 1 -type f -name "*.bed" | head -1)
-bed=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-BED $found_bed);
+bed=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-TARGETS-BED $found_bed);
 
 # generate exons BED file if doesn't exist already
 if [ ! -s "$bed" ] ; then
+
+	echo -e "\n $script_name : CREATING TARGETS BED FROM GTF EXONS \n" >&2
 
 	module load bedtools/2.26.0
 
@@ -162,8 +165,8 @@ if [ ! -s "$bed" ] ; then
 	| bedtools merge \
 	> "${proj_dir}/exons.bed"
 
-	found_bed=$(find $proj_dir -maxdepth 1 -type f -name "*.bed" | head -1)
-	bed=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-BED $found_bed);
+	found_bed=$(find $proj_dir -maxdepth 1 -type f -name "exons.bed" | head -1)
+	bed=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-TARGETS-BED $found_bed);
 
 fi
 

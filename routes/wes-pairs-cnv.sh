@@ -2,7 +2,7 @@
 
 
 ##
-## whole genome/exome/targeted sequencing somatic single/short nucleotide variant calling
+## exome/targeted sequencing somatic copy number variant calling
 ##
 
 
@@ -73,9 +73,9 @@ fi
 
 # segments
 
-# MuTect2
-segment_mutect2="snvs-mutect2"
-bash_cmd="bash ${code_dir}/segments/${segment_mutect2}.sh $proj_dir $sample_t $bam_t $sample_n $bam_n"
+# Control-FREEC
+segment_freec="cnvs-wes-freec"
+bash_cmd="bash ${code_dir}/segments/${segment_freec}.sh $proj_dir $sample_t $bam_t $sample_n $bam_n"
 echo "CMD: $bash_cmd"
 ($bash_cmd)
 

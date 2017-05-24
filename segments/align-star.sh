@@ -40,7 +40,7 @@ if [ ! -s "$fastq_R1" ] ; then
 fi
 
 code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
-ref_star=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-STAR);
+ref_star=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-STAR)
 
 if [ ! -s "${ref_star}/SA" ] ; then
 	echo -e "\n $script_name ERROR: REF $ref_star DOES NOT EXIST \n" >&2
@@ -77,11 +77,14 @@ star_prefix="${star_logs_dir}/${sample}."
 
 # exit if output exits already
 
+# if final BAM exists
 if [ -s "$bam" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
+	echo "${sample},${bam}" >> "$samples_csv"
 	exit 1
 fi
 
+# if run is in progress
 if [ -s "${star_prefix}.bam" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	exit 1

@@ -45,13 +45,14 @@ mkdir -p "$fastq_clean_dir"
 fastq_R1_clean="${fastq_clean_dir}/${sample}_R1.fastq.gz"
 fastq_R2_clean="${fastq_clean_dir}/${sample}_R2.fastq.gz"
 
-# considered initially
-# fastq_R1_clean=$(bash ${CODE_DIR}/scripts/get-segment-filename.sh $proj_dir fastq-to-fastq-clean-r1 $sample)
-# fastq_R2_clean=$(bash ${CODE_DIR}/scripts/get-segment-filename.sh $proj_dir fastq-to-fastq-clean-r2 $sample)
-
 # check if output already exists
 if [ -s "$fastq_R1_clean" ] || [ -s "$fastq_R2_clean" ]; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
+	if [ -s "$fastq_R2_clean" ] ; then
+		echo "${sample},${fastq_R1_clean},${fastq_R2_clean}" >> "$samples_csv_clean"
+	else
+		echo "${sample},${fastq_R1_clean}," >> "$samples_csv_clean"
+	fi
 	exit 1
 fi
 

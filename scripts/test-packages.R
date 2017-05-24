@@ -15,7 +15,7 @@ source(paste0(scripts_dir, "/load-install-packages.R"))
 
 # load some packages (some will probably need to be installed)
 # used by GATK: ggplot2, gplots, reshape, gsalib
-test_packages = c("bitops", "mnormt", "reshape", "gplots", "ggplot2", "gsalib", "dplyr", "limma")
+test_packages = c("optparse", "bitops", "mnormt", "reshape", "gplots", "ggplot2", "gsalib", "dplyr", "limma")
 load_install_packages(test_packages)
 
 

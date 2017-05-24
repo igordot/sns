@@ -46,21 +46,21 @@ fi
 
 code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
 
-genome_dir=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" GENOME-DIR);
+genome_dir=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" GENOME-DIR)
 
 if [ ! -d "$genome_dir" ] ; then
 	echo -e "\n $script_name ERROR: GENOME DIR $genome_dir DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
-ref_fasta=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-FASTA);
+ref_fasta=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-FASTA)
 
 if [ ! -s "$ref_fasta" ] ; then
 	echo -e "\n $script_name ERROR: FASTA $ref_fasta DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
-bed=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-BED $found_bed);
+bed=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-TARGETS-BED)
 
 if [ ! -s "$bed" ] ; then
 	echo -e "\n $script_name ERROR: BED $bed DOES NOT EXIST \n" >&2
@@ -72,10 +72,6 @@ fi
 
 
 # settings and files
-
-# summary_dir="${proj_dir}/summary"
-# mkdir -p "$summary_dir"
-# summary_csv="${summary_dir}/${sample}.${segment_name}.csv"
 
 sample="${sample_t}:${sample_n}"
 
@@ -126,11 +122,12 @@ fi
 gatk_log_level_arg="--logging_level WARN"
 
 # known variants (may vary greatly for each genome)
-if [[ "$genome_dir" == */hg19 ]] ; then
+genome_build=$(basename "$genome_dir")
+if [[ "$genome_build" == "hg19" ]] ; then
 	cosmic_vcf="${genome_dir}/CosmicCodingMuts_v73.hg19.vcf"
 	dbsnp_vcf="${genome_dir}/gatk-bundle/dbsnp_138.hg19.vcf"
 	mt_var_arg="--dbsnp $dbsnp_vcf --cosmic $cosmic_vcf"
-elif [[ "$genome_dir" == */mm10 ]] ; then
+elif [[ "$genome_build" == "mm10" ]] ; then
 	dbsnp_vcf="${genome_dir}/dbSNP/dbsnp.146.vcf"
 	mt_var_arg="--dbsnp $dbsnp_vcf"
 else
