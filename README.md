@@ -56,28 +56,30 @@ Routes are different analysis workflows.
 Generic routes are sample-centric (same analysis is performed for each sample).
 Available routes:
 
-* `rna-star`: RNA-seq using STAR. Generates BAMs, normalized bigWigs, counts matrix, and various QC metrics.
-* `rna-rsem`: RNA-seq using RSEM. Generates FPKM/TPM/counts matrix and various QC metrics.
-* `rna-snv`: RNA-seq variant detection. Generates BAMs, VCFs, and various QC metrics.
-* `wgbs`: WGBS using Bismark.
-* `rrbs`: RRBS using Bismark.
-* `wes`: Whole genome/exome/targeted variant detection. Generates BAMs, VCFs, and various QC metrics.
-* `atac`: ATAC-seq. Generates BAMs, bigWigs, peaks, nucleosome positions, and various QC metrics.
-* `species`: Species/metagenomics/contamination analysis.
+* [rna-star](https://github.com/igordot/sns/blob/master/routes/rna-star.md): RNA-seq using STAR. Generates BAMs, normalized bigWigs, counts matrix, and various QC metrics.
+* [rna-rsem](https://github.com/igordot/sns/blob/master/routes/rna-rsem.md): RNA-seq using RSEM. Generates FPKM/TPM/counts matrix and various QC metrics.
+* [rna-snv](https://github.com/igordot/sns/blob/master/routes/rna-snv.md): RNA-seq variant detection. Generates BAMs, VCFs, and various QC metrics.
+* [wgbs](https://github.com/igordot/sns/blob/master/routes/rrbs.md): WGBS methylation analysis.
+* [rrbs](https://github.com/igordot/sns/blob/master/routes/rrbs.md): RRBS methylation analysis.
+* [wes](https://github.com/igordot/sns/blob/master/routes/wes.md): Whole genome/exome/targeted variant detection. Generates BAMs, VCFs, and various QC metrics.
+* [atac](https://github.com/igordot/sns/blob/master/routes/atac.md): ATAC-seq. Generates BAMs, bigWigs, peaks, nucleosome positions, and various QC metrics.
+* [species](https://github.com/igordot/sns/blob/master/routes/species.md): Species/metagenomics/contamination analysis.
 
 There are additional routes for comparing groups of samples after individual samples are processed with a generic route.
 They depend on the output of the generic routes and must be run from the same directory.
 Before running, manually add proper group names or pairs to the `samples.groups.csv` or `samples.pairs.csv` files (depending on the comparison type).
 Available comparison routes:
 
-* `rna-star-groups-dge`: Differential gene expression using DESeq2 for the `rna-star` results.
-* `wes-pairs-snv`: Somatic variant detection for the `wes` results.
+* [rna-star-groups-dge](https://github.com/igordot/sns/blob/master/routes/rna-star-groups-dge.md): Differential gene expression using DESeq2 for the `rna-star` results.
+* [wes-pairs-snv](https://github.com/igordot/sns/blob/master/routes/wes-pairs-snv.md): Somatic variant detection for the `wes` results.
 
 ## Output
 
 * Directories for different output types (such as BAMs or bigWigs) containing files for each sample.
 * `summary-combined.*.csv`: Combined segment summaries table that provides a comprehensive overview of the project.
 * `logs-*` directories: Most stdout/stderr output will be placed here. The information can be used for tracking progress and troubleshooting.
+
+Each route has a description with more specific details.
 
 ## About
 
