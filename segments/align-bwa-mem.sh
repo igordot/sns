@@ -136,8 +136,17 @@ sleep 30
 
 # check that bwa/sambamba output generated
 
+# check if BAM file is present
 if [ ! -s "$bam" ] ; then
 	echo -e "\n $script_name ERROR: BAM $bam NOT GENERATED \n" >&2
+	exit 1
+fi
+
+# check if BAM index is present (generated only if BAM is valid)
+if [ ! -s "$bai" ] ; then
+	echo -e "\n $script_name ERROR: BAI $bai NOT GENERATED \n" >&2
+	# delete BAM since something went wrong and it might be corrupted
+	rm -fv "$bam"
 	exit 1
 fi
 
@@ -208,7 +217,12 @@ cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "
 # add sample and BAM to sample sheet
 echo "${sample},${bam}" >> "$samples_csv"
 
-sleep 30
+sleep 1
+
+# add again (reduce potential loss if another sample is sorting at the same time)
+echo "${sample},${bam}" >> "$samples_csv"
+
+sleep 1
 
 # sort and remove duplicates in place in sample sheet
 LC_ALL=C sort -t ',' -k1,1 -u -o "$samples_csv" "$samples_csv"

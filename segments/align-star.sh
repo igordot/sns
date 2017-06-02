@@ -62,6 +62,7 @@ samples_csv="${proj_dir}/samples.${segment_name}.csv"
 star_bam_dir="${proj_dir}/BAM-STAR"
 mkdir -p "$star_bam_dir"
 bam="${star_bam_dir}/${sample}.bam"
+bai="${bam}.bai"
 
 star_quant_dir="${proj_dir}/quant-STAR"
 mkdir -p "$star_quant_dir"
@@ -148,6 +149,8 @@ bash_cmd="samtools index $bam"
 echo "CMD: $bash_cmd"
 eval "$bash_cmd"
 
+sleep 30
+
 
 #########################
 
@@ -160,17 +163,20 @@ if [ ! -s "$bam" ] ; then
 	exit 1
 fi
 
-# check that bam file size above 10 kb
-du -s $bam
-bam_size=$(du -s --apparent-size $bam | cut -f 1)
-if [ $bam_size -lt 10 ] ; then
-	echo -e "\n $script_name ERROR: BAM $bam TOO SMALL \n" >&2
+# check if BAM index is present (generated only if BAM is valid)
+if [ ! -s "$bai" ] ; then
+	echo -e "\n $script_name ERROR: BAI $bai NOT GENERATED \n" >&2
+	# delete BAM since something went wrong and it might be corrupted
+	rm -fv "$bam"
 	exit 1
 fi
 
 # check if gene counts file is present
 if [ ! -s "${star_prefix}ReadsPerGene.out.tab" ] ; then
 	echo -e "\n $script_name ERROR: COUNTS FILE ${star_prefix}ReadsPerGene.out.tab NOT GENERATED \n" >&2
+	# delete BAM and BAI since something went wrong and they might be corrupted
+	rm -fv "$bam"
+	rm -fv "$bai"
 	exit 1
 fi
 
@@ -275,7 +281,12 @@ rm -rfv ${star_prefix}_STAR*
 # add sample and BAM to sample sheet
 echo "${sample},${bam}" >> "$samples_csv"
 
-sleep 30
+sleep 1
+
+# add again (reduce potential loss if another sample is sorting at the same time)
+echo "${sample},${bam}" >> "$samples_csv"
+
+sleep 1
 
 # sort and remove duplicates in place in sample sheet
 LC_ALL=C sort -t ',' -k1,1 -u -o "$samples_csv" "$samples_csv"
