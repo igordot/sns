@@ -48,6 +48,13 @@ if [ ! -d "$proj_dir" ] ; then
 	exit 1
 fi
 
+gtf=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-GTF);
+
+if [ ! -s "$gtf" ] || [ ! "$gtf" ] ; then
+	echo -e "\n $script_name ERROR: GTF $gtf DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
 groups_table="${proj_dir}/samples.groups.csv"
 
 if [ ! -s "$groups_table" ] ; then
@@ -163,7 +170,7 @@ echo -e "\n ========== start analysis ========== \n"
 cd "$dge_dir" || exit 1
 
 # launch the analysis R script
-bash_cmd="Rscript --vanilla ${code_dir}/scripts/dge-deseq2.R $input_counts_table $input_groups_table"
+bash_cmd="Rscript --vanilla ${code_dir}/scripts/dge-deseq2.R $gtf $input_counts_table $input_groups_table"
 echo "CMD: $bash_cmd"
 ($bash_cmd)
 

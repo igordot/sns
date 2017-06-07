@@ -57,7 +57,12 @@ if [ -z "$fastq_R1" ] ; then
 	fastq_R1=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_clean}.csv" | cut -d ',' -f 2)
 	fastq_R2=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_clean}.csv" | cut -d ',' -f 3)
 fi
-[ "$fastq_R1" ] || exit 1
+
+# if FASTQ is not set, there was a problem
+if [ -z "$fastq_R1" ] ; then
+	echo -e "\n $script_name ERROR: $segment_fastq_clean DID NOT FINISH \n" >&2
+	exit 1
+fi
 
 # fastq_screen
 bash_cmd="bash ${code_dir}/segments/qc-fastqscreen.sh $proj_dir $sample $fastq_R1"

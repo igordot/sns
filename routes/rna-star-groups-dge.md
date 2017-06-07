@@ -22,6 +22,8 @@ Results:
 * `counts.raw.csv`: Matrix of raw counts.
 * `counts.norm.csv`: Matrix of normalized counts that can be used to check the expression levels of specific genes across samples.
 * `counts.norm.xlsx`: Matrix of normalized counts in Excel format to avoid potential auto-conversion of gene names.
+* `counts.fpkm.csv`: Matrix of FPKMs.
+* `counts.fpkm.xlsx`: Matrix of FPKMs in Excel format to avoid potential auto-conversion of gene names.
 * `counts.vst.csv`: Matrix of counts after variance stabilizing transformation (VST) for clustering samples or other machine learning applications. These are log2-transformed and normalized with respect to library size. The point of VST is to remove the dependence of the variance on the mean.
 * `plot.pca.png`: PCA plot that shows the samples based on their first two principal components. Useful for visualizing the overall effect of experimental covariates and batch effects.
 * `dge.*`: Differential gene expression results between different groups.

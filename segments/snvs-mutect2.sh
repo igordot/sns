@@ -78,6 +78,7 @@ sample="${sample_t}:${sample_n}"
 vcf_dir="${proj_dir}/VCF-MuTect2"
 mkdir -p "$vcf_dir"
 vcf_original="${vcf_dir}/${sample_t}-${sample_n}.original.vcf"
+idx_original="${vcf_original}.idx"
 vcf_fixed="${vcf_dir}/${sample_t}-${sample_n}.vcf"
 
 
@@ -181,8 +182,17 @@ $mutect_cmd
 
 # check that output generated
 
+# check if VCF file is present
 if [ ! -s "$vcf_original" ] ; then
 	echo -e "\n $script_name ERROR: VCF $vcf_original NOT GENERATED \n" >&2
+	exit 1
+fi
+
+# check if VCF index is present (should be present if VCF is complete)
+if [ ! -s "$idx_original" ] ; then
+	echo -e "\n $script_name ERROR: VCF IDX $idx_original NOT GENERATED \n" >&2
+	# delete VCF since something went wrong and it might be corrupted
+	rm -fv "$vcf_original"
 	exit 1
 fi
 

@@ -57,7 +57,12 @@ if [ -z "$fastq_R1" ] ; then
 	fastq_R1=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_clean}.csv" | cut -d ',' -f 2)
 	fastq_R2=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_clean}.csv" | cut -d ',' -f 3)
 fi
-[ "$fastq_R1" ] || exit 1
+
+# if FASTQ is not set, there was a problem
+if [ -z "$fastq_R1" ] ; then
+	echo -e "\n $script_name ERROR: $segment_fastq_clean DID NOT FINISH \n" >&2
+	exit 1
+fi
 
 # trim FASTQs with Trimmomatic
 segment_fastq_trim="fastq-trim-trimmomatic"
@@ -69,7 +74,12 @@ if [ -z "$fastq_R1_trimmed" ] ; then
 	fastq_R1_trimmed=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_trim}.csv" | cut -d ',' -f 2)
 	fastq_R2_trimmed=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_trim}.csv" | cut -d ',' -f 3)
 fi
-[ "$fastq_R1_trimmed" ] || exit 1
+
+# if trimmed FASTQ is not set, there was a problem
+if [ -z "$fastq_R1_trimmed" ] ; then
+	echo -e "\n $script_name ERROR: $segment_fastq_trim DID NOT FINISH \n" >&2
+	exit 1
+fi
 
 # run BWA-MEM alignment
 segment_align="align-bwa-mem"
@@ -81,6 +91,12 @@ if [ -z "$bam_bwa" ] ; then
 fi
 [ "$bam_bwa" ] || exit 1
 
+# if BWA BAM is not set, there was a problem
+if [ -z "$bam_bwa" ] ; then
+	echo -e "\n $script_name ERROR: $segment_align DID NOT FINISH \n" >&2
+	exit 1
+fi
+
 # remove duplicates
 segment_dedup="bam-dedup-sambamba"
 bam_dd=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_dedup}.csv" | cut -d ',' -f 2)
@@ -89,7 +105,12 @@ if [ -z "$bam_dd" ] ; then
 	($bash_cmd)
 	bam_dd=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_dedup}.csv" | cut -d ',' -f 2)
 fi
-[ "$bam_dd" ] || exit 1
+
+# if deduplicated BAM is not set, there was a problem
+if [ -z "$bam_dd" ] ; then
+	echo -e "\n $script_name ERROR: $segment_dedup DID NOT FINISH \n" >&2
+	exit 1
+fi
 
 # fragment size distribution
 segment_qc_frag_size="qc-fragment-sizes"
@@ -109,7 +130,12 @@ if [ -z "$bam_gatk" ] ; then
 	($bash_cmd)
 	bam_gatk=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_gatk}.csv" | cut -d ',' -f 2)
 fi
-[ "$bam_gatk" ] || exit 1
+
+# if GATK BAM is not set, there was a problem
+if [ -z "$bam_gatk" ] ; then
+	echo -e "\n $script_name ERROR: $segment_gatk DID NOT FINISH \n" >&2
+	exit 1
+fi
 
 # final average coverage
 segment_avg_cov="qc-coverage-gatk"
