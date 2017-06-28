@@ -184,7 +184,12 @@ fi
 # add sample and FASTQ to sample sheet
 echo "${sample},${fastq_R1_clean},${fastq_R2_clean}" >> "$samples_csv_clean"
 
-sleep 30
+sleep 1
+
+# add again (reduce potential loss if another sample is sorting at the same time)
+echo "${sample},${fastq_R1_clean},${fastq_R2_clean}" >> "$samples_csv_clean"
+
+sleep 1
 
 # sort and remove duplicates in place in sample sheet
 LC_ALL=C sort -t ',' -k1,1 -u -o "$samples_csv_clean" "$samples_csv_clean"

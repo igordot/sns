@@ -106,6 +106,12 @@ if [[ "$genome_build" == "hg19" ]] ; then
 	annovar_operation="r,g"
 	annovar_multianno="${annovar_out_prefix}.hg19_multianno.txt"
 	annovar_keep_cols="1,7-10"
+elif [[ "$genome_build" == "mm10" ]] ; then
+	annovar_buildver="mm10"
+	annovar_protocol="cytoBand,refGene"
+	annovar_operation="r,g"
+	annovar_multianno="${annovar_out_prefix}.mm10_multianno.txt"
+	annovar_keep_cols="1,7-10"
 else
 	annovar_buildver=""
 	echo -e "\n $script_name ERROR: UNKNOWN GENOME $genome_build \n" >&2
