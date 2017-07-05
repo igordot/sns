@@ -89,7 +89,6 @@ if [ -z "$bam_bwa" ] ; then
 	($bash_cmd)
 	bam_bwa=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_align}.csv" | cut -d ',' -f 2)
 fi
-[ "$bam_bwa" ] || exit 1
 
 # if BWA BAM is not set, there was a problem
 if [ -z "$bam_bwa" ] ; then

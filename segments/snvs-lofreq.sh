@@ -183,7 +183,7 @@ echo -e "\n CMD: $bcf_index_cmd \n"
 eval "$bcf_index_cmd"
 
 # 1) split multi-allelic variants calls into separate lines (uses VCF 4.2 specification)
-# 2) perform indel left-normalization (start position of a variant should be shifted to the left until it is no longer possible to do so)
+# 2) perform indel left-normalization (start position shifted to the left until it is no longer possible to do so)
 # 3) depth filter
 
 fix_vcf_cmd="

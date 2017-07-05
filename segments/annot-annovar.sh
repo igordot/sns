@@ -90,7 +90,7 @@ fi
 # ANNOVAR genome-specific settings
 
 # ANNOVAR directory
-annovar_path="/ifs/home/id460/software/annovar/annovar-160201"
+annovar_path="/ifs/home/id460/software/annovar/annovar-170601"
 annovar_db_path="/ifs/home/id460/ref/annovar"
 
 genome_build=$(basename "$genome_dir")
@@ -123,6 +123,31 @@ elif [[ "$genome_build" == "sacCer3" ]] ; then
 else
 	annovar_buildver=""
 	echo -e "\n $script_name ERROR: UNKNOWN GENOME $genome_build \n" >&2
+	exit 1
+fi
+
+
+#########################
+
+
+# extract variant info (quality, depth, frequency) from a VCF in a table format for merging with annotations
+
+vcf_table_cmd="
+perl ${code_dir}/scripts/vcf-table.pl $vcf_file $sample | LC_ALL=C sort -k1,1 > $vcf_table
+"
+echo -e "\n CMD: $vcf_table_cmd \n"
+eval "$vcf_table_cmd"
+
+sleep 30
+
+
+#########################
+
+
+# check that vcf-table.pl completed
+
+if [ ! -s "$vcf_table" ] ; then
+	echo -e "\n $script_name ERROR: $vcf_table IS EMPTY \n" >&2
 	exit 1
 fi
 
@@ -249,31 +274,6 @@ fi
 #########################
 
 
-# convert VCF to a table format
-
-vcf_table_cmd="
-perl ${code_dir}/scripts/vcf-table.pl $vcf_file $sample | LC_ALL=C sort -k1,1 > $vcf_table
-"
-echo -e "\n CMD: $vcf_table_cmd \n"
-eval "$vcf_table_cmd"
-
-sleep 30
-
-
-#########################
-
-
-# check that table_annovar completed
-
-if [ ! -s "$vcf_table" ] ; then
-	echo -e "\n $script_name ERROR: $vcf_table IS EMPTY \n" >&2
-	exit 1
-fi
-
-
-#########################
-
-
 # merge variant info from VCF with annotations from ANNOVAR
 
 join_cmd="
@@ -311,16 +311,19 @@ rm -fv "$annovar_out_fixed"
 # summary
 
 total_muts=$(cat "$annovar_combined" | grep -v 'refGene' | wc -l)
-echo "total_muts: $total_muts"
+echo "total muts: $total_muts"
 
 coding_muts=$(cat "$annovar_combined" | grep -v 'refGene' | grep 'exon' | wc -l)
-echo "coding_muts: $coding_muts"
+echo "coding muts: $coding_muts"
+
+nonsyn_muts=$(cat "$annovar_combined" | grep -v 'refGene' | grep -E 'nonsynonymous|stopgain|frameshift' | wc -l)
+echo "nonsynonymous muts: $coding_muts"
 
 # header for summary file
-echo "#SAMPLE,total muts,coding muts" > "$summary_csv"
+echo "#SAMPLE,total muts,coding muts,nonsyn muts" > "$summary_csv"
 
 # summarize log file
-echo "${sample_clean},${total_muts},${coding_muts}" >> "$summary_csv"
+echo "${sample_clean},${total_muts},${coding_muts},${nonsyn_muts}" >> "$summary_csv"
 
 sleep 30
 

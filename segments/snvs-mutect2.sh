@@ -207,7 +207,7 @@ module load samtools/1.3
 
 # 1) keep header and only passing variants
 # 2) split multi-allelic variants calls into separate lines (uses VCF 4.2 specification)
-# 3) perform indel left-normalization (start position of a variant should be shifted to the left until it is no longer possible to do so)
+# 3) perform indel left-normalization (start position shifted to the left until it is no longer possible to do so)
 
 fix_vcf_cmd="
 cat $vcf_original \

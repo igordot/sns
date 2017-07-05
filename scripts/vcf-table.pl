@@ -6,7 +6,7 @@ my $HELP = <<HELP;
 
   Convert VCF file to tab-delimited table for merging with ANNOVAR output.
 
-  usage: vcf-format.pl file.vcf sample_name > vcf_table.txt
+  usage: vcf-table.pl file.vcf sample_name > vcf_table.txt
 
 HELP
 
@@ -25,14 +25,16 @@ sub main {
 	# my ($caller, $sample) = get_info($vcf);
 	my $caller = get_info($vcf);
 
-	# print header (for somatic, T and N are separate columns to make it clear which is which)
+	# print germline header
 	if ($caller eq "HaplotypeCaller" || $caller eq "LoFreq") {
 		print "#MUT\tSAMPLE\tCHR\tPOS\tQUAL\tDEPTH\tFREQ\n";
 	}
+	# print old MuTect somatic header
 	if ($caller eq "MuTect114" || $caller eq "MuTect116") {
 		print "#MUT\tSAMPLE N\tSAMPLE T\tCHR\tPOS\tt_lod_fstar ( log of ( likelihood event is real / likelihood event is seq error ) )\tN Depth\tN Freq\tT Depth\tT Freq\n";
 	}
-	if ($caller eq "MuTect2") {
+	# print somatic header (T and N are separate columns to make it clear which is which)
+	if ($caller eq "MuTect2" || $caller eq "Strelka") {
 		print "#MUT\tSAMPLE T\tSAMPLE N\tCHR\tPOS\tQUAL\tT DEPTH\tT FREQ\tN DEPTH\tN FREQ\n";
 	}
 
@@ -57,6 +59,10 @@ sub main {
 		if ($caller eq "MuTect2") {
 			$clean_line = format_mutect2($line, $sample);
 		}
+		if ($caller eq "Strelka") {
+			$clean_line = format_strelka($line, $sample);
+		}
+
 
 		# skip lines that returned empty
 		if ($clean_line) {
@@ -99,6 +105,10 @@ sub get_info {
 			$caller = "MuTect2";
 			last;
 		}
+		if ($line =~ /source=strelka/) {
+			$caller = "Strelka";
+			last;
+		}
 
 	}
 	close IN;
@@ -130,7 +140,7 @@ sub format_haplotypecaller {
 	# there are not any quality reads (reported depth 0)
 	# less than 5 variant call supporting reads
 	if ( ($depth > 0) && ($ad_cols[1] >= 5) ) {
-		($pos, $ref, $alt) = fix_indels($pos, $ref, $alt);
+		($pos, $ref, $alt) = adjust_indels($pos, $ref, $alt);
 		my $qual = (sprintf "%.1f", $cols[5]);
 		my $freq = sprintf("%.3f", ( $ad_cols[1] / $depth ));
 		$out = join("\t", "${chr}:${pos}:${ref}:${alt}", $sample, $chr, $pos, $qual, $depth, $freq);
@@ -162,7 +172,7 @@ sub format_lofreq {
 
 	# do not report if frequency is less than 1%
 	if ($freq > 0.01) {
-		($pos, $ref, $alt) = fix_indels($pos, $ref, $alt);
+		($pos, $ref, $alt) = adjust_indels($pos, $ref, $alt);
 		$freq = sprintf("%.3f", $freq);
 		$out = join("\t", "${chr}:${pos}:${ref}:${alt}", $sample, $chr, $pos, $qual, $depth, $freq);
 	}
@@ -269,11 +279,13 @@ sub format_mutect2 {
 
 	my ($sample_t, $sample_n) = split(':', $sample);
 
-	# split the needed columns (#CHROM POS ID REF ALT QUAL FILTER INFO FORMAT TUMOR NORMAL)
+	# split the columns (#CHROM POS ID REF ALT QUAL FILTER INFO FORMAT TUMOR NORMAL)
 	my @cols = split(/\t/, $line);
-	# sample fields (GT:AD:AF:ALT_F1R2:ALT_F2R1:FOXOG:PGT:PID:QSS:REF_F1R2:REF_F2R1)
+
+	# T/N sample fields (GT:AD:AF:ALT_F1R2:ALT_F2R1:FOXOG:PGT:PID:QSS:REF_F1R2:REF_F2R1)
 	my @sample_t_fields = split(':', $cols[9]);
 	my @sample_n_fields = split(':', $cols[10]);
+
 	# allelic depth field (Allelic depths for the ref and alt alleles in the order listed)
 	# not using AF for now because number format is scientific for low fractions
 	my @t_ad_cols = split(',', $sample_t_fields[1]);
@@ -291,24 +303,116 @@ sub format_mutect2 {
 	my $t_freq = $t_ad_cols[1] / $t_depth;
 	my $n_freq = $n_ad_cols[1] / $n_depth;
 
-	# do not report if
-	# T frequency is less than 3%
-	# N frequency is more than 5%
-	# less than 5 variant call supporting reads
+	# report if
+	# T frequency is more than 3%
+	# N frequency is less than 5%
+	# at least 5 variant call supporting reads
 	# T frequency is sufficiently higher than N frequency
 	# "we recommend applying post-processing filters, e.g. by hard-filtering calls with low minor allele frequencies"
 	if ( ($t_freq > 0.03) && ($n_freq < 0.05) && ($t_ad_cols[1] >= 5) && ($t_freq > $n_freq * 5) ) {
-		($pos, $ref, $alt) = fix_indels($pos, $ref, $alt);
+		($pos, $ref, $alt) = adjust_indels($pos, $ref, $alt);
 		$t_freq = sprintf("%.3f", $t_freq);
 		$n_freq = sprintf("%.3f", $n_freq);
-		$out = join("\t", "${chr}:${pos}:${ref}:${alt}", $sample_t, $sample_n, $chr, $pos, $qual, $t_depth, $t_freq, $n_depth, $n_freq);
+		my $mut_id = "${chr}:${pos}:${ref}:${alt}";
+		$out = join("\t", $mut_id, $sample_t, $sample_n, $chr, $pos, $qual, $t_depth, $t_freq, $n_depth, $n_freq);
 	}
 
 	$out;
 }
 
-# fix indels to match annovar output
-sub fix_indels {
+# format Strelka line
+sub format_strelka {
+	my $line = $_[0];
+	my $sample = $_[1];
+	my $out;
+
+	my ($sample_t, $sample_n) = split(':', $sample);
+
+	# split the columns (#CHROM POS ID REF ALT QUAL FILTER INFO FORMAT NORMAL TUMOR)
+	my @cols = split(/\t/, $line);
+
+	# T/N sample fields (DP:FDP:SDP:SUBDP:AU:CU:GU:TU)
+	my @sample_t_fields = split(':', $cols[10]);
+	my @sample_n_fields = split(':', $cols[9]);
+
+	# output columns
+	my $chr = $cols[0];
+	my $pos = $cols[1];
+	my $ref = $cols[3];
+	my $alt = $cols[4];
+	my $qual = $cols[7];
+	my $t_depth = 0;
+	my $n_depth = 0;
+	my $t_freq = 1;
+	my $n_freq = 1;
+	my $t_ref_count = 0;
+	my $t_alt_count = 999;
+	my $n_ref_count = 999;
+	my $n_alt_count = 0;
+
+	# SNV lines
+	if ($line =~ /AU:CU:GU:TU/) {
+		# allele fields (AU:CU:GU:TU)
+		my %t_alleles = (
+			A => (split(',', $sample_t_fields[4]))[0],
+			C => (split(',', $sample_t_fields[5]))[0],
+			G => (split(',', $sample_t_fields[6]))[0],
+			T => (split(',', $sample_t_fields[7]))[0]
+		);
+		my %n_alleles = (
+			A => (split(',', $sample_n_fields[4]))[0],
+			C => (split(',', $sample_n_fields[5]))[0],
+			G => (split(',', $sample_n_fields[6]))[0],
+			T => (split(',', $sample_n_fields[7]))[0]
+		);
+
+		# output columns
+		$qual =~ s/.*;QSS=(.+?);.*/$1/;
+		$t_alt_count = $t_alleles{$alt};
+		$n_alt_count = $n_alleles{$alt};
+		$t_depth = $sample_t_fields[0];
+		$n_depth = $sample_n_fields[0];
+		$t_freq = $t_alt_count / $t_depth;
+		$n_freq = $n_alt_count / $n_depth;
+	}
+
+	# indel lines
+	if ($line =~ /TAR:TIR:TOR/) {
+		# from https://github.com/Illumina/strelka/issues/3
+		# somatic indel allele frequency is: alt_t1count / (ref_t1count + alt_t1count)
+		# ref_t1count = 1st value of FORMAT column value TAR
+		# alt_t1count = 1st value of FORMAT column value TIR
+
+		# extract ref/alt allele counts from TAR/TIR fields
+		$t_ref_count = (split(',', $sample_t_fields[2]))[0];
+		$t_alt_count = (split(',', $sample_t_fields[3]))[0];
+		$n_ref_count = (split(',', $sample_n_fields[2]))[0];
+		$n_alt_count = (split(',', $sample_n_fields[3]))[0];
+
+		# output columns
+		$qual =~ s/.*;QSI=(.+?);.*/$1/;
+		$t_depth = $t_ref_count + $t_alt_count;
+		$n_depth = $n_ref_count + $n_alt_count;
+		$t_freq = $t_alt_count / $t_depth;
+		$n_freq = $n_alt_count / $n_depth;
+	}
+
+	# report if
+	# T frequency is more than 3%
+	# at least 5 variant call supporting reads
+	if ( ($t_freq > 0.03) && ($t_alt_count >= 5) ) {
+		($pos, $ref, $alt) = adjust_indels($pos, $ref, $alt);
+		$t_freq = sprintf("%.3f", $t_freq);
+		$n_freq = sprintf("%.3f", $n_freq);
+		my $mut_id = "${chr}:${pos}:${ref}:${alt}";
+		$out = join("\t", $mut_id, $sample_t, $sample_n, $chr, $pos, $qual, $t_depth, $t_freq, $n_depth, $n_freq);
+	}
+
+	$out;
+}
+
+# adjust indels to match annovar output
+sub adjust_indels {
 	my $pos = $_[0];
 	my $ref = $_[1];
 	my $alt = $_[2];

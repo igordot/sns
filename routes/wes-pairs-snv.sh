@@ -22,6 +22,7 @@ fi
 proj_dir=$(readlink -f "$1")
 sample_t=$2
 sample_n=$3
+sample_clean="${sample_t}-${sample_n}"
 
 # additional settings
 code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
@@ -73,11 +74,23 @@ fi
 
 # segments
 
+qsub_settings="-M ${USER}@nyumc.org -m a -j y -cwd -b y -hard -l mem_free=64G"
+
 # MuTect2
 segment_mutect2="snvs-mutect2"
 bash_cmd="bash ${code_dir}/segments/${segment_mutect2}.sh $proj_dir $sample_t $bam_t $sample_n $bam_n"
-echo "CMD: $bash_cmd"
-($bash_cmd)
+qsub_cmd="qsub -N sns.${segment_mutect2}.${sample_clean} ${qsub_settings} ${bash_cmd}"
+echo "CMD: $qsub_cmd"
+($qsub_cmd)
+
+sleep 30
+
+# Strelka
+segment_strelka="snvs-strelka"
+bash_cmd="bash ${code_dir}/segments/${segment_strelka}.sh $proj_dir $sample_t $bam_t $sample_n $bam_n 8"
+qsub_cmd="qsub -N sns.${segment_strelka}.${sample_clean} ${qsub_settings} -pe threaded 8 ${bash_cmd}"
+echo "CMD: $qsub_cmd"
+($qsub_cmd)
 
 
 #########################
