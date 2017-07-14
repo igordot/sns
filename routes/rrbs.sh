@@ -58,6 +58,12 @@ if [ -z "$fastq_R1" ] ; then
 	fastq_R2=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_clean}.csv" | cut -d ',' -f 3)
 fi
 
+# if FASTQ is not set, there was a problem
+if [ -z "$fastq_R1" ] ; then
+	echo -e "\n $script_name ERROR: $segment_fastq_clean DID NOT FINISH \n" >&2
+	exit 1
+fi
+
 # trim FASTQs with Trim Galore
 segment_fastq_trim="fastq-trim-trimgalore"
 fastq_R1_trimmed=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_trim}.csv" | cut -d ',' -f 2)
@@ -69,6 +75,12 @@ if [ -z "$fastq_R1_trimmed" ] ; then
 	fastq_R2_trimmed=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_trim}.csv" | cut -d ',' -f 3)
 fi
 
+# if trimmed FASTQ is not set, there was a problem
+if [ -z "$fastq_R1_trimmed" ] ; then
+	echo -e "\n $script_name ERROR: $segment_fastq_trim DID NOT FINISH \n" >&2
+	exit 1
+fi
+
 # run Bismark alignment
 segment_align="align-bismark"
 bam_bismark=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_align}.csv" | cut -d ',' -f 2)
@@ -78,11 +90,16 @@ if [ -z "$bam_bismark" ] ; then
 	bam_bismark=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_align}.csv" | cut -d ',' -f 2)
 fi
 
+# if Bismark BAM is not set, there was a problem
+if [ -z "$bam_bismark" ] ; then
+	echo -e "\n $script_name ERROR: $segment_align DID NOT FINISH \n" >&2
+	exit 1
+fi
+
 # run Bismark methylation extractor
 segment_meth="meth-bismark"
 if [ -n "$fastq_R2" ] ; then
-	#
-	echo "ERROR: PE not currently supported"
+	echo -e "\n $script_name ERROR: PE not currently supported \n" >&2
 else
 	bash_cmd="bash ${code_dir}/segments/${segment_meth}.sh $proj_dir $sample $threads $bam_bismark se"
 	($bash_cmd)

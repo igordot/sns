@@ -82,14 +82,15 @@ fi
 
 # run deduplicate_bismark
 
-module load bismark/0.16.3
+module load bismark/0.18.1
 
-echo " * BISMARK: $(readlink -f $(which deduplicate_bismark)) "
+echo " * Bismark: $(readlink -f $(which deduplicate_bismark)) "
+echo " * Bismark version: $(deduplicate_bismark --version | grep -m 1 'Version' | tr -s '[:blank:]') "
 echo " * BAM IN: $bismark_bam "
-echo " * BAM OUT ORIGINAL : $bismark_bam_dd_original "
-echo " * REPORT ORIGINAL : $bismark_dd_report_original "
-echo " * BAM OUT FINAL : $bismark_bam_dd_final "
-echo " * REPORT FINAL : $bismark_dd_report_final "
+echo " * BAM OUT original : $bismark_bam_dd_original "
+echo " * report original : $bismark_dd_report_original "
+echo " * BAM OUT final : $bismark_bam_dd_final "
+echo " * report final : $bismark_dd_report_final "
 
 if [ "$analysis_type" == "se" ] ; then
 	bismark_flags="--single"
@@ -167,13 +168,6 @@ echo "#SAMPLE,ALIGNED PAIRS,DEDUPLICATED PAIRS,DUPLICATION RATE" > $summary_csv
 
 # print the relevant numbers
 echo "${sample},${reads_total},${reads_deduplicated},${reads_duplicated_pct}" >> "$summary_csv"
-
-# paste -d ',' \
-# <(echo "$sample") \
-# <(cat "$bismark_dd_report_final" | grep -m 1 "Total number of alignments analysed" | cut -f 2) \
-# <(cat "$bismark_dd_report_final" | grep -m 1 "deduplicated leftover sequences"     | cut -d ' ' -f 7) \
-# <(cat "$bismark_dd_report_final" | grep -m 1 "Total number duplicated alignments"  | cut -f 2 | cut -d ' ' -f 1) \
-# >> $summary_csv
 
 sleep 30
 

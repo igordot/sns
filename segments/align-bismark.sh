@@ -72,8 +72,6 @@ bismark_report_dir="${proj_dir}/Bismark-report"
 mkdir -p "$bismark_report_dir"
 
 # v0.16.0: "File endings .fastq | .fq | .fastq.gz | .fq.gz are now removed from the output file"
-# BISMARK_ID=$(basename $FASTQ1)
-# BISMARK_ID="$FASTQ1_SHORT"
 bismark_id=$(basename "$fastq_R1")
 bismark_id=${bismark_id/.fastq.gz/}
 
@@ -107,11 +105,12 @@ fi
 #########################
 
 
-# bismark
+# Bismark
+
 # bismark can't use sorted bam at the next step, but other tools may need sorted bam
 
-# bismark/0.15.0 and bismark/0.16.0 load bowtie2/2.2.6 and samtools/1.3
-module load bismark/0.16.3
+# bismark 0.15.0 and 0.16.0 and 0.18.1 load bowtie2/2.2.6 and samtools/1.3
+module load bismark/0.18.1
 
 # "In order to work properly the current working directory must contain the sequence files to be analysed" (as of v0.14)
 fastq_dir=$(dirname "$fastq_R1")
@@ -132,15 +131,16 @@ multicore_flag=$(( threads / 3 ))
 
 # v0.15.0: "specifying --basename in conjuction with --multicore is currently not supported"
 
-echo " * BISMARK: $(readlink -f $(which bismark)) "
-echo " * BISMARK REF: $ref_bismark "
-echo " * FASTQ DIR: $fastq_dir "
+echo " * Bismark: $(readlink -f $(which bismark)) "
+echo " * Bismark version: $(bismark --version | grep -m 1 'Version' | tr -s '[:blank:]') "
+echo " * Bismark ref: $ref_bismark "
+echo " * FASTQ dir: $fastq_dir "
 echo " * FASTQ R1: $fastq_R1 "
 echo " * FASTQ R2: $fastq_R2 "
-echo " * BAM ORIGINAL: $bismark_bam_original "
-echo " * REPORT ORIGINAL: $bismark_report_original "
-echo " * BAM FINAL: $bismark_bam_final "
-echo " * REPORT FINAL: $bismark_report_final "
+echo " * BAM original: $bismark_bam_original "
+echo " * report original: $bismark_report_original "
+echo " * BAM final: $bismark_bam_final "
+echo " * report final: $bismark_report_final "
 
 bash_cmd="
 bismark \

@@ -12,7 +12,7 @@ echo -e "\n ========== $script_name ========== \n" >&2
 # check for correct number of arguments
 if [ ! $# == 5 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
-	echo -e "\n USAGE: $script_name [project dir] [sample] [threads] [Bismark BAM] [analysis type] \n" >&2
+	echo -e "\n USAGE: $script_name project_dir sample_name num_threads BAM analysis_type \n" >&2
 	exit 1
 fi
 
@@ -50,8 +50,6 @@ bismark_cov="${bismark_meth_dir}/${sample}.bismark.cov"
 bismark_cov_gz="${bismark_cov}.gz"
 
 bismark_cpg_report_gz="${bismark_meth_dir}/${sample}.CpG_report.txt.gz"
-
-# BISMARK_METHYLKIT_REPORT="${bismark_meth_dir}/${sample}.methylkit.txt"
 
 
 #########################
@@ -94,17 +92,14 @@ fi
 
 # adjust paramaters based on run type
 
-# --ignore_r2 <int>
-# The first couple of bases in Read 2 of BS-Seq experiments show a severe bias towards
-# non-methylation as a result of end-repairing sonicated fragments with unmethylated cytosines,
-# it is recommended that the first couple of bp of Read 2 are removed before starting downstream analysis.
-
-
 if [ "$analysis_type" == "pe" ] ; then
 	bismark_flags="--paired-end"
 fi
 
-# the first bases in R2 of BS-Seq experiments show a bias towards non-methylation as a result of end-repairing sonicated fragments with unmethylated cytosines
+# --ignore_r2 <int>
+# The first couple of bases in Read 2 of BS-Seq experiments show a severe bias towards
+# non-methylation as a result of end-repairing sonicated fragments with unmethylated cytosines,
+# it is recommended that the first couple of bp of Read 2 are removed before starting downstream analysis.
 if [ "$analysis_type" == "pe-ignore-r2-3" ] ; then
 	bismark_flags="--paired-end --ignore_r2 3"
 fi
@@ -124,22 +119,23 @@ fi
 # bismark_methylation_extractor
 
 # load module (loads bowtie2/2.2.6 and samtools/1.3)
-module load bismark/0.16.3
+module load bismark/0.18.1
 
 # navigate to output dir
-mkdir -p $bismark_meth_dir
-cd $bismark_meth_dir
+mkdir -p "$bismark_meth_dir"
+cd "$bismark_meth_dir"
 
 # number of parallel instances of Bismark to run
 multicore=$(( threads / 3 ))
 
-echo " * BISMARK: $(readlink -f $(which bismark_methylation_extractor)) "
-echo " * OUT DIR: $bismark_meth_dir "
+echo " * Bismark: $(readlink -f $(which bismark_methylation_extractor)) "
+echo " * Bismark version: $(bismark_methylation_extractor --version | grep -m 1 'Version' | tr -s '[:blank:]') "
+echo " * output dir: $bismark_meth_dir "
 echo " * BAM: $bismark_bam "
-echo " * REPORT ORIGINAL: $bismark_report "
-echo " * BEDGRAPH: $bismark_bedgraph_gz "
-echo " * REPORT: $bismark_report_short "
-echo " * CYTOSINE REPORT: $bismark_cpg_report_gz "
+echo " * report original: $bismark_report "
+echo " * BedGraph: $bismark_bedgraph_gz "
+echo " * report: $bismark_report_short "
+echo " * cytosine report: $bismark_cpg_report_gz "
 
 # --comprehensive \
 
@@ -226,18 +222,6 @@ $CMD
 #########################
 
 
-# convert cytosine report to methylkit-compatible format and remove uncovered bases
-# no longer needed with methylKit 0.99
-
-# cytosine report:
-# <chromosome> <position> <strand> <count methylated> <count unmethylated> <C-context> <trinucleotide context>
-# new format: chr, start, strand, methylationRatio, coverage
-# zcat $bismark_cpg_report_gz | awk '{ OFS="\t"; if( $4+0 > 0 || $5+0 > 0 ) print $1,$2,$3,$4/($4+$5),$4+$5; }' | sort -k1,1 -k2,2n > $BISMARK_METHYLKIT_REPORT
-
-
-#########################
-
-
 # convert bedgraph to bigwig
 
 module load kentutils/329
@@ -283,16 +267,24 @@ rm -fv $bismark_bedgraph
 # generate summary
 
 # header
-echo "#SAMPLE,READS,TOTAL Cs,METH_CpG_CONTEXT,METH_CHG_CONTEXT,METH_CHH_CONTEXT" > $summary_csv
+header_report="READS,TOTAL Cs,METH_CpG_CONTEXT,METH_CHG_CONTEXT,METH_CHH_CONTEXT"
+header_cpg_report="CpGs 1X,CpGs 10X,CpGs 100X"
+echo "#SAMPLE,${header_report},${header_cpg_report}" > $summary_csv
+
+# cytosine report:
+# <chromosome> <position> <strand> <count methylated> <count unmethylated> <C-context> <trinucleotide context>
 
 # print the relevant numbers
 paste -d ',' \
 <(echo "$sample") \
-<(cat $bismark_report_short | grep "lines in total" 					| head -1 | cut -d " " -f 2) \
-<(cat $bismark_report_short | grep "Total number of C's analysed" 		| head -1 | cut -f 2) \
-<(cat $bismark_report_short | grep "C methylated in CpG context" 		| head -1 | cut -f 2) \
-<(cat $bismark_report_short | grep "C methylated in CHG context" 		| head -1 | cut -f 2) \
-<(cat $bismark_report_short | grep "C methylated in CHH context" 		| head -1 | cut -f 2) \
+<(cat "$bismark_report_short" | grep "lines in total"               | head -1 | cut -d " " -f 2) \
+<(cat "$bismark_report_short" | grep "Total number of C's analysed" | head -1 | cut -f 2) \
+<(cat "$bismark_report_short" | grep "C methylated in CpG context"  | head -1 | cut -f 2) \
+<(cat "$bismark_report_short" | grep "C methylated in CHG context"  | head -1 | cut -f 2) \
+<(cat "$bismark_report_short" | grep "C methylated in CHH context"  | head -1 | cut -f 2) \
+<(gunzip -c "$bismark_cpg_report_gz" | awk -F $'\t' '$4 + $5 >= 1'   | wc -l) \
+<(gunzip -c "$bismark_cpg_report_gz" | awk -F $'\t' '$4 + $5 >= 10'  | wc -l) \
+<(gunzip -c "$bismark_cpg_report_gz" | awk -F $'\t' '$4 + $5 >= 100' | wc -l) \
 >> $summary_csv
 
 sleep 30
@@ -300,6 +292,8 @@ sleep 30
 # combine all sample summaries
 cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq \
 > "${proj_dir}/summary.${segment_name}.csv"
+
+sleep 30
 
 
 #########################
@@ -345,13 +339,6 @@ montage -geometry +20+20 -tile 4x -label %t -pointsize 18 -font Nimbus-Sans-Regu
 
 
 # bismark html report
-
-# bismark 0.16.3 does not properly generate the report
-# https://github.com/FelixKrueger/Bismark/issues/61
-module unload bismark
-module unload bowtie2
-module unload samtools
-module load bismark/0.16.0
 
 cd "$bismark_report_dir"
 
