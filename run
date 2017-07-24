@@ -105,6 +105,7 @@ sub get_sample_sheet {
 		die "\n\n ERROR: SAMPLE SHEET $samples_csv DOES NOT EXIST \n\n";
 	}
 
+	# remove problematic characters from sample sheet
 	system("bash ${code_dir}/scripts/fix-csv.sh $samples_csv");
 
 	return($samples_csv);
@@ -126,11 +127,19 @@ sub run_samples {
 	}
 	chomp(@unique_samples);
 
+	# check that sample names do not contain problematic characters
+	my @invalid_samples = grep(/[^\w\-\.]/, @unique_samples);
+	if (@invalid_samples) {
+		my $invalid_samples_str = join(', ', @invalid_samples);
+		die "\n\n ERROR: SAMPLES $invalid_samples_str CONTAIN PROBLEMATIC CHARACTERS \n\n";
+	}
+
 	# check that pairs are valid (default sample sheet has normals as "NA")
 	if ($route =~ "-pairs-") {
 		my @invalid_pairs = grep(/:NA$/, @unique_samples);
 		if (@invalid_pairs) {
-			die "\n\n ERROR: @invalid_pairs CONTAINS MISSING SAMPLES (LABELED NA) \n\n";
+			my $invalid_pairs_str = join(', ', @invalid_pairs);
+			die "\n\n ERROR: PAIRS $invalid_pairs_str CONTAIN MISSING SAMPLES (LABELED NA) \n\n";
 		}
 	}
 
@@ -179,13 +188,14 @@ sub run_samples {
 		$email = `echo $email`;
 		chomp($email);
 		my $qsub_name = "sns.${route}.${sample}";
-		my $qsub_thread = "-pe threaded ${threads}";
 		my $qsub_mem = "-hard -l mem_free=64G";
-		my $qsub_cmd = "qsub -N $qsub_name -M $email -m a -j y -cwd $qsub_thread $qsub_mem -b y $cmd";
+		my $qsub_thread = "-pe threaded ${threads}";
+		my $qsub_cmd_base = "qsub -q all.q -cwd -b y -j y -N $qsub_name -M $email -m a $qsub_mem";
+		my $qsub_cmd = "$qsub_cmd_base $qsub_thread $cmd";
 
 		# paired command is single-threaded (at least for now)
 		if ($route =~ "-pairs-") {
-			$qsub_cmd = "qsub -N $qsub_name -M $email -m a -j y -cwd -b y $cmd";
+			$qsub_cmd = "$qsub_cmd_base $cmd";
 		}
 
 		print "\n CMD: $qsub_cmd \n";

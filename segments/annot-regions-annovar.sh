@@ -2,7 +2,7 @@
 
 
 # annotate regions with cytoband and overlapping genes using ANNOVAR
-# expects tab-delimited input file with header row and first 3 columns being chr, start, end
+# expects tab-delimited input file with header row and 5 columns: chr, start, end, 0, 0
 
 
 # script filename
