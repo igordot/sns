@@ -28,9 +28,9 @@ deseq2_results = function(deseq_dataset, contrast = NULL, name = NULL) {
   res = res[order(res$padj, res$pvalue, -res$baseMean), ]
 
   # save results object
-  res_rdata = paste0("deseq2.res.", file_suffix, ".RData")
-  save(res, file = res_rdata)
-  message("save results object: ", res_rdata)
+  res_rds = paste0("deseq2.res.", file_suffix, ".rds")
+  saveRDS(dds, file = res_rds)
+  message("save results object: ", res_rds)
 
   # save results as csv
   res_csv = paste0("dge.", file_suffix, ".csv")
@@ -77,9 +77,9 @@ deseq2_results = function(deseq_dataset, contrast = NULL, name = NULL) {
 
   # heatmap gene subsets (list with genes, plot title, and file suffix)
   hmg = list()
-  hmg[[length(hmg) + 1]] = list(genes = rownames(res_df)[1:50], title = "Top 50", file_suffix = "top")
-  hmg[[length(hmg) + 1]] = list(genes = rownames(res_df)[1:100], title = "Top 100", file_suffix = "top")
-  hmg[[length(hmg) + 1]] = list(genes = rownames(res_df)[1:1000], title = "Top 1000", file_suffix = "top")
+  hmg[[length(hmg) + 1]] = list(genes = rownames(res_df)[1:50], title = "50 Most Significant", file_suffix = "top")
+  hmg[[length(hmg) + 1]] = list(genes = rownames(res_df)[1:100], title = "100 Most Significant", file_suffix = "top")
+  hmg[[length(hmg) + 1]] = list(genes = rownames(res_df)[1:1000], title = "1000 Most Significant", file_suffix = "top")
   hmg[[length(hmg) + 1]] = list(genes = rownames(subset(res_df, padj < 0.10)), title = "q < 0.1", file_suffix = "q010")
   hmg[[length(hmg) + 1]] = list(genes = rownames(subset(res_df, padj < 0.05)), title = "q < 0.05", file_suffix = "q005")
   hmg[[length(hmg) + 1]] = list(genes = rownames(subset(res_df, padj < 0.01)), title = "q < 0.01", file_suffix = "q001")

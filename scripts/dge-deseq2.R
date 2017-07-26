@@ -96,21 +96,21 @@ if (identical(sort(names(gene_lengths)), sort(rownames(dds)))) {
   message("GTF num genes: ", length(gene_lengths))
   message("counts table num genes: ", nrow(counts_table))
   message("dds genes: ", nrow(dds))
-  stop("genes in GTF and dds do not match")
+  stop("genes in the GTF and the DESeq object do not match")
 }
 
 # save
-save(dds, file = "deseq2.dds.RData")
+saveRDS(dds, file = "deseq2.dds.rds")
 
 # VST
 vsd = varianceStabilizingTransformation(dds, blind = TRUE)
-save(vsd, file = "deseq2.vsd.RData")
+saveRDS(vsd, file = "deseq2.vsd.rds")
 
 # export counts
 write.csv(counts(dds, normalized = FALSE), file = "counts.raw.csv")
 norm_counts_table = counts(dds, normalized = TRUE) %>% round(2)
-write.csv(norm_counts_table, file = "counts.norm.csv")
-write.xlsx2(x = norm_counts_table, file = "counts.norm.xlsx", sheetName = "normalized counts")
+write.csv(norm_counts_table, file = "counts.normalized.csv")
+write.xlsx2(x = norm_counts_table, file = "counts.normalized.xlsx", sheetName = "normalized counts")
 
 # export FPKMs (fragment counts normalized per kilobase of feature length per million mapped fragments)
 fpkm_table = fpkm(dds, robust = TRUE) %>% round(2)

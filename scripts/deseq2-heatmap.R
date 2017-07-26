@@ -18,7 +18,7 @@ deseq2_heatmap = function(mat, genes, samples, title, file_suffix) {
   filename_pdf = paste0("plot.heatmap.", file_suffix, ".", size_text, ".pdf")
 
   # heatmap cells color range: blue-white-red
-  cell_colors = colorRampPalette(c("#010F57", "#010F57", "#FAFAFA", "#B21212", "#B21212"))(50)
+  cell_colors = colorRampPalette(c("#043177", "#244B88", "#FAFAFA", "#C62E2E", "#BF0F0F"))(50)
 
   # adjust row font size based on gene list size
   fontsize_row = 4
