@@ -322,11 +322,6 @@ echo "${sample},${bam_ra_rc}" >> "$samples_csv"
 
 sleep 30
 
-# sort and remove duplicates in place in sample sheet
-LC_ALL=C sort -t ',' -k1,1 -u -o "$samples_csv" "$samples_csv"
-
-sleep 30
-
 
 #########################
 

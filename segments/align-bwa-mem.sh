@@ -190,13 +190,17 @@ else
 	reads_input=$(echo "${fastq_lines}/4" | bc)
 fi
 
-reads_mapped=$(cat "$bwa_flagstat" | grep -m 1 "mapped (" | cut -d ' ' -f 1)
+# "mapped" and "total" lines include secondary alignments
+reads_mapped_all=$(cat "$bwa_flagstat" | grep -m 1 "mapped (" | cut -d ' ' -f 1)
+reads_mapped_sec=$(cat "$bwa_flagstat" | grep -m 1 "secondary" | cut -d ' ' -f 1)
+reads_mapped=$(echo "${reads_mapped_all} - ${reads_mapped_sec}" | bc)
+
 reads_chimeric=$(cat "$bwa_flagstat" | grep -m 1 "mate mapped to a different chr" | cut -d ' ' -f 1)
 
-reads_mapped_pct=$(echo "(${reads_mapped}/${reads_input})*100" | bc -l | cut -c 1-4)
+reads_mapped_pct=$(echo "(${reads_mapped} / ${reads_input}) * 100" | bc -l | cut -c 1-4)
 reads_mapped_pct="${reads_mapped_pct}%"
 
-reads_chimeric_pct=$(echo "(${reads_chimeric}/${reads_mapped})*100" | bc -l | cut -c 1-4)
+reads_chimeric_pct=$(echo "(${reads_chimeric} / ${reads_mapped}) * 100" | bc -l | cut -c 1-4)
 reads_chimeric_pct="${reads_chimeric_pct}%"
 
 # header for summary file
@@ -216,16 +220,6 @@ cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "
 
 # add sample and BAM to sample sheet
 echo "${sample},${bam}" >> "$samples_csv"
-
-sleep 1
-
-# add again (reduce potential loss if another sample is sorting at the same time)
-echo "${sample},${bam}" >> "$samples_csv"
-
-sleep 1
-
-# sort and remove duplicates in place in sample sheet
-LC_ALL=C sort -t ',' -k1,1 -u -o "$samples_csv" "$samples_csv"
 
 sleep 30
 

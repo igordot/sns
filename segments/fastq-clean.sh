@@ -167,7 +167,7 @@ cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "
 
 # exit if FASTQ has very few reads
 
-if [ $reads_R1 -lt 10000 ] ; then
+if [ $reads_R1 -lt 1000 ] ; then
 	echo -e "\n $script_name ERROR: FASTQ $fastq_R1_clean IS TOO SHORT \n" >&2
 	# delete FASTQs since they are not useable
 	rm -fv "$fastq_R1_clean"
@@ -183,16 +183,6 @@ fi
 
 # add sample and FASTQ to sample sheet
 echo "${sample},${fastq_R1_clean},${fastq_R2_clean}" >> "$samples_csv_clean"
-
-sleep 1
-
-# add again (reduce potential loss if another sample is sorting at the same time)
-echo "${sample},${fastq_R1_clean},${fastq_R2_clean}" >> "$samples_csv_clean"
-
-sleep 1
-
-# sort and remove duplicates in place in sample sheet
-LC_ALL=C sort -t ',' -k1,1 -u -o "$samples_csv_clean" "$samples_csv_clean"
 
 sleep 30
 

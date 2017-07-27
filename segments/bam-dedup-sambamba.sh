@@ -151,10 +151,15 @@ fi
 # generate alignment summary
 
 reads_duplicates=$(cat "$bam_dd_log" | grep -m 1 "found.*duplicates" | tr -d -c 0-9)
-reads_dedup=$(cat "$bam_dd_flagstat" | grep -m 1 "mapped (" | cut -d ' ' -f 1)
-reads_mapped=$(echo "${reads_dedup}+${reads_duplicates}" | bc)
 
-reads_duplicates_pct=$(echo "(${reads_duplicates}/${reads_mapped})*100" | bc -l | cut -c 1-4)
+# "mapped" and "total" lines include secondary alignments
+reads_dedup_all=$(cat "$bam_dd_flagstat" | grep -m 1 "mapped (" | cut -d ' ' -f 1)
+reads_dedup_sec=$(cat "$bam_dd_flagstat" | grep -m 1 "secondary" | cut -d ' ' -f 1)
+reads_dedup=$(echo "${reads_dedup_all} - ${reads_dedup_sec}" | bc)
+
+reads_mapped=$(echo "${reads_dedup} + ${reads_duplicates}" | bc)
+
+reads_duplicates_pct=$(echo "(${reads_duplicates} / ${reads_mapped}) * 100" | bc -l | cut -c 1-4)
 reads_duplicates_pct="${reads_duplicates_pct}%"
 
 # header for summary file
@@ -174,11 +179,6 @@ cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "
 
 # add sample and BAM to sample sheet
 echo "${sample},${bam_dd}" >> "$samples_csv"
-
-sleep 30
-
-# sort and remove duplicates in place in sample sheet
-LC_ALL=C sort -t ',' -k1,1 -u -o "$samples_csv" "$samples_csv"
 
 sleep 30
 

@@ -281,16 +281,6 @@ rm -rfv ${star_prefix}_STAR*
 # add sample and BAM to sample sheet
 echo "${sample},${bam}" >> "$samples_csv"
 
-sleep 1
-
-# add again (reduce potential loss if another sample is sorting at the same time)
-echo "${sample},${bam}" >> "$samples_csv"
-
-sleep 1
-
-# sort and remove duplicates in place in sample sheet
-LC_ALL=C sort -t ',' -k1,1 -u -o "$samples_csv" "$samples_csv"
-
 sleep 30
 
 
