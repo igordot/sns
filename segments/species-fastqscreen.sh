@@ -60,7 +60,7 @@ fastqscreen_txt="${fastqscreen_txt/.fastq.gz/}"
 #########################
 
 
-# exit if output exits already
+# exit if output exists already
 
 if [ -s "$fastqscreen_txt" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2

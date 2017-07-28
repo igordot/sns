@@ -92,7 +92,7 @@ vcf_combined="${vcf_dir}/${sample_t}-${sample_n}.all.vcf"
 #########################
 
 
-# skip to annotation if output exits already
+# skip to annotation if output exists already
 
 annot_cmd="bash ${code_dir}/segments/annot-annovar.sh $proj_dir $sample $vcf_combined"
 

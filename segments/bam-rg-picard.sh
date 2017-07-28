@@ -57,7 +57,7 @@ bam_rg="${bam_rg_dir}/${bam_base}.bam"
 #########################
 
 
-# exit if output exits already
+# exit if output exists already
 
 if [ -s "$bam_rg" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2

@@ -85,7 +85,7 @@ vcf_fixed="${vcf_dir}/${sample_t}-${sample_n}.vcf"
 #########################
 
 
-# skip to annotation if output exits already
+# skip to annotation if output exists already
 
 annot_cmd="bash ${code_dir}/segments/annot-annovar.sh $proj_dir $sample $vcf_fixed"
 

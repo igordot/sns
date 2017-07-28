@@ -94,10 +94,11 @@ bismark_nucstats_original="${bismark_logs_dir}/${bismark_id}${suffix_nucstats}"
 #########################
 
 
-# exit if output exits already
+# exit if output exists already
 
 if [ -s "$bismark_bam_final" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
+	echo "${sample},${bismark_bam_final}" >> "$samples_csv"
 	exit 1
 fi
 

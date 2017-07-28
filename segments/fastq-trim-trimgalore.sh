@@ -74,10 +74,11 @@ fi
 #########################
 
 
-# exit if output exits already
+# exit if output exists already
 
 if [ -s "$fastq_R1_trim" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
+	echo "${sample},${fastq_R1_trim},${fastq_R2_trim}" >> "$samples_csv"
 	exit 1
 fi
 

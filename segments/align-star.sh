@@ -76,7 +76,7 @@ star_prefix="${star_logs_dir}/${sample}."
 #########################
 
 
-# exit if output exits already
+# exit if output exists already
 
 # if final BAM exists
 if [ -s "$bam" ] ; then

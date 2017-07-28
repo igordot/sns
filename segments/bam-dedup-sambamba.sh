@@ -64,7 +64,7 @@ bam_dd_flagstat="${dedup_logs_dir}/${sample}.flagstat.txt"
 #########################
 
 
-# exit if output exits already
+# exit if output exists already
 
 if [ -s "$bam_dd" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2

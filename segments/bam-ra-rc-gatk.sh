@@ -103,7 +103,7 @@ gatk_rc_pdf="${gatk_logs_dir}/${sample}.pdf"
 #########################
 
 
-# exit if output exits already
+# exit if output exists already
 
 if [ -s "$bam_ra_rc" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2

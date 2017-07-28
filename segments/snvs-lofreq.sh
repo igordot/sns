@@ -80,7 +80,7 @@ vcf_fixed="${vcf_dir}/${sample}.vcf"
 #########################
 
 
-# exit if output exits already
+# exit if output exists already
 
 if [ -s "$vcf_original" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2

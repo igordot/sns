@@ -69,10 +69,11 @@ bismark_dd_report_original="${bismark_bam/%.bam/.deduplication_report.txt}"
 #########################
 
 
-# exit if output exits already
+# exit if output exists already
 
 if [ -s "$bismark_bam_dd_final" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
+	echo "${sample},${bismark_bam_dd_final}" >> "$samples_csv"
 	exit 1
 fi
 
