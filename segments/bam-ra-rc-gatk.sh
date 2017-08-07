@@ -129,7 +129,7 @@ module load r/3.3.0
 module unload zlib
 
 # command
-gatk_jar="/ifs/home/id460/software/GenomeAnalysisTK-3.6/GenomeAnalysisTK.jar"
+gatk_jar="/ifs/home/id460/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-0/GenomeAnalysisTK.jar"
 gatk_cmd="java -Xms16G -Xmx16G -jar ${gatk_jar}"
 
 if [ ! -s "$gatk_jar" ] ; then

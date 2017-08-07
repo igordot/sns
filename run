@@ -128,7 +128,7 @@ sub run_samples {
 	chomp(@unique_samples);
 
 	# check that sample names do not contain problematic characters
-	my @invalid_samples = grep(/[^\w\-\.]/, @unique_samples);
+	my @invalid_samples = grep(/[^\w\-\.\:]/, @unique_samples);
 	if (@invalid_samples) {
 		my $invalid_samples_str = join(', ', @invalid_samples);
 		die "\n\n ERROR: SAMPLES $invalid_samples_str CONTAIN PROBLEMATIC CHARACTERS \n\n";
