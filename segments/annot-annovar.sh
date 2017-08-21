@@ -90,38 +90,34 @@ fi
 # ANNOVAR genome-specific settings
 
 # ANNOVAR directory
-annovar_path="/ifs/home/id460/software/annovar/annovar-170601"
+annovar_path="/ifs/home/id460/software/annovar/annovar-170716"
 annovar_db_path="/ifs/home/id460/ref/annovar"
 
+# genome build (used to define settings and as table_annovar.pl parameter)
 genome_build=$(basename "$genome_dir")
 
-# annovar_buildver, annovar_protocol, annovar_operation - table_annovar parameters
-# annovar_multianno - table_annovar output
-# annovar_keep_cols - columns to keep for final fixed table
+# table_annovar output file (automatically named)
+annovar_multianno="${annovar_out_prefix}.${genome_build}_multianno.txt"
 
+# genome-specific settings (available annotations differ)
+# annovar_protocol, annovar_operation - table_annovar parameters
+# annovar_cols_grep - column names to grep for the final fixed table
 if [[ "$genome_build" == "hg19" ]] ; then
-	annovar_buildver="hg19"
-	annovar_protocol="refGene,snp138,snp138NonFlagged,exac03,esp6500siv2_all,1000g2015aug_all,cosmic80,cadd13gt10,fathmm"
-	annovar_operation="g,f,f,f,f,f,f,f,f"
-	annovar_argument="'--splicing_threshold 10',,,,,,,,"
-	annovar_multianno="${annovar_out_prefix}.hg19_multianno.txt"
-	annovar_keep_cols="1,5-14,22,23,24,26,27,28"
+	annovar_protocol="refGene,avsnp147,gnomad_exome,gnomad_genome,kaviar_20150923,cosmic80,cadd13gt10,fathmm"
+	annovar_operation="g,f,f,f,f,f,f,f"
+	annovar_argument="'--splicing_threshold 10',,,,,,,"
+	annovar_cols_grep="^Ref|^Alt|refGene|avsnp|gnomAD_exome_ALL|gnomAD_genome_ALL|Kaviar_AF|cosmic|CADD13_PHRED|FATHMM"
 elif [[ "$genome_build" == "mm10" ]] ; then
-	annovar_buildver="mm10"
 	annovar_protocol="refGene,snp142,snp142Common"
 	annovar_operation="g,f,f"
 	annovar_argument="'--splicing_threshold 10',,"
-	annovar_multianno="${annovar_out_prefix}.mm10_multianno.txt"
-	annovar_keep_cols="1,5-13"
+	annovar_cols_grep="^Ref|^Alt|refGene|snp"
 elif [[ "$genome_build" == "sacCer3" ]] ; then
-	annovar_buildver="sacCer3"
 	annovar_protocol="sgdGene,ensGene"
 	annovar_operation="g,g"
 	annovar_argument="'--splicing_threshold 10','--splicing_threshold 10'"
-	annovar_multianno="${annovar_out_prefix}.sacCer3_multianno.txt"
-	annovar_keep_cols="1,5-99"
+	annovar_cols_grep="^Ref|^Alt|Gene"
 else
-	annovar_buildver=""
 	echo -e "\n $script_name ERROR: UNKNOWN GENOME $genome_build \n" >&2
 	exit 1
 fi
@@ -196,9 +192,9 @@ echo " * table_annovar out : $annovar_multianno "
 
 # annotate with annovar (outputs $annovar_multianno)
 table_cmd="
-perl ${annovar_path}/table_annovar.pl $annovar_input ${annovar_db_path}/${annovar_buildver}/ \
+perl ${annovar_path}/table_annovar.pl $annovar_input ${annovar_db_path}/${genome_build}/ \
 --outfile $annovar_out_prefix \
---buildver $annovar_buildver \
+--buildver $genome_build \
 --protocol $annovar_protocol \
 --operation $annovar_operation \
 --argument $annovar_argument \
@@ -225,32 +221,27 @@ fi
 #########################
 
 
-# add identifier, remove some columns, and sort ANNOVAR table
+# prepare ANNOVAR multianno table for merging with variant info from VCF
 
-# columns (original columns shifted by 1 by added identifier):
-# 1 - mutation identifier
-# 2-4 - Chr,Start,End
-# 5-6 - Ref,Alt
-# 7-11 - refGene
+# get column names (add extra column that will become mutation ID)
+unfiltered_header=$(head -1 "$annovar_multianno" | awk -F $'\t' 'BEGIN {OFS=FS} {print "X", $0}')
+# convert column names to comma-separated numbers
+annovar_keep_cols=$(echo "$unfiltered_header" \
+| tr '\t' '\n' \
+| grep -En "$annovar_cols_grep" \
+| cut -d ':' -f 1 \
+| tr '\n' ',')
+# add column 1 (mutation ID) and remove trailing comma
+annovar_keep_cols=$(echo "1,$annovar_keep_cols" | rev | cut -c 2- | rev)
 
-# hg19 columns:
-# 12-13 - snp
-# 14-21 - exac
-# 22 - esp6500
-# 23 - 1000g
-# 24 - cosmic
-# 26 - cadd
-# 27-28 - fathmm
-
-# mm10 columns:
-# 12-13 - snp
-
+# add mutation ID, filter columns, and sort multianno table
 # backslashes in awk to prevent variable expansion and retain quotes
 bash_cmd="
 cat $annovar_multianno \
 | awk -F $'\t' 'BEGIN {OFS=FS} {print \$1 \":\" \$2 \":\" \$4 \":\" \$5, \$0}' \
 | cut -f $annovar_keep_cols \
 | sed 's/Chr:Start:Ref:Alt/#MUT/g' \
+| sed 's/avsnp1/dbSNP_1/g' \
 | LC_ALL=C sort -k1,1 \
 > $annovar_out_fixed
 "
