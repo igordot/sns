@@ -28,6 +28,9 @@ genes_gtf = args[1]
 counts_table_file = args[2]
 groups_table_file = args[3]
 
+# check for arguments
+if (length(args) < 3) stop("not enough arguments provided")
+
 # check that input files exist
 if (!file.exists(counts_table_file)) stop("file does not exist: ", counts_table_file)
 if (!file.exists(groups_table_file)) stop("file does not exist: ", groups_table_file)

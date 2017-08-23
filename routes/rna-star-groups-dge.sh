@@ -138,7 +138,7 @@ sleep 3
 #########################
 
 
-echo -e "\n ========== test R ========== \n"
+echo -e "\n ========== test R environment ========== \n"
 
 # load relevant modules
 module unload java
@@ -154,10 +154,9 @@ echo " * Rscript: $(readlink -f $(which Rscript)) "
 echo " * Rscript version: $(Rscript --version 2>&1) "
 echo
 
-# test R installation and setting
-bash_cmd="Rscript --vanilla ${code_dir}/scripts/test-packages.R"
-echo "CMD: $bash_cmd"
-($bash_cmd)
+Rscript --vanilla ${code_dir}/scripts/test-package.R optparse
+Rscript --vanilla ${code_dir}/scripts/test-package.R mnormt
+Rscript --vanilla ${code_dir}/scripts/test-package.R limma
 
 sleep 3
 

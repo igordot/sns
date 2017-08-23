@@ -307,7 +307,7 @@ echo "total muts: $total_muts"
 coding_muts=$(cat "$annovar_combined" | grep -v 'refGene' | grep 'exon' | wc -l)
 echo "coding muts: $coding_muts"
 
-nonsyn_muts=$(cat "$annovar_combined" | grep -v 'refGene' | grep -E 'nonsynonymous|stopgain|frameshift' | wc -l)
+nonsyn_muts=$(cat "$annovar_combined" | grep -v 'refGene' | grep -E 'nonsynonymous|stopgain|stoploss|frameshift' | wc -l)
 echo "nonsynonymous muts: $coding_muts"
 
 # header for summary file
@@ -329,7 +329,10 @@ cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "
 
 # all mutations
 combine_all_cmd="
-cat ${annovar_dir}/*.combined.txt | LC_ALL=C sort -k1,1 -k2,2 | uniq > ${annovar_dir}.all.txt
+cat ${annovar_dir}/*.combined.txt \
+| LC_ALL=C sort -k1,1 -k2,2 \
+| uniq \
+> ${annovar_dir}.all.txt
 "
 echo -e "\n CMD: $combine_all_cmd \n"
 eval "$combine_all_cmd"
@@ -338,7 +341,9 @@ sleep 1
 
 # coding mutations
 combine_coding_cmd="
-cat ${annovar_dir}.all.txt | grep -E 'refGene|exon|splicing' > ${annovar_dir}.coding.txt
+cat ${annovar_dir}.all.txt \
+| grep -E 'refGene|exon|splicing' \
+> ${annovar_dir}.coding.txt
 "
 echo -e "\n CMD: $combine_coding_cmd \n"
 eval "$combine_coding_cmd"
@@ -347,7 +352,9 @@ sleep 1
 
 # consequence mutations
 combine_nonsyn_cmd="
-cat ${annovar_dir}.all.txt | grep -E 'refGene|nonsynonymous|stopgain|splicing|frameshift' > ${annovar_dir}.nonsyn.txt
+cat ${annovar_dir}.all.txt \
+| grep -E 'refGene|splicing|nonsynonymous|stopgain|stoploss|frameshift' \
+> ${annovar_dir}.nonsyn.txt
 "
 echo -e "\n CMD: $combine_nonsyn_cmd \n"
 eval "$combine_nonsyn_cmd"
