@@ -26,7 +26,7 @@ load_install_packages = function(package_list) {
     }
 
     # load package
-    library(p, character.only = TRUE, quietly = TRUE)
+    suppressPackageStartupMessages(library(p, character.only = TRUE))
 
   }
 

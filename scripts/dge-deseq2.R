@@ -64,22 +64,28 @@ message("GTF median gene length: ", median(gene_lengths))
 # import groups table
 groups_table = read.csv(file = groups_table_file, header = TRUE, row.names = 1, colClasses = "factor")
 message("groups table sample num: ", nrow(groups_table))
-message("groups table groups: ", colnames(groups_table))
+message("groups table samples: ", paste(rownames(groups_table), collapse = ", "))
+message("groups table groups: ", paste(colnames(groups_table), collapse = ", "))
 
 # import counts table
 counts_table = read.delim(file = counts_table_file, header = TRUE, row.names = 1, check.names = FALSE, stringsAsFactors = FALSE)
 message("full counts table gene num: ", nrow(counts_table))
 message("full counts table sample num: ", ncol(counts_table))
+message("full counts table samples: ", paste(colnames(counts_table), collapse = ", "))
+
+# check that all samples from the groups table are found in the counts table
+diff_samples = setdiff(rownames(groups_table), colnames(counts_table))
+if (length(diff_samples)) stop("some samples not in counts table: ", paste(diff_samples, collapse = ", "))
 
 # subset to samples in groups table (also sets samples to be in the same order)
-counts_table = counts_table[,rownames(groups_table)]
+counts_table = counts_table[, rownames(groups_table)]
 message("group-subset counts table gene num: ", nrow(counts_table))
 message("group-subset counts table sample num: ", ncol(counts_table))
 
-# group info
+# group info (use the first column for grouped comparisons)
 group_name = colnames(groups_table)[1]
 message("group name: ", group_name)
-group_levels = levels(groups_table[,group_name])
+group_levels = levels(groups_table[, group_name])
 message("group levels: ", toString(group_levels))
 
 # design formula
@@ -89,8 +95,9 @@ message("design formula: ", design_formula)
 message(" ========== normalize ========== ")
 
 # import raw counts and create DESeq object
+# since v1.16 (11/2016), betaPrior is set to FALSE and shrunken LFCs are obtained afterwards using lfcShrink
 dds = DESeqDataSetFromMatrix(countData = counts_table, colData = groups_table, design = design_formula)
-dds = DESeq(dds, parallel = TRUE, BPPARAM = BiocParallel::MulticoreParam(workers = 4))
+dds = DESeq(dds, betaPrior = TRUE, parallel = TRUE, BPPARAM = BiocParallel::MulticoreParam(workers = 4))
 
 # add gene lengths (used to generate FPKM values)
 if (identical(sort(names(gene_lengths)), sort(rownames(dds)))) {
@@ -131,7 +138,7 @@ print(plotSparsity(dds, normalized = TRUE))
 dev.off()
 
 # PCA plot
-pca_plot = deseq2_pca(vsd, intgroup = c("group"), ntop = 1000)
+pca_plot = deseq2_pca(vsd, intgroup = group_name, ntop = 1000)
 save_plot("plot.pca.pdf", pca_plot, base_width = 8, base_height = 5, units = "in", dpi = 300)
 save_plot("plot.pca.png", pca_plot, base_width = 8, base_height = 5, units = "in", dpi = 300)
 

@@ -30,9 +30,9 @@ deseq2_pca = function(object, intgroup, ntop = 500) {
   }
 
   # add the intgroup factors together to create a new grouping factor
-  intgroup_df = as.data.frame(colData(object)[, intgroup, drop=FALSE])
+  intgroup_df = as.data.frame(colData(object)[, intgroup, drop = FALSE])
   if (length(intgroup) > 1) {
-    fac = factor(apply( intgroup.df, 1, paste, collapse=" : "))
+    fac = factor(apply(intgroup_df, 1, paste, collapse = " : "))
   } else {
     fac = colData(object)[[intgroup]]
   }
