@@ -96,7 +96,7 @@ fi
 module load bowtie2/2.2.6
 module load samtools/1.3
 
-sambamba_bin="/ifs/home/id460/bin/sambamba"
+sambamba_bin="/ifs/home/id460/software/sambamba/sambamba_v0.6.6"
 
 echo " * bowtie2: $(readlink -f $(which bowtie2)) "
 echo " * bowtie2 version: $(bowtie2 --version 2>&1 | head -1) "
