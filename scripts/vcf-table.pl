@@ -31,11 +31,11 @@ sub main {
 	}
 	# print old MuTect somatic header
 	if ($caller eq "MuTect114" || $caller eq "MuTect116") {
-		print "#MUT\tSAMPLE N\tSAMPLE T\tCHR\tPOS\tt_lod_fstar ( log of ( likelihood event is real / likelihood event is seq error ) )\tN Depth\tN Freq\tT Depth\tT Freq\n";
+		print "#MUT\tSAMPLE_N\tSAMPLE_T\tCHR\tPOS\tt_lod_fstar ( log of ( likelihood event is real / likelihood event is seq error ) )\tN Depth\tN Freq\tT Depth\tT Freq\n";
 	}
 	# print somatic header (T and N are separate columns to make it clear which is which)
 	if ($caller eq "MuTect2" || $caller eq "Strelka") {
-		print "#MUT\tSAMPLE T\tSAMPLE N\tCHR\tPOS\tQUAL\tT DEPTH\tT FREQ\tN DEPTH\tN FREQ\n";
+		print "#MUT\tSAMPLE_T\tSAMPLE_N\tCHR\tPOS\tQUAL\tT_DEPTH\tT_FREQ\tN_DEPTH\tN_FREQ\n";
 	}
 
 	# remove header lines
@@ -250,16 +250,7 @@ sub format_mutect_116 {
 	# consider replacing raw depth with q20 depth (q20 depth and frequencies were not available in 1.1.4)
 
 	my $depth_t = $t_alt_count + $t_ref_count;
-	#my $freq_t = 0;
-	#if ($depth_t > 0) {
-	#	$freq_t = sprintf("%.3f", ( $t_alt_count / $depth_t ));
-	#}
-
 	my $depth_n = $n_alt_count + $n_ref_count;
-	#my $freq_n = 0;
-	#if ($depth_n > 0) {
-	#	$freq_n = sprintf("%.3f", ( $n_alt_count / $depth_n ));
-	#}
 
 	my $judgement = $cols[50];
 

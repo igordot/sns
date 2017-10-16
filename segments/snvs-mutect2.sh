@@ -96,7 +96,7 @@ if [ -s "$vcf_fixed" ] ; then
 	exit 1
 fi
 
-if [ -s "$vcf_original" ] ; then
+if [ -f "$vcf_original" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	exit 1
 fi
