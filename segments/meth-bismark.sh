@@ -119,6 +119,8 @@ fi
 # bismark_methylation_extractor
 
 # load module (loads bowtie2/2.2.6 and samtools/1.3)
+module purge
+module load local
 module load bismark/0.18.1
 
 # navigate to output dir

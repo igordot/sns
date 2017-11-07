@@ -88,7 +88,11 @@ fi
 
 # trim galore
 
-module load trim-galore/0.4.1
+# cutadapt is installed as a python package
+module purge
+module load local
+module load python/2.7.3
+module load trim-galore/0.4.4
 
 echo " * trim_galore: $(readlink -f $(which trim_galore)) "
 echo " * trim_galore version: $(trim_galore --version | grep 'version' | tr -s '[:blank:]') "
@@ -104,7 +108,7 @@ echo " * FASTQ R2 TRIMMED: $fastq_R2_trim "
 # optional fastqc
 # --fastqc --fastqc_args ' --threads $THREADS --outdir $FASTQC_DIR ' \
 
-# check for run type
+# check for run type (currently only using for RRBS)
 if [ "$run_type" == "rrbs" ] ; then
 	trim_galore_flags="--length 30 --rrbs"
 else
