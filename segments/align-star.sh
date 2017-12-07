@@ -221,18 +221,18 @@ counts_rev=$(cat $counts_txt | grep -v 'N_' | awk -F $'\t' '{sum+=$4} END {print
 echo "counts rev: $counts_rev"
 
 # perform some sanity checks
-if [ "$counts_unstr" -lt 1000 ] || [ "$counts_fwd" -lt 10 ] || [ "$counts_rev" -lt 10 ] ; then
+if [ "$counts_unstr" -lt 10000 ] || [ "$counts_fwd" -lt 10 ] || [ "$counts_rev" -lt 10 ] ; then
 	echo -e "\n $script_name ERROR: LOW COUNTS \n" >&2
 	exit 1
 fi
 
 lib_strand="unstr"
 
-if [ "$(echo "${counts_fwd}/${counts_rev}" | bc)" -gt 8 ] ; then
+if [ "$(echo "${counts_fwd}/${counts_rev}" | bc)" -gt 5 ] ; then
 	lib_strand="fwd"
 fi
 
-if [ "$(echo "${counts_rev}/${counts_fwd}" | bc)" -gt 8 ] ; then
+if [ "$(echo "${counts_rev}/${counts_fwd}" | bc)" -gt 5 ] ; then
 	lib_strand="rev"
 fi
 

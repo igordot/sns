@@ -75,6 +75,10 @@ unfiltered_sam="${logs_dir}/${sample}.unfiltered.sam"
 bowtie2_txt="${logs_dir}/${sample}.bowtie2.txt"
 flagstat_txt="${logs_dir}/${sample}.flagstat.txt"
 
+# unload all loaded modulefiles
+module purge
+module load local
+
 
 #########################
 
@@ -93,10 +97,10 @@ fi
 
 # Bowtie2
 
-module load bowtie2/2.2.6
+module load bowtie2/2.3.1
 module load samtools/1.3
 
-sambamba_bin="/ifs/home/id460/software/sambamba/sambamba_v0.6.6"
+sambamba_bin="/ifs/home/id460/software/sambamba/sambamba_v0.6.7"
 
 echo " * bowtie2: $(readlink -f $(which bowtie2)) "
 echo " * bowtie2 version: $(bowtie2 --version 2>&1 | head -1) "
@@ -112,7 +116,7 @@ echo " * BAM: $bam "
 # step 1: align with Bowtie2
 # step 2: convert SAM to BAM and remove low quality reads
 # step 3: sort BAM
-# add Picard AddOrReplaceReadGroups for extra compatibility
+# to do: add Picard AddOrReplaceReadGroups for extra compatibility
 
 bash_cmd="
 bowtie2 \

@@ -51,6 +51,10 @@ bismark_cov_gz="${bismark_cov}.gz"
 
 bismark_cpg_report_gz="${bismark_meth_dir}/${sample}.CpG_report.txt.gz"
 
+# unload all loaded modulefiles
+module purge
+module load local
+
 
 #########################
 
@@ -119,8 +123,6 @@ fi
 # bismark_methylation_extractor
 
 # load module (loads bowtie2/2.2.6 and samtools/1.3)
-module purge
-module load local
 module load bismark/0.18.1
 
 # navigate to output dir

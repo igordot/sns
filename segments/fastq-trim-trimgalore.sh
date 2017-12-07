@@ -70,6 +70,10 @@ else
 	fastq_R2_trim=""
 fi
 
+# unload all loaded modulefiles
+module purge
+module load local
+
 
 #########################
 
@@ -89,8 +93,6 @@ fi
 # trim galore
 
 # cutadapt is installed as a python package
-module purge
-module load local
 module load python/2.7.3
 module load trim-galore/0.4.4
 
