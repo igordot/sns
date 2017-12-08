@@ -60,6 +60,10 @@ mkdir -p "$dedup_logs_dir"
 bam_dd_log="${dedup_logs_dir}/${sample}.log.txt"
 bam_dd_flagstat="${dedup_logs_dir}/${sample}.flagstat.txt"
 
+# unload all loaded modulefiles
+module purge
+module load local
+
 
 #########################
 
@@ -78,7 +82,7 @@ fi
 
 # sambamba markdup
 
-sambamba_bin="/ifs/home/id460/software/sambamba/sambamba_v0.6.6"
+sambamba_bin="/ifs/home/id460/software/sambamba/sambamba_v0.6.7"
 
 echo " * sambamba: $(readlink -f $(which $sambamba_bin)) "
 echo " * sambamba version: $($sambamba_bin 2>&1 | head -1) "

@@ -80,8 +80,9 @@ out_prefix_pad500="${out_prefix}.pad500"
 out_prefix_pad100="${out_prefix}.pad100"
 out_prefix_bed="${out_prefix}.bed"
 
-# logs_dir="${proj_dir}/logs-${segment_name}"
-# mkdir -p "$logs_dir"
+# unload all loaded modulefiles
+module purge
+module load local
 
 
 #########################
@@ -100,7 +101,6 @@ fi
 
 # GATK settings
 
-module unload java
 module load java/1.8
 
 # command

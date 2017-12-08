@@ -147,7 +147,7 @@ sub run_samples {
 	my $num_samples = @unique_samples;
 	my $threads;
 	my $sample_pause;
-	if ($num_samples < 15) {
+	if ($num_samples < 10) {
 		$threads = "8-16";
 		$sample_pause = 5;
 	}

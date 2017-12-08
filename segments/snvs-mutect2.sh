@@ -81,6 +81,10 @@ vcf_original="${vcf_dir}/${sample_t}-${sample_n}.original.vcf"
 idx_original="${vcf_original}.idx"
 vcf_fixed="${vcf_dir}/${sample_t}-${sample_n}.vcf"
 
+# unload all loaded modulefiles
+module purge
+module load local
+
 
 #########################
 
@@ -107,7 +111,6 @@ fi
 
 # GATK settings
 
-module unload java
 module load java/1.8
 
 # command

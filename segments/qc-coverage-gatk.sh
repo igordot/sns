@@ -76,8 +76,9 @@ mkdir -p "$cov_dir"
 out_prefix="${cov_dir}/${sample}"
 gatk_sample_summary="${out_prefix}.sample_summary"
 
-# logs_dir="${proj_dir}/logs-${segment_name}"
-# mkdir -p "$logs_dir"
+# unload all loaded modulefiles
+module purge
+module load local
 
 
 #########################
@@ -96,12 +97,13 @@ fi
 
 # GATK settings
 
-module unload java
 module load java/1.8
 
 # command
+# all other GATK segments work with 16G (hg19/mm10 WGS/WES)
+# this segment failed for canFam3 WES (1.1M targets) with error "adjust the maximum heap size provided to Java"
 gatk_jar="/ifs/home/id460/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-0/GenomeAnalysisTK.jar"
-gatk_cmd="java -Xms16G -Xmx16G -jar ${gatk_jar}"
+gatk_cmd="java -Xms32G -Xmx32G -jar ${gatk_jar}"
 
 if [ ! -s "$gatk_jar" ] ; then
 	echo -e "\n $script_name ERROR: GATK $gatk_jar DOES NOT EXIST \n" >&2

@@ -5,7 +5,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -62,6 +63,10 @@ trimmomatic_logs_dir="${proj_dir}/logs-trimmomatic"
 mkdir -p "$trimmomatic_logs_dir"
 trimmomatic_log="${trimmomatic_logs_dir}/${sample}.txt"
 
+# unload all loaded modulefiles
+module purge
+module load local
+
 
 #########################
 
@@ -80,7 +85,6 @@ fi
 
 # trimmomatic
 
-module unload java
 module load java/1.7
 module load trimmomatic/0.33
 
@@ -96,6 +100,7 @@ else
 	fastq_R2_trim_unpaired=""
 fi
 
+echo
 echo " * trimmomatic: $trimmomatic_jar "
 echo " * RUN TYPE: $run_type_arg "
 echo " * FASTQ R1: $fastq_R1 "
@@ -104,6 +109,7 @@ echo " * FASTQ R1 TRIMMED: $fastq_R1_trim "
 echo " * FASTQ R2 TRIMMED: $fastq_R2_trim "
 echo " * FASTQ R1 TRIMMED UNPAIRED: $fastq_R1_trim_unpaired "
 echo " * FASTQ R2 TRIMMED UNPAIRED: $fastq_R2_trim_unpaired "
+echo
 
 bash_cmd="
 java -Xms16G -Xmx16G -jar $trimmomatic_jar \
@@ -120,8 +126,8 @@ eval "$bash_cmd"
 sleep 30
 
 # delete unpaired files
-rm -fv $fastq_R1_trim_unpaired
-rm -fv $fastq_R2_trim_unpaired
+rm -fv "$fastq_R1_trim_unpaired"
+rm -fv "$fastq_R2_trim_unpaired"
 
 
 #########################

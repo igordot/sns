@@ -5,7 +5,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -38,16 +39,16 @@ if [ ! -s "$bam" ] ; then
 	exit 1
 fi
 
-code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
+code_dir=$(dirname $(dirname "$script_path"))
 
-ref_fasta=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-FASTA)
+ref_fasta=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-FASTA)
 
 if [ ! -s "$ref_fasta" ] ; then
 	echo -e "\n $script_name ERROR: FASTA $ref_fasta DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
-bed=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-TARGETS-BED $found_bed)
+bed=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-TARGETS-BED $found_bed)
 
 if [ ! -s "$bed" ] ; then
 	echo -e "\n $script_name ERROR: BED $bed DOES NOT EXIST \n" >&2
@@ -60,15 +61,15 @@ fi
 
 # settings and files
 
-# summary_dir="${proj_dir}/summary"
-# mkdir -p "$summary_dir"
-# summary_csv="${summary_dir}/${sample}.${segment_name}.csv"
-
 vcf_dir="${proj_dir}/VCF-GATK-HC"
 mkdir -p "$vcf_dir"
 vcf_original="${vcf_dir}/${sample}.original.vcf"
 idx_original="${vcf_original}.idx"
 vcf_fixed="${vcf_dir}/${sample}.vcf"
+
+# unload all loaded modulefiles
+module purge
+module load local
 
 
 #########################
@@ -92,7 +93,6 @@ fi
 
 # GATK settings
 
-module unload java
 module load java/1.8
 
 # command
@@ -113,12 +113,14 @@ fi
 
 # GATK HaplotypeCaller
 
+echo
 echo " * GATK: $(readlink -f $gatk_jar) "
 echo " * GATK version: $($gatk_cmd --version) "
 echo " * BAM: $bam "
 echo " * INTERVALS: $bed "
 echo " * VCF original: $vcf_original "
 echo " * VCF fixed: $vcf_fixed "
+echo
 
 gatk_hc_cmd="
 $gatk_cmd -T HaplotypeCaller -dt NONE $gatk_log_level_arg \

@@ -5,7 +5,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -38,30 +39,30 @@ if [ ! -s "$bam" ] ; then
 	exit 1
 fi
 
-code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
+code_dir=$(dirname $(dirname "$script_path"))
 
-genome_dir=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" GENOME-DIR)
+genome_dir=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" GENOME-DIR)
 
 if [ ! -d "$genome_dir" ] ; then
 	echo -e "\n $script_name ERROR: GENOME DIR $genome_dir DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
-ref_fasta=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-FASTA)
+ref_fasta=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-FASTA)
 
 if [ ! -s "$ref_fasta" ] ; then
 	echo -e "\n $script_name ERROR: FASTA $ref_fasta DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
-ref_dict=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-DICT)
+ref_dict=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-DICT)
 
 if [ ! -s "$ref_dict" ] ; then
 	echo -e "\n $script_name ERROR: DICT $ref_dict DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
-found_bed=$(find $proj_dir -maxdepth 1 -type f -iname "*.bed" | grep -v "probes" | sort | head -1)
+found_bed=$(find "$proj_dir" -maxdepth 1 -type f -iname "*.bed" | grep -v "probes" | sort | head -1)
 bed=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-TARGETS-BED $found_bed)
 
 if [ ! -s "$bed" ] ; then
@@ -77,7 +78,7 @@ fi
 
 samples_csv="${proj_dir}/samples.${segment_name}.csv"
 
-# account for both dedup (.dd.bam) non-dedup (.bam) input BAMs
+# should account for both dedup (.dd.bam) non-dedup (.bam) input BAMs
 bam_base=$(basename "$bam")
 bam_base=${bam_base/%.bam/}
 
@@ -98,6 +99,10 @@ gatk_rc_table1="${gatk_logs_dir}/${sample}.table1.txt"
 gatk_rc_table2="${gatk_logs_dir}/${sample}.table2.txt"
 gatk_rc_csv="${gatk_logs_dir}/${sample}.csv"
 gatk_rc_pdf="${gatk_logs_dir}/${sample}.pdf"
+
+# unload all loaded modulefiles
+module purge
+module load local
 
 
 #########################
@@ -122,11 +127,8 @@ fi
 
 # GATK settings
 
-module unload java
-module unload r
 module load java/1.8
 module load r/3.3.0
-module unload zlib
 
 # command
 gatk_jar="/ifs/home/id460/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-0/GenomeAnalysisTK.jar"
@@ -141,22 +143,26 @@ fi
 gatk_log_level_arg="--logging_level ERROR"
 
 # known variants (may vary greatly for each genome)
-if [[ "$genome_dir" == */hg19 ]] ; then
+genome_build=$(basename "$genome_dir")
+if [[ "$genome_build" == "hg19" ]] ; then
 	gatk_indel_vcf_1="${genome_dir}/gatk-bundle/1000G_phase1.indels.hg19.vcf"
 	gatk_indel_vcf_2="${genome_dir}/gatk-bundle/Mills_and_1000G_gold_standard.indels.hg19.vcf"
 	gatk_snp_vcf="${genome_dir}/gatk-bundle/dbsnp_138.hg19.vcf"
 	gatk_ra_known_arg="-known $gatk_indel_vcf_1 -known $gatk_indel_vcf_2"
 	gatk_rc_known_arg="-knownSites $gatk_indel_vcf_1 -knownSites $gatk_indel_vcf_2 -knownSites $gatk_snp_vcf"
-elif [[ "$genome_dir" == */mm10 ]] ; then
+elif [[ "$genome_build" == "mm10" ]] ; then
 	gatk_indel_vcf="${genome_dir}/MGP/mgp.v5.indels.pass.chr.sort.vcf"
 	gatk_snp_vcf="${genome_dir}/dbSNP/dbsnp.146.vcf"
 	gatk_ra_known_arg="-known $gatk_indel_vcf"
 	gatk_rc_known_arg="-knownSites $gatk_indel_vcf -knownSites $gatk_snp_vcf"
-elif [[ "$genome_dir" == */dm3$ ]] ; then
-	gatk_ra_known_arg="-known xxxxx"
+elif [[ "$genome_build" == "canFam3" ]] ; then
+	# for canFam3, indels are a subset of all dbSNP variants
+	gatk_indel_vcf="${genome_dir}/dbSNP/dbsnp.151.indel.vcf"
+	gatk_snp_vcf="${genome_dir}/dbSNP/dbsnp.151.vcf"
+	gatk_ra_known_arg="-known $gatk_indel_vcf"
+	gatk_rc_known_arg="-knownSites $gatk_snp_vcf"
 else
-	# should adjust
-	echo -e "\n $script_name ERROR: genome $genome_dir not supported \n" >&2
+	echo -e "\n $script_name ERROR: genome $genome_build at $genome_dir not supported \n" >&2
 	exit 1
 fi
 
@@ -166,15 +172,26 @@ fi
 
 # test R (GATK uses R for plotting)
 
+echo
 echo " * R: $(readlink -f $(which R)) "
 echo " * R version: $(R --version | head -1) "
 echo " * Rscript: $(readlink -f $(which Rscript)) "
 echo " * Rscript version: $(Rscript --version 2>&1) "
+echo
 
-# test R settings and install missing packages if needed
-test_r_cmd="Rscript --vanilla ${code_dir}/scripts/test-packages.R"
-echo "CMD: $test_r_cmd"
-($test_r_cmd)
+# basic packages
+Rscript --vanilla ${code_dir}/scripts/test-package.R getopt
+Rscript --vanilla ${code_dir}/scripts/test-package.R optparse
+
+# required by GATK 3
+Rscript --vanilla ${code_dir}/scripts/test-package.R gsalib
+Rscript --vanilla ${code_dir}/scripts/test-package.R reshape
+Rscript --vanilla ${code_dir}/scripts/test-package.R gplots
+Rscript --vanilla ${code_dir}/scripts/test-package.R ggplot2
+
+# required by GATK 4
+Rscript --vanilla ${code_dir}/scripts/test-package.R data.table
+Rscript --vanilla ${code_dir}/scripts/test-package.R naturalsort
 
 
 #########################
@@ -182,10 +199,12 @@ echo "CMD: $test_r_cmd"
 
 # realignment
 
+echo
 echo " * GATK: $(readlink -f $gatk_jar) "
 echo " * GATK version: $($gatk_cmd --version) "
 echo " * BAM IN: $bam "
 echo " * BAM RA: $bam_ra "
+echo
 
 gatk_ra1_cmd="
 $gatk_cmd -T RealignerTargetCreator -dt NONE $gatk_log_level_arg \
@@ -303,13 +322,15 @@ fi
 
 # clean up
 
-# move .bai to .bam.bai (some tools expect that)
+# move .bai (GATK convention) to .bam.bai (samtools convention) since some tools expect that
 mv -v "$bai_ra_rc" "${bam_ra_rc}.bai"
 
-# delete files that are no longer needed
+# delete realignment files that are no longer needed
 rm -fv "$bam_ra"
 rm -fv "$bai_ra"
 rm -fv "$gatk_ra_intervals"
+
+# delete recalibration files that are no longer needed
 rm -fv "$gatk_rc_table1"
 rm -fv "$gatk_rc_table2"
 
