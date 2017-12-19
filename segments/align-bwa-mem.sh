@@ -28,31 +28,6 @@ fastq_R2=$5
 #########################
 
 
-# check that inputs exist
-
-if [ ! -d "$proj_dir" ] ; then
-	echo -e "\n $script_name ERROR: DIR $proj_dir DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-if [ ! -s "$fastq_R1" ] ; then
-	echo -e "\n $script_name ERROR: FASTQ $fastq_R1 DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-code_dir=$(dirname $(dirname "$script_path"))
-
-ref_bwa=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-BWA)
-
-if [ ! -s "$ref_bwa" ] || [ ! -n "$ref_bwa" ] ; then
-	echo -e "\n $script_name ERROR: REF $ref_bwa DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-
-#########################
-
-
 # settings and files
 
 summary_dir="${proj_dir}/summary"
@@ -83,6 +58,31 @@ module load local
 if [ -s "$bam" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	echo "${sample},${bam}" >> "$samples_csv"
+	exit 1
+fi
+
+
+#########################
+
+
+# check that inputs exist
+
+if [ ! -d "$proj_dir" ] ; then
+	echo -e "\n $script_name ERROR: DIR $proj_dir DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+if [ ! -s "$fastq_R1" ] ; then
+	echo -e "\n $script_name ERROR: FASTQ $fastq_R1 DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+code_dir=$(dirname $(dirname "$script_path"))
+
+ref_bwa=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-BWA)
+
+if [ ! -s "$ref_bwa" ] || [ ! -n "$ref_bwa" ] ; then
+	echo -e "\n $script_name ERROR: REF $ref_bwa DOES NOT EXIST \n" >&2
 	exit 1
 fi
 

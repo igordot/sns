@@ -5,7 +5,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -25,24 +26,6 @@ bam=$3
 #########################
 
 
-# check that inputs exist
-
-if [ ! -d "$proj_dir" ] ; then
-	echo -e "\n $script_name ERROR: PROJ DIR $proj_dir DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-if [ ! -s "$bam" ] ; then
-	echo -e "\n $script_name ERROR: BAM $bam DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
-
-
-#########################
-
-
 # settings and files
 
 summary_dir="${proj_dir}/summary"
@@ -55,6 +38,10 @@ frag_sizes_png="${frag_sizes_dir}/${sample}.png"
 frag_sizes_freq_csv="${frag_sizes_dir}/${sample}.freq.csv"
 frag_sizes_stats_csv="${frag_sizes_dir}/${sample}.stats.csv"
 
+# unload all loaded modulefiles
+module purge
+module load local
+
 
 #########################
 
@@ -65,6 +52,24 @@ if [ -s "$frag_sizes_freq_csv" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	exit 1
 fi
+
+
+#########################
+
+
+# check that inputs exist
+
+if [ ! -d "$proj_dir" ] ; then
+	echo -e "\n $script_name ERROR: PROJ DIR $proj_dir DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+if [ ! -s "$bam" ] ; then
+	echo -e "\n $script_name ERROR: BAM $bam DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+code_dir=$(dirname $(dirname "$script_path"))
 
 
 #########################

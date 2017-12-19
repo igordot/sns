@@ -5,7 +5,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -22,30 +23,6 @@ sample=$2
 threads=$3
 fastq_R1=$4
 fastq_R2=$5
-
-
-#########################
-
-
-# check that inputs exist
-
-if [ ! -d "$proj_dir" ] ; then
-	echo -e "\n $script_name ERROR: DIR $proj_dir DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-if [ ! -s "$fastq_R1" ] ; then
-	echo -e "\n $script_name ERROR: FASTQ $fastq_R1 DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
-ref_star=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-STAR)
-
-if [ ! -s "${ref_star}/SA" ] ; then
-	echo -e "\n $script_name ERROR: REF $ref_star DOES NOT EXIST \n" >&2
-	exit 1
-fi
 
 
 #########################
@@ -72,6 +49,10 @@ star_logs_dir="${proj_dir}/logs-${segment_name}"
 mkdir -p "$star_logs_dir"
 star_prefix="${star_logs_dir}/${sample}."
 
+# unload all loaded modulefiles
+module purge
+module load local
+
 
 #########################
 
@@ -95,11 +76,35 @@ fi
 #########################
 
 
+# check that inputs exist
+
+if [ ! -d "$proj_dir" ] ; then
+	echo -e "\n $script_name ERROR: DIR $proj_dir DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+if [ ! -s "$fastq_R1" ] ; then
+	echo -e "\n $script_name ERROR: FASTQ $fastq_R1 DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+code_dir=$(dirname $(dirname "$script_path"))
+
+ref_star=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-STAR)
+
+if [ ! -s "${ref_star}/SA" ] ; then
+	echo -e "\n $script_name ERROR: REF $ref_star DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+
+#########################
+
+
 # STAR
 
-module unload samtools
 module load samtools/1.3
-# module load star/2.5.0c has issues
+# star/2.5.0c has issues
 module load star/2.4.5a
 
 echo " * STAR: $(readlink -f $(which STAR)) "
@@ -249,7 +254,7 @@ echo "experiment strand: $exp_strand"
 # generate alignment summary
 
 # header for summary file
-echo "#SAMPLE,INPUT READS,UNIQUELY MAPPED,MULTI-MAPPED,UNIQUELY MAPPED %,MULTI-MAPPED %" > $summary_csv
+echo "#SAMPLE,INPUT READS,UNIQUELY MAPPED,MULTI-MAPPED,UNIQUELY MAPPED %,MULTI-MAPPED %" > "$summary_csv"
 
 # print the relevant numbers from log file
 star_log_final="${star_prefix}Log.final.out"
@@ -260,7 +265,7 @@ paste -d ',' \
 <(cat "$star_log_final" | grep "Number of reads mapped to too many loci" | head -1 | tr -d "[:blank:]" | cut -d "|" -f 2) \
 <(cat "$star_log_final" | grep "Uniquely mapped reads %"                 | head -1 | tr -d "[:blank:]" | cut -d "|" -f 2) \
 <(cat "$star_log_final" | grep "% of reads mapped to too many loci"      | head -1 | tr -d "[:blank:]" | cut -d "|" -f 2) \
->> $summary_csv
+>> "$summary_csv"
 
 sleep 30
 
