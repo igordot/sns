@@ -121,15 +121,15 @@ convert "${fastqscreen_dir}/*screen.png" "$combined_pdf"
 
 # combine charts into a single png
 
-combined_png_3w="${proj_dir}/summary.fastqscreen.3w.png"
+combined_png_2w="${proj_dir}/summary.fastqscreen.2w.png"
 combined_png_4w="${proj_dir}/summary.fastqscreen.4w.png"
 
-rm -f "$combined_png_3w"
+rm -f "$combined_png_2w"
 rm -f "$combined_png_4w"
 
 # -geometry +20+20 = 20px x and y padding
 # -tile 3x = 3 images wide
-montage -geometry +20+20 -tile 3x "${fastqscreen_dir}/*screen.png" "$combined_png_3w"
+montage -geometry +20+20 -tile 2x "${fastqscreen_dir}/*screen.png" "$combined_png_2w"
 montage -geometry +20+20 -tile 4x "${fastqscreen_dir}/*screen.png" "$combined_png_4w"
 
 

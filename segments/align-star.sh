@@ -47,7 +47,7 @@ counts_txt="${star_quant_dir}/${sample}.txt"
 
 star_logs_dir="${proj_dir}/logs-${segment_name}"
 mkdir -p "$star_logs_dir"
-star_prefix="${star_logs_dir}/${sample}."
+star_prefix="${star_logs_dir}/${sample}_"
 
 # unload all loaded modulefiles
 module purge
@@ -103,19 +103,18 @@ fi
 
 # STAR
 
-module load samtools/1.3
-# star/2.5.0c has issues
-module load star/2.4.5a
+module load star/2.5.3a
 
 echo " * STAR: $(readlink -f $(which STAR)) "
 echo " * samtools: $(readlink -f $(which samtools)) "
-echo " * STAR REF: $ref_star "
+echo " * samtools version: $(samtools --version | head -1) "
+echo " * STAR ref: $ref_star "
 echo " * FASTQ R1: $fastq_R1 "
 echo " * FASTQ R2: $fastq_R2 "
 echo " * BAM: $bam "
 
-# change dir because star writes a log file to pwd
-cd "$proj_dir"
+# change dir because STAR and samtools may generate temp or log files in working dir
+cd "$star_logs_dir"
 
 # --outFilterType BySJout - ENCODE standard option
 # --outSAMmapqUnique - int: 0 to 255: the MAPQ value for unique mappers
@@ -129,7 +128,7 @@ STAR \
 --runThreadN $threads \
 --genomeDir $ref_star \
 --genomeLoad NoSharedMemory \
---outFilterMismatchNoverLmax 0.05 \
+--outFilterMismatchNoverLmax 0.2 \
 --outFilterMultimapNmax 1 \
 --outFilterType BySJout \
 --outSAMstrandField intronMotif \
@@ -142,7 +141,7 @@ STAR \
 --quantMode GeneCounts \
 --outSAMtype BAM Unsorted \
 --outStd BAM_Unsorted | \
-samtools sort -@ $threads -m 4G -T $sample -o $bam -
+samtools sort -@ $threads -m 4G -T ${sample}.samtools -o $bam -
 "
 echo "CMD: $bash_cmd"
 eval "$bash_cmd"
@@ -155,6 +154,13 @@ echo "CMD: $bash_cmd"
 eval "$bash_cmd"
 
 sleep 30
+
+
+#########################
+
+
+# delete tmp directories (_STARtmp should be empty at this point)
+rm -rfv ${star_prefix}_STAR*
 
 
 #########################
@@ -190,7 +196,7 @@ fi
 
 
 # STAR counts
-# not using STAR counts later, since it's hard to filter and they have gene ids instead of names
+# not using the counts downstream since the file is hard to filter and uses gene ids instead of gene names
 
 # STAR outputs read counts per gene into ReadsPerGene.out.tab file with 4 columns which correspond to strandedness:
 # column 1: gene ID
@@ -271,13 +277,6 @@ sleep 30
 
 # combine all sample summaries
 cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.${segment_name}.csv"
-
-
-#########################
-
-
-# delete tmp directories (_STARtmp should be empty at this point)
-rm -rfv ${star_prefix}_STAR*
 
 
 #########################
