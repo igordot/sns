@@ -188,7 +188,8 @@ sub run_samples {
 		$email = `echo $email`;
 		chomp($email);
 		my $qsub_name = "sns.${route}.${sample}";
-		my $qsub_mem = "-hard -l mem_free=64G";
+		# using memory limits to avoid busy nodes and prevent many jobs going to the same node
+		my $qsub_mem = "-hard -l mem_free=150G -l mem_token=15G";
 		my $qsub_thread = "-pe threaded ${threads}";
 		my $qsub_cmd_base = "qsub -q all.q -cwd -b y -j y -N $qsub_name -M $email -m a $qsub_mem";
 		my $qsub_cmd = "$qsub_cmd_base $qsub_thread $cmd";
