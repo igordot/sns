@@ -10,7 +10,8 @@
 
 # increase output width
 options(width = 120)
-
+# print warnings as they occur
+options(warn = 1)
 # java heap size
 options(java.parameters = "-Xmx8G")
 
@@ -34,6 +35,10 @@ if (length(args) < 3) stop("not enough arguments provided")
 # check that input files exist
 if (!file.exists(counts_table_file)) stop("file does not exist: ", counts_table_file)
 if (!file.exists(groups_table_file)) stop("file does not exist: ", groups_table_file)
+
+# create separate directories for certain output files
+r_dir = "r-data"
+if (!dir.exists(r_dir)) dir.create(r_dir)
 
 # load relevant packages
 load_install_packages("magrittr")
@@ -60,33 +65,38 @@ message("GTF genes: ", length(exons_by_gene))
 gene_lengths = exons_by_gene %>% reduce %>% width %>% sum
 message("GTF mean gene length: ", round(mean(gene_lengths), 1))
 message("GTF median gene length: ", median(gene_lengths))
-
-# import groups table
-groups_table = read.csv(file = groups_table_file, header = TRUE, row.names = 1, colClasses = "factor")
-message("groups table sample num: ", nrow(groups_table))
-message("groups table samples: ", paste(rownames(groups_table), collapse = ", "))
-message("groups table groups: ", paste(colnames(groups_table), collapse = ", "))
+message("")
 
 # import counts table
 counts_table = read.delim(file = counts_table_file, header = TRUE, row.names = 1, check.names = FALSE, stringsAsFactors = FALSE)
-message("full counts table gene num: ", nrow(counts_table))
-message("full counts table sample num: ", ncol(counts_table))
-message("full counts table samples: ", paste(colnames(counts_table), collapse = ", "))
+message("input counts table gene num: ", nrow(counts_table))
+message("input counts table sample num: ", ncol(counts_table))
+message("input counts table samples: ", toString(colnames(counts_table)))
+message("")
+
+# import groups table
+groups_table = read.csv(file = groups_table_file, header = TRUE, row.names = 1, colClasses = "factor")
+message("sample groups table sample num: ", nrow(groups_table))
+message("sample groups table samples: ", toString(rownames(groups_table)))
+message("sample groups table groups: ", toString(colnames(groups_table)))
+message("")
 
 # check that all samples from the groups table are found in the counts table
 diff_samples = setdiff(rownames(groups_table), colnames(counts_table))
-if (length(diff_samples)) stop("some samples not in counts table: ", paste(diff_samples, collapse = ", "))
+if (length(diff_samples)) stop("some samples not in counts table: ", toString(diff_samples))
 
 # subset to samples in groups table (also sets samples to be in the same order)
 counts_table = counts_table[, rownames(groups_table)]
-message("group-subset counts table gene num: ", nrow(counts_table))
-message("group-subset counts table sample num: ", ncol(counts_table))
+message("subset counts table gene num: ", nrow(counts_table))
+message("subset counts table sample num: ", ncol(counts_table))
+message("")
 
 # group info (use the first column for grouped comparisons)
 group_name = colnames(groups_table)[1]
 message("group name: ", group_name)
 group_levels = levels(groups_table[, group_name])
 message("group levels: ", toString(group_levels))
+message("")
 
 # design formula
 design_formula = formula(paste("~", group_name))
@@ -106,15 +116,15 @@ if (identical(sort(names(gene_lengths)), sort(rownames(dds)))) {
   message("GTF num genes: ", length(gene_lengths))
   message("counts table num genes: ", nrow(counts_table))
   message("dds genes: ", nrow(dds))
-  stop("genes in the GTF and the DESeq object do not match")
+  stop("genes in the GTF and the DESeq dataset object do not match")
 }
-
-# save
-saveRDS(dds, file = "deseq2.dds.rds")
 
 # VST
 vsd = varianceStabilizingTransformation(dds, blind = TRUE)
-saveRDS(vsd, file = "deseq2.vsd.rds")
+
+# save DESeqDataSet and VST DESeqTransform objects
+saveRDS(dds, file = paste0(r_dir, "/deseq2.dds.rds"))
+saveRDS(vsd, file = paste0(r_dir, "/deseq2.vsd.rds"))
 
 # export counts
 write.csv(counts(dds, normalized = FALSE), file = "counts.raw.csv")

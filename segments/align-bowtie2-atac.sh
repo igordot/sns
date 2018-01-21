@@ -100,7 +100,7 @@ sambamba_bin="/ifs/home/id460/software/sambamba/sambamba_v0.6.6"
 
 echo " * bowtie2: $(readlink -f $(which bowtie2)) "
 echo " * bowtie2 version: $(bowtie2 --version 2>&1 | head -1) "
-echo " * sambamba: $(readlink -f $(which $sambamba_bin)) "
+echo " * sambamba: $(readlink -f $sambamba_bin) "
 echo " * sambamba version: $($sambamba_bin 2>&1 | head -1) "
 echo " * samtools: $(readlink -f $(which samtools)) "
 echo " * samtools version: $(samtools --version | head -1) "

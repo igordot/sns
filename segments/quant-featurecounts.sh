@@ -12,7 +12,7 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 # check for correct number of arguments
 if [ ! $# == 6 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
-	echo -e "\n USAGE: $script_name [project dir] [sample] [threads] [bam] [PE/SE] [strand] \n" >&2
+	echo -e "\n USAGE: $script_name project_dir sample_name threads BAM PE/SE strand \n" >&2
 	exit 1
 fi
 
@@ -23,10 +23,6 @@ threads=$3
 bam=$4
 run_type=$5
 strand=$6
-
-# strand:
-# fwd | transcript             | cufflinks "fr-secondstrand" | htseq "yes"     | picard "FIRST_READ"
-# rev | rev comp of transcript | cufflinks "fr-firststrand"  | htseq "reverse" | picard "SECOND_READ"
 
 
 #########################
@@ -118,10 +114,14 @@ module load subread/1.4.6-p3
 cd "$fc_logs_dir"
 
 echo " * featureCounts: $(readlink -f $(which featureCounts)) "
-echo " * RUN TYPE: $run_type "
+echo " * run type: $run_type "
 echo " * BAM: $bam "
 echo " * GTF: $gtf "
-echo " * COUNTS: $counts_clean "
+echo " * counts: $counts_clean "
+
+# strand:
+# fwd | transcript             | cufflinks "fr-secondstrand" | htseq "yes"     | picard "FIRST_READ"
+# rev | rev comp of transcript | cufflinks "fr-firststrand"  | htseq "reverse" | picard "SECOND_READ"
 
 # Summarize a single-end read dataset using 5 threads:
 # featureCounts -T 5 -t exon -g gene_id -a annotation.gtf -o counts.txt mapping_results_SE.sam

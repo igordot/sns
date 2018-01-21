@@ -12,9 +12,10 @@ load_install_packages = function(package_list) {
     # create local user library path (not present by default)
     dir.create(path = Sys.getenv("R_LIBS_USER"), showWarnings = FALSE, recursive = TRUE)
 
-    # try to install using biocLite() (installs both Bioconductor and CRAN packages)
+    # check if package is installed and try to install if not
+    # install using biocLite() (installs both Bioconductor and CRAN packages)
     # use require() instead of installed.packages() to check that package is both installed and usable
-    if (!require(p, character.only = TRUE, quietly = TRUE)) {
+    if (!suppressPackageStartupMessages(require(p, character.only = TRUE, quietly = TRUE))) {
       message("installing package: ", p)
       source("https://bioconductor.org/biocLite.R")
       biocLite(p, suppressUpdates = TRUE, lib = Sys.getenv("R_LIBS_USER"))

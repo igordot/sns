@@ -9,6 +9,12 @@ deseq2_results = function(deseq_dataset, contrast = NULL, name = NULL) {
   library(DESeq2)
   library(xlsx)
 
+  # create separate directories for certain output files
+  r_dir = "r-data"
+  if (!dir.exists(r_dir)) dir.create(r_dir)
+  heatmaps_dir = "heatmaps"
+  if (!dir.exists(heatmaps_dir)) dir.create(heatmaps_dir)
+
   # calculate results (using contrast or name, depending on what is given)
   # since v1.16 (11/2016), lfcShrink function performs fold change shrinkage and addMLE is for backward compatibility
   if(!is.null(contrast)) {
@@ -29,8 +35,8 @@ deseq2_results = function(deseq_dataset, contrast = NULL, name = NULL) {
   res = res[order(res$padj, res$pvalue, -res$baseMean), ]
 
   # save unmodified results object
-  res_rds = paste0("deseq2.res.", file_suffix, ".rds")
-  saveRDS(dds, file = res_rds)
+  res_rds = paste0(r_dir, "/deseq2.res.", file_suffix, ".rds")
+  saveRDS(res, file = res_rds)
   message("save results object: ", res_rds)
 
   # save unmodified results as csv
@@ -70,16 +76,12 @@ deseq2_results = function(deseq_dataset, contrast = NULL, name = NULL) {
   message("save filtered results xlsx: ", res_padj005_xlsx)
 
   # heatmap variance stabilized values matrix
-  vsd = assay(varianceStabilizingTransformation(dds, blind = TRUE))
+  vsd = assay(varianceStabilizingTransformation(deseq_dataset, blind = TRUE))
 
   # all samples and the subset used for the comparison
   samples_all = colnames(deseq_dataset)
   samples_comp = samples_all
   if(!is.null(contrast)) samples_comp = rownames(subset(deseq_dataset@colData, group %in% contrast[2:3]))
-
-  # create a separate directory for heatmaps
-  heatmaps_dir = "heatmaps"
-  if (!dir.exists(heatmaps_dir)) dir.create(heatmaps_dir)
 
   # heatmap gene subsets (list with genes, plot title, and file suffix)
   hmg = list()
