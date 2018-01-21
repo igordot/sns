@@ -5,7 +5,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -61,26 +62,45 @@ num_files=$(grep -c "^${sample}," "${samples_csv}")
 
 # scan for files that belong to the sample
 grep "^${sample}," "${samples_csv}" | LC_ALL=C sort | while read -r LINE ; do
+
 	fastq_R1=$(echo "$LINE" | cut -d "," -f 2)
 	fastq_R2=$(echo "$LINE" | cut -d "," -f 3)
 	fastq_R1=$(readlink -f "$fastq_R1")
 	fastq_R2=$(readlink -f "$fastq_R2")
 
-	# check that R1 file exists and not set to null
-	if [ ! -e "$fastq_R1" ] || [ ! -n "$fastq_R1" ] ; then
-		echo -e "\n $script_name ERROR: FASTQ R1 $fastq_R1 DOES NOT EXIST \n"
+	# check that R1 file is not set to null and exists
+	if [ ! -n "$fastq_R1" ] || [ ! -e "$fastq_R1" ] ; then
+		echo -e "\n $script_name ERROR: INPUT FASTQ R1 $fastq_R1 DOES NOT EXIST \n"
 		exit 1
 	fi
 
 	# check that R2 file exists if specified
-	if [ ! -e "$fastq_R2" ] && [ -n "$fastq_R2" ] ; then
-		echo -e "\n $script_name ERROR: FASTQ R2 $fastq_R2 DOES NOT EXIST \n"
+	if [ -n "$fastq_R2" ] && [ ! -e "$fastq_R2" ] ; then
+		echo -e "\n $script_name ERROR: INPUT FASTQ R2 $fastq_R2 DOES NOT EXIST \n"
 		exit 1
+	fi
+
+	# check R1 file integrity and clear the output file if there is a problem
+	if ! gzip --test "$fastq_R1" ; then
+		echo -e "\n $script_name ERROR: INPUT FASTQ R1 $fastq_R1 IS CORRUPT \n"
+		num_files="0"
+		echo "." > "$fastq_R1_clean"
+		exit 1
+	fi
+
+	# check R2 file integrity if specified and clear the output file if there is a problem
+	if [ -n "$fastq_R2" ] ; then
+		if ! gzip --test "$fastq_R2" ; then
+			echo -e "\n $script_name ERROR: INPUT FASTQ R2 $fastq_R2 IS CORRUPT \n"
+			num_files="0"
+			echo "." > "$fastq_R2_clean"
+			exit 1
+		fi
 	fi
 
 	if [ "$num_files" -gt 1 ] ; then
 
-		# merge multple FASTQs
+		# merge multiple FASTQs
 
 		bash_cmd="cat $fastq_R1 >> $fastq_R1_clean"
 		echo "CMD: $bash_cmd"
@@ -118,27 +138,20 @@ done
 #########################
 
 
-# check if output exists
+# count number of reads in clean output FASTQs
 
-if [ ! -s "$fastq_R1_clean" ] || [ ! -n "$fastq_R1_clean" ] ; then
-	echo -e "\n $script_name ERROR: FASTQ $fastq_R1_clean DOES NOT EXIST \n"
-	exit 1
+reads_R1="0"
+reads_R2="0"
+
+if [ -s "$fastq_R1_clean" ] ; then
+	lines_R1=$(zcat "$fastq_R1_clean" | wc -l)
+	reads_R1=$(echo "${lines_R1}/4" | bc)
 fi
-
-
-#########################
-
-
-# count number of reads in merged FASTQs
-
-lines_R1=$(zcat "$fastq_R1_clean" | wc -l)
-reads_R1=$(echo "${lines_R1}/4" | bc)
 
 if [ -s "$fastq_R2_clean" ] ; then
 	lines_R2=$(zcat "$fastq_R2_clean" | wc -l)
 	reads_R2=$(echo "${lines_R2}/4" | bc)
 else
-	reads_R2="0"
 	fastq_R2_clean=""
 fi
 
@@ -152,6 +165,7 @@ echo "READS R2: $reads_R2"
 
 
 # generate summary
+# problematic samples are included so there is a record of them in the summary tables
 
 echo "#SAMPLE,R1 RAW READS,R2 RAW READS" > "$summary_csv"
 echo "${sample},${reads_R1},${reads_R2}" >> "$summary_csv"
@@ -165,16 +179,34 @@ cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "
 #########################
 
 
-# exit if FASTQ has very few reads
+# check FASTQ read numbers
 
-if [ $reads_R1 -lt 1000 ] ; then
-	echo -e "\n $script_name ERROR: FASTQ $fastq_R1_clean IS TOO SHORT \n" >&2
-	# delete FASTQs since they are not useable
+# check if output exists at all
+if [ ! -s "$fastq_R1_clean" ] || [ ! -n "$fastq_R1_clean" ] ; then
+	echo -e "\n $script_name ERROR: OUTPUT FASTQ $fastq_R1_clean DOES NOT EXIST \n"
+	exit 1
+fi
+
+# check if there are very few reads
+if [ "$reads_R1" -lt 1000 ] ; then
+	echo -e "\n $script_name ERROR: OUTPUT FASTQ $fastq_R1_clean IS TOO SHORT \n" >&2
+	# delete clean (not original) FASTQs since they are not usable
 	rm -fv "$fastq_R1_clean"
 	if [ -s "$fastq_R2_clean" ] ; then
 		rm -fv "$fastq_R2_clean"
 	fi
 	exit 1
+fi
+
+# check if R1 and R2 have equal number of reads
+if [ -s "$fastq_R2_clean" ] ; then
+	if [ "$reads_R1" -ne "$reads_R2" ] ; then
+		echo -e "\n $script_name ERROR: FASTQ R1 AND R2 HAVE DIFFERENT NUMBER OF READS \n" >&2
+		# delete clean (not original) FASTQs since they are not usable
+		rm -fv "$fastq_R1_clean"
+		rm -fv "$fastq_R2_clean"
+		exit 1
+	fi
 fi
 
 

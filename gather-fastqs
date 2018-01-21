@@ -37,7 +37,7 @@ sub main {
 
 	# find fastqs in given directory
 	my $find_fastq_cmd_names = "-name '*_R1_0*.fastq.gz' -or -name '*_R1.fastq.gz' -or -name '*_1.fastq.gz'";
-	my $find_fastq_cmd = "find -L $search_dir -maxdepth 2 -type f $find_fastq_cmd_names | LC_ALL=C sort";
+	my $find_fastq_cmd = "find -L $search_dir -maxdepth 3 -type f $find_fastq_cmd_names | LC_ALL=C sort";
 	my @fastqs = `$find_fastq_cmd`;
 
 	# counter single and paired reads

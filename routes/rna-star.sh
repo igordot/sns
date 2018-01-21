@@ -61,7 +61,7 @@ fi
 
 # if FASTQ is not set, there was a problem
 if [ -z "$fastq_R1" ] ; then
-	echo -e "\n $script_name ERROR: $segment_fastq_clean DID NOT FINISH \n" >&2
+	echo -e "\n $script_name ERROR: SEGMENT $segment_fastq_clean DID NOT FINISH \n" >&2
 	exit 1
 fi
 
@@ -80,7 +80,7 @@ fi
 
 # if STAR BAM is not set, there was a problem
 if [ -z "$bam_star" ] ; then
-	echo -e "\n $script_name ERROR: $segment_align DID NOT FINISH \n" >&2
+	echo -e "\n $script_name ERROR: SEGMENT $segment_align DID NOT FINISH \n" >&2
 	exit 1
 fi
 

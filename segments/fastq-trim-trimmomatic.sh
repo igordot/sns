@@ -143,8 +143,8 @@ fi
 if grep -q -i "error" "$trimmomatic_log" ; then
 	echo -e "\n $script_name ERROR: LOG $trimmomatic_log CONTAINS ERROR \n" >&2
 	grep -i "error" "$trimmomatic_log"
-	rm -fv $fastq_R1_trim
-	rm -fv $fastq_R2_trim
+	rm -fv "$fastq_R1_trim"
+	rm -fv "$fastq_R2_trim"
 	exit 1
 fi
 

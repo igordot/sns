@@ -60,7 +60,7 @@ fi
 
 # if FASTQ is not set, there was a problem
 if [ -z "$fastq_R1" ] ; then
-	echo -e "\n $script_name ERROR: $segment_fastq_clean DID NOT FINISH \n" >&2
+	echo -e "\n $script_name ERROR: SEGMENT $segment_fastq_clean DID NOT FINISH \n" >&2
 	exit 1
 fi
 
@@ -77,7 +77,7 @@ fi
 
 # if trimmed FASTQ is not set, there was a problem
 if [ -z "$fastq_R1_trimmed" ] ; then
-	echo -e "\n $script_name ERROR: $segment_fastq_trim DID NOT FINISH \n" >&2
+	echo -e "\n $script_name ERROR: SEGMENT $segment_fastq_trim DID NOT FINISH \n" >&2
 	exit 1
 fi
 
@@ -92,7 +92,7 @@ fi
 
 # if BWA BAM is not set, there was a problem
 if [ -z "$bam_bwa" ] ; then
-	echo -e "\n $script_name ERROR: $segment_align DID NOT FINISH \n" >&2
+	echo -e "\n $script_name ERROR: SEGMENT $segment_align DID NOT FINISH \n" >&2
 	exit 1
 fi
 
@@ -107,7 +107,7 @@ fi
 
 # if deduplicated BAM is not set, there was a problem
 if [ -z "$bam_dd" ] ; then
-	echo -e "\n $script_name ERROR: $segment_dedup DID NOT FINISH \n" >&2
+	echo -e "\n $script_name ERROR: SEGMENT $segment_dedup DID NOT FINISH \n" >&2
 	exit 1
 fi
 
@@ -132,7 +132,7 @@ fi
 
 # if GATK BAM is not set, there was a problem
 if [ -z "$bam_gatk" ] ; then
-	echo -e "\n $script_name ERROR: $segment_gatk DID NOT FINISH \n" >&2
+	echo -e "\n $script_name ERROR: SEGMENT $segment_gatk DID NOT FINISH \n" >&2
 	exit 1
 fi
 
