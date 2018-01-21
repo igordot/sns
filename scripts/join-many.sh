@@ -2,8 +2,8 @@
 
 
 ##
-## merge any number of tab or comma-separated files ("join" can only do 2 at a time)
-## use $'\t' as tab field separator
+## merge any number of tab or comma-separated files (coreutils join can only do 2 at a time)
+## for tab field separator, use $'\t'
 ##
 
 
@@ -17,6 +17,9 @@ if [ $# -lt 3 ] ; then
 	exit 1
 fi
 
+# load recent coreutils ("-o auto" support added in release 8.12)
+module load coreutils/8.24
+
 # arguments
 separator="$1"
 shift
@@ -29,9 +32,7 @@ if [ ! -s "$1" ] ; then
 	exit 1
 fi
 
-# load recent coreutils ("-o auto" support added in release 8.12)
-module load coreutils/8.24
-
+# recursive join function
 function rjoin {
 	if [[ $# -gt 1 ]]; then
 		LC_ALL=C join -t "$separator" -a1 -a2 -o auto -e "$empty_char" - <(LC_ALL=C sort "$1") | rjoin "${@:2}"

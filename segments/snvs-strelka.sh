@@ -113,7 +113,7 @@ fi
 module unload python
 module load python/2.7.3
 
-manta_dir="/ifs/home/id460/software/manta/manta-1.1.1"
+manta_dir="/ifs/home/id460/software/manta/manta-1.2.1"
 manta_config_py="${manta_dir}/bin/configManta.py"
 
 echo " * Manta config: $(readlink -f $manta_config_py) "
@@ -145,8 +145,9 @@ $manta_config_cmd
 # check if runWorkflow.py is present
 if [ ! -s "$manta_run_py" ] ; then
 	echo -e "\n $script_name ERROR: runWorkflow.py $manta_run_py NOT GENERATED \n" >&2
-	# delete Manta output since something went wrong and it might be corrupted
-	rm -rfv "$manta_logs_dir"
+	# delete Manta output (keep top level for logs)
+	rm -rfv "${manta_logs_dir}/results"
+	rm -rfv "${manta_logs_dir}/workspace"
 	exit 1
 fi
 
@@ -177,8 +178,9 @@ sleep 30
 # check if candidateSmallIndels.vcf.gz is present
 if [ ! -s "$manta_indels_vcf" ] ; then
 	echo -e "\n $script_name ERROR: VCF $manta_indels_vcf NOT GENERATED \n" >&2
-	# delete Manta output since something went wrong and it might be corrupted
-	rm -rfv "$manta_logs_dir"
+	# delete Manta output (keep top level for logs)
+	rm -rfv "${manta_logs_dir}/results"
+	rm -rfv "${manta_logs_dir}/workspace"
 	exit 1
 fi
 
@@ -188,7 +190,7 @@ fi
 
 # configure Strelka
 
-strelka_dir="/ifs/home/id460/software/strelka/strelka-2.7.1"
+strelka_dir="/ifs/home/id460/software/strelka/strelka-2.8.3"
 strelka_config_py="${strelka_dir}/bin/configureStrelkaSomaticWorkflow.py"
 
 echo " * Strelka config: $(readlink -f $strelka_config_py) "
@@ -225,9 +227,10 @@ $strelka_config_cmd
 # check if runWorkflow.py is present
 if [ ! -s "$strelka_run_py" ] ; then
 	echo -e "\n $script_name ERROR: runWorkflow.py $strelka_run_py NOT GENERATED \n" >&2
-	# delete Manta and Strelka output since something went wrong and it might be corrupted
-	rm -rfv "$manta_logs_dir"
-	rm -rfv "$strelka_logs_dir"
+	# delete Manta and Strelka output (keep top level for logs)
+	rm -rfv "${manta_logs_dir}"
+	rm -rfv "${strelka_logs_dir}/results"
+	rm -rfv "${strelka_logs_dir}/workspace"
 	exit 1
 fi
 
@@ -261,21 +264,23 @@ sleep 30
 
 # check that output generated
 
-# check if VCF file is present
+# check if SNVs VCF file is present
 if [ ! -s "$vcf_snvs_original" ] ; then
 	echo -e "\n $script_name ERROR: VCF $vcf_snvs_original NOT GENERATED \n" >&2
-	# delete Manta and Strelka output since something went wrong and it might be corrupted
-	rm -rfv "$manta_logs_dir"
-	rm -rfv "$strelka_logs_dir"
+	# delete Manta and Strelka output (keep top level for logs)
+	rm -rfv "${manta_logs_dir}"
+	rm -rfv "${strelka_logs_dir}/results"
+	rm -rfv "${strelka_logs_dir}/workspace"
 	exit 1
 fi
 
-# check if VCF file is present
+# check if indels VCF file is present
 if [ ! -s "$vcf_indels_original" ] ; then
 	echo -e "\n $script_name ERROR: VCF $vcf_indels_original NOT GENERATED \n" >&2
-	# delete Manta and Strelka output since something went wrong and it might be corrupted
-	rm -rfv "$manta_logs_dir"
-	rm -rfv "$strelka_logs_dir"
+	# delete Manta and Strelka output (keep top level for logs)
+	rm -rfv "${manta_logs_dir}"
+	rm -rfv "${strelka_logs_dir}/results"
+	rm -rfv "${strelka_logs_dir}/workspace"
 	exit 1
 fi
 

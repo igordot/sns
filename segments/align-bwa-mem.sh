@@ -5,7 +5,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -22,30 +23,6 @@ sample=$2
 threads=$3
 fastq_R1=$4
 fastq_R2=$5
-
-
-#########################
-
-
-# check that inputs exist
-
-if [ ! -d "$proj_dir" ] ; then
-	echo -e "\n $script_name ERROR: DIR $proj_dir DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-if [ ! -s "$fastq_R1" ] ; then
-	echo -e "\n $script_name ERROR: FASTQ $fastq_R1 DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
-ref_bwa=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-BWA)
-
-if [ ! -s "$ref_bwa" ] || [ ! -n "$ref_bwa" ] ; then
-	echo -e "\n $script_name ERROR: REF $ref_bwa DOES NOT EXIST \n" >&2
-	exit 1
-fi
 
 
 #########################
@@ -68,6 +45,10 @@ bwa_logs_dir="${proj_dir}/logs-${segment_name}"
 mkdir -p "$bwa_logs_dir"
 bwa_flagstat="${bwa_logs_dir}/${sample}.flagstat.txt"
 
+# unload all loaded modulefiles
+module purge
+module load local
+
 
 #########################
 
@@ -84,12 +65,38 @@ fi
 #########################
 
 
+# check that inputs exist
+
+if [ ! -d "$proj_dir" ] ; then
+	echo -e "\n $script_name ERROR: DIR $proj_dir DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+if [ ! -s "$fastq_R1" ] ; then
+	echo -e "\n $script_name ERROR: FASTQ $fastq_R1 DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+code_dir=$(dirname $(dirname "$script_path"))
+
+ref_bwa=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-BWA)
+
+if [ ! -s "$ref_bwa" ] || [ ! -n "$ref_bwa" ] ; then
+	echo -e "\n $script_name ERROR: REF $ref_bwa DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+
+#########################
+
+
 # BWA
 
-module load bwa/0.7.13
+module load bwa/0.7.17
 
-sambamba_bin="/ifs/home/id460/software/sambamba/sambamba_v0.6.6"
+sambamba_bin="/ifs/home/id460/software/sambamba/sambamba_v0.6.7"
 
+echo
 echo " * bwa: $(readlink -f $(which bwa)) "
 echo " * bwa version: $(bwa 2>&1 | grep -m 1 'Version') "
 echo " * sambamba: $(readlink -f $(which $sambamba_bin)) "
@@ -98,10 +105,13 @@ echo " * BWA REF: $ref_bwa "
 echo " * FASTQ R1: $fastq_R1 "
 echo " * FASTQ R2: $fastq_R2 "
 echo " * BAM: $bam "
+echo
 
 # step 1: align with BWA-MEM
 # step 2: convert SAM to BAM and remove low quality reads
 # step 3: sort BAM
+
+# -M flag marks shorter split hits as secondary (for Picard compatibility)
 
 bash_cmd="
 bwa mem \

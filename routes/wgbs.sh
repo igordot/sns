@@ -64,6 +64,12 @@ if [ -z "$fastq_R1" ] ; then
 	exit 1
 fi
 
+# confirm if this is a paired-end run
+if [ -z "$fastq_R2" ] ; then
+	echo -e "\n $script_name ERROR: single-read sequencing is not currently supported \n" >&2
+	exit 1
+fi
+
 # trim FASTQs with Trimmomatic
 segment_fastq_trim="fastq-trim-trimmomatic"
 fastq_R1_trimmed=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_trim}.csv" | cut -d ',' -f 2)
@@ -121,10 +127,8 @@ if [ -n "$fastq_R2" ] ; then
 	bash_cmd="bash ${code_dir}/segments/${segment_meth}.sh $proj_dir $sample $threads $bam_bismark pe-ignore-r2-3"
 	($bash_cmd)
 else
-	bash_cmd="bash ${code_dir}/segments/${segment_meth}.sh $proj_dir $sample $threads $bam_bismark se"
-	($bash_cmd)
-	# bash_cmd="bash ${code_dir}/segments/${segment_meth}.sh $proj_dir $sample $threads $bam_bismark se-ignore-r1-3"
-	# ($bash_cmd)
+	echo -e "\n $script_name ERROR: single-read sequencing is not currently supported \n" >&2
+	exit 1
 fi
 
 

@@ -5,7 +5,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -25,46 +26,6 @@ bam=$3
 #########################
 
 
-# check that inputs exist
-
-if [ ! -d "$proj_dir" ] ; then
-	echo -e "\n $script_name ERROR: PROJ DIR $proj_dir DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-if [ ! -s "$bam" ] ; then
-	echo -e "\n $script_name ERROR: BAM $bam DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
-
-ref_fasta=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-FASTA);
-
-if [ ! -s "$ref_fasta" ] ; then
-	echo -e "\n $script_name ERROR: FASTA $ref_fasta DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-ref_dict=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-DICT);
-
-if [ ! -s "$ref_dict" ] ; then
-	echo -e "\n $script_name ERROR: DICT $ref_dict DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-found_bed=$(find $proj_dir -maxdepth 1 -type f -iname "*.bed" | grep -v "probes" | sort | head -1)
-bed=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-TARGETS-BED $found_bed);
-
-if [ ! -s "$bed" ] ; then
-	echo -e "\n $script_name ERROR: BED $bed DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-
-#########################
-
-
 # settings and files
 
 summary_dir="${proj_dir}/summary"
@@ -76,8 +37,9 @@ mkdir -p "$cov_dir"
 out_prefix="${cov_dir}/${sample}"
 gatk_sample_summary="${out_prefix}.sample_summary"
 
-# logs_dir="${proj_dir}/logs-${segment_name}"
-# mkdir -p "$logs_dir"
+# unload all loaded modulefiles
+module purge
+module load local
 
 
 #########################
@@ -94,14 +56,55 @@ fi
 #########################
 
 
+# check that inputs exist
+
+if [ ! -d "$proj_dir" ] ; then
+	echo -e "\n $script_name ERROR: PROJ DIR $proj_dir DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+if [ ! -s "$bam" ] ; then
+	echo -e "\n $script_name ERROR: BAM $bam DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+code_dir=$(dirname $(dirname "$script_path"))
+
+ref_fasta=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-FASTA);
+
+if [ ! -s "$ref_fasta" ] ; then
+	echo -e "\n $script_name ERROR: FASTA $ref_fasta DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+ref_dict=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-DICT);
+
+if [ ! -s "$ref_dict" ] ; then
+	echo -e "\n $script_name ERROR: DICT $ref_dict DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+found_bed=$(find "$proj_dir" -maxdepth 1 -type f -iname "*.bed" | grep -v "probes" | sort | head -1)
+bed=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-TARGETS-BED "$found_bed");
+
+if [ ! -s "$bed" ] ; then
+	echo -e "\n $script_name ERROR: BED $bed DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+
+#########################
+
+
 # GATK settings
 
-module unload java
 module load java/1.8
 
 # command
+# all other GATK segments work with 16G (hg19/mm10 WGS/WES)
+# this segment failed for canFam3 WES (1.1M targets) with error "adjust the maximum heap size provided to Java"
 gatk_jar="/ifs/home/id460/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-0/GenomeAnalysisTK.jar"
-gatk_cmd="java -Xms16G -Xmx16G -jar ${gatk_jar}"
+gatk_cmd="java -Xms32G -Xmx32G -jar ${gatk_jar}"
 
 if [ ! -s "$gatk_jar" ] ; then
 	echo -e "\n $script_name ERROR: GATK $gatk_jar DOES NOT EXIST \n" >&2

@@ -5,7 +5,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -22,30 +23,6 @@ sample=$2
 threads=$3
 fastq_R1=$4
 fastq_R2=$5
-
-
-#########################
-
-
-# check that inputs exist
-
-if [ ! -d "$proj_dir" ] ; then
-	echo -e "\n $script_name ERROR: DIR $proj_dir DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-if [ ! -s "$fastq_R1" ] ; then
-	echo -e "\n $script_name ERROR: FASTQ $fastq_R1 DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
-ref_star=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-STAR)
-
-if [ ! -s "${ref_star}/SA" ] ; then
-	echo -e "\n $script_name ERROR: REF $ref_star DOES NOT EXIST \n" >&2
-	exit 1
-fi
 
 
 #########################
@@ -70,7 +47,11 @@ counts_txt="${star_quant_dir}/${sample}.txt"
 
 star_logs_dir="${proj_dir}/logs-${segment_name}"
 mkdir -p "$star_logs_dir"
-star_prefix="${star_logs_dir}/${sample}."
+star_prefix="${star_logs_dir}/${sample}_"
+
+# unload all loaded modulefiles
+module purge
+module load local
 
 
 #########################
@@ -95,22 +76,45 @@ fi
 #########################
 
 
+# check that inputs exist
+
+if [ ! -d "$proj_dir" ] ; then
+	echo -e "\n $script_name ERROR: DIR $proj_dir DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+if [ ! -s "$fastq_R1" ] ; then
+	echo -e "\n $script_name ERROR: FASTQ $fastq_R1 DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+code_dir=$(dirname $(dirname "$script_path"))
+
+ref_star=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-STAR)
+
+if [ ! -s "${ref_star}/SA" ] ; then
+	echo -e "\n $script_name ERROR: REF $ref_star DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+
+#########################
+
+
 # STAR
 
-module unload samtools
-module load samtools/1.3
-# module load star/2.5.0c has issues
-module load star/2.4.5a
+module load star/2.5.3a
 
 echo " * STAR: $(readlink -f $(which STAR)) "
 echo " * samtools: $(readlink -f $(which samtools)) "
-echo " * STAR REF: $ref_star "
+echo " * samtools version: $(samtools --version | head -1) "
+echo " * STAR ref: $ref_star "
 echo " * FASTQ R1: $fastq_R1 "
 echo " * FASTQ R2: $fastq_R2 "
 echo " * BAM: $bam "
 
-# change dir because star writes a log file to pwd
-cd "$proj_dir"
+# change dir because STAR and samtools may generate temp or log files in working dir
+cd "$star_logs_dir"
 
 # --outFilterType BySJout - ENCODE standard option
 # --outSAMmapqUnique - int: 0 to 255: the MAPQ value for unique mappers
@@ -124,7 +128,7 @@ STAR \
 --runThreadN $threads \
 --genomeDir $ref_star \
 --genomeLoad NoSharedMemory \
---outFilterMismatchNoverLmax 0.05 \
+--outFilterMismatchNoverLmax 0.2 \
 --outFilterMultimapNmax 1 \
 --outFilterType BySJout \
 --outSAMstrandField intronMotif \
@@ -137,7 +141,7 @@ STAR \
 --quantMode GeneCounts \
 --outSAMtype BAM Unsorted \
 --outStd BAM_Unsorted | \
-samtools sort -@ $threads -m 4G -T $sample -o $bam -
+samtools sort -@ $threads -m 4G -T ${sample}.samtools -o $bam -
 "
 echo "CMD: $bash_cmd"
 eval "$bash_cmd"
@@ -150,6 +154,13 @@ echo "CMD: $bash_cmd"
 eval "$bash_cmd"
 
 sleep 30
+
+
+#########################
+
+
+# delete tmp directories (_STARtmp should be empty at this point)
+rm -rfv ${star_prefix}_STAR*
 
 
 #########################
@@ -185,7 +196,7 @@ fi
 
 
 # STAR counts
-# not using STAR counts later, since it's hard to filter and they have gene ids instead of names
+# not using the counts downstream since the file is hard to filter and uses gene ids instead of gene names
 
 # STAR outputs read counts per gene into ReadsPerGene.out.tab file with 4 columns which correspond to strandedness:
 # column 1: gene ID
@@ -221,18 +232,18 @@ counts_rev=$(cat $counts_txt | grep -v 'N_' | awk -F $'\t' '{sum+=$4} END {print
 echo "counts rev: $counts_rev"
 
 # perform some sanity checks
-if [ "$counts_unstr" -lt 1000 ] || [ "$counts_fwd" -lt 10 ] || [ "$counts_rev" -lt 10 ] ; then
+if [ "$counts_unstr" -lt 10000 ] || [ "$counts_fwd" -lt 10 ] || [ "$counts_rev" -lt 10 ] ; then
 	echo -e "\n $script_name ERROR: LOW COUNTS \n" >&2
 	exit 1
 fi
 
 lib_strand="unstr"
 
-if [ "$(echo "${counts_fwd}/${counts_rev}" | bc)" -gt 8 ] ; then
+if [ "$(echo "${counts_fwd}/${counts_rev}" | bc)" -gt 5 ] ; then
 	lib_strand="fwd"
 fi
 
-if [ "$(echo "${counts_rev}/${counts_fwd}" | bc)" -gt 8 ] ; then
+if [ "$(echo "${counts_rev}/${counts_fwd}" | bc)" -gt 5 ] ; then
 	lib_strand="rev"
 fi
 
@@ -249,7 +260,7 @@ echo "experiment strand: $exp_strand"
 # generate alignment summary
 
 # header for summary file
-echo "#SAMPLE,INPUT READS,UNIQUELY MAPPED,MULTI-MAPPED,UNIQUELY MAPPED %,MULTI-MAPPED %" > $summary_csv
+echo "#SAMPLE,INPUT READS,UNIQUELY MAPPED,MULTI-MAPPED,UNIQUELY MAPPED %,MULTI-MAPPED %" > "$summary_csv"
 
 # print the relevant numbers from log file
 star_log_final="${star_prefix}Log.final.out"
@@ -260,19 +271,12 @@ paste -d ',' \
 <(cat "$star_log_final" | grep "Number of reads mapped to too many loci" | head -1 | tr -d "[:blank:]" | cut -d "|" -f 2) \
 <(cat "$star_log_final" | grep "Uniquely mapped reads %"                 | head -1 | tr -d "[:blank:]" | cut -d "|" -f 2) \
 <(cat "$star_log_final" | grep "% of reads mapped to too many loci"      | head -1 | tr -d "[:blank:]" | cut -d "|" -f 2) \
->> $summary_csv
+>> "$summary_csv"
 
 sleep 30
 
 # combine all sample summaries
 cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.${segment_name}.csv"
-
-
-#########################
-
-
-# delete tmp directories (_STARtmp should be empty at this point)
-rm -rfv ${star_prefix}_STAR*
 
 
 #########################

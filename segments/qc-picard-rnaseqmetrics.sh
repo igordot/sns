@@ -5,7 +5,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -25,37 +26,7 @@ bam=$3
 #########################
 
 
-# check that inputs exist
-
-if [ ! -d "$proj_dir" ] || [ ! "$proj_dir" ] ; then
-	echo -e "\n $script_name ERROR: DIR $proj_dir DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-if [ ! -s "$bam" ] || [ ! "$bam" ] ; then
-	echo -e "\n $script_name ERROR: BAM $bam DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-CODE_DIR=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
-REFFLAT=$(bash ${CODE_DIR}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-REFFLAT)
-RRNA_INTERVAL_LIST=$(bash ${CODE_DIR}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-RRNAINTERVALLIST)
-
-if [ ! -s "$REFFLAT" ] || [ ! "$REFFLAT" ] ; then
-	echo -e "\n $script_name ERROR: REFFLAT $REFFLAT DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-if [ ! -s "$RRNA_INTERVAL_LIST" ] || [ ! "$RRNA_INTERVAL_LIST" ] ; then
-	echo -e "\n $script_name ERROR: RRNA INTERVAL LIST $RRNA_INTERVAL_LIST DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-
-#########################
-
-
-# output
+# settings and files
 
 metrics_dir="${proj_dir}/QC-RnaSeqMetrics"
 mkdir -p "$metrics_dir"
@@ -64,6 +35,10 @@ metrics_pdf="${metrics_dir}/${sample}.pdf"
 
 summary_dir="${proj_dir}/summary"
 summary_csv="${summary_dir}/${sample}.${segment_name}.csv"
+
+# unload all loaded modulefiles
+module purge
+module load local
 
 
 #########################
@@ -80,31 +55,59 @@ fi
 #########################
 
 
+# check that inputs exist
+
+if [ ! -d "$proj_dir" ] || [ ! "$proj_dir" ] ; then
+	echo -e "\n $script_name ERROR: DIR $proj_dir DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+if [ ! -s "$bam" ] || [ ! "$bam" ] ; then
+	echo -e "\n $script_name ERROR: BAM $bam DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+code_dir=$(dirname $(dirname "$script_path"))
+refflat=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-REFFLAT)
+rrna_interval_list=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-RRNAINTERVALLIST)
+
+if [ ! -s "$refflat" ] || [ ! "$refflat" ] ; then
+	echo -e "\n $script_name ERROR: REFFLAT $refflat DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+if [ ! -s "$rrna_interval_list" ] || [ ! "$rrna_interval_list" ] ; then
+	echo -e "\n $script_name ERROR: RRNA INTERVAL LIST $rrna_interval_list DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+
+#########################
+
+
 # run picard CollectRnaSeqMetrics
 
-module unload java
-module load java/1.7
-module load picard-tools/1.88
+module load picard-tools/2.6.0
 
 # strand:
 # fwd | transcript             | cufflinks "fr-secondstrand" | htseq "yes"     | picard "FIRST_READ"
 # rev | rev comp of transcript | cufflinks "fr-firststrand"  | htseq "reverse" | picard "SECOND_READ"
 
-echo " * CollectRnaSeqMetrics: ${PICARD_ROOT}/CollectRnaSeqMetrics.jar "
+echo " * Picard: ${PICARD_ROOT}/picard.jar "
 echo " * BAM: $bam "
-echo " * REF_FLAT: $REFFLAT "
-echo " * RIBOSOMAL_INTERVALS: $RRNA_INTERVAL_LIST "
-echo " * OUT TXT: $metrics_txt "
-echo " * OUT PDF: $metrics_pdf "
+echo " * refFlat: $refflat "
+echo " * ribosomal intervals: $rrna_interval_list "
+echo " * out TXT: $metrics_txt "
+echo " * out PDF: $metrics_pdf "
 
-PICARD_CMD="java -Xms8G -Xmx8G -jar ${PICARD_ROOT}/CollectRnaSeqMetrics.jar \
+PICARD_CMD="java -Xms16G -Xmx16G -jar ${PICARD_ROOT}/picard.jar CollectRnaSeqMetrics \
 VERBOSITY=WARNING QUIET=true VALIDATION_STRINGENCY=LENIENT MAX_RECORDS_IN_RAM=2500000 \
-REF_FLAT=${REFFLAT} \
+REF_FLAT=${refflat} \
 INPUT=${bam}"
 
 CMD="$PICARD_CMD \
 STRAND_SPECIFICITY=NONE \
-RIBOSOMAL_INTERVALS=${RRNA_INTERVAL_LIST} \
+RIBOSOMAL_INTERVALS=${rrna_interval_list} \
 CHART_OUTPUT=${metrics_pdf} \
 OUTPUT=${metrics_txt}"
 echo "CMD: $CMD"
@@ -185,15 +188,15 @@ gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=${combined_pdf} ${metrics
 
 # combine charts into a single png
 
-combined_png_4w=${proj_dir}/summary.${segment_name}.4w.png
+combined_png_3w=${proj_dir}/summary.${segment_name}.3w.png
 combined_png_5w=${proj_dir}/summary.${segment_name}.5w.png
 
-rm -f "$combined_png_4w"
+rm -f "$combined_png_3w"
 rm -f "$combined_png_5w"
 
 # -geometry +20+20 = 20px x and y padding
 # -tile 4x = 4 images wide
-montage -geometry +20+20 -tile 4x "${metrics_dir}/*.pdf" "$combined_png_4w"
+montage -geometry +20+20 -tile 3x "${metrics_dir}/*.pdf" "$combined_png_3w"
 montage -geometry +20+20 -tile 5x "${metrics_dir}/*.pdf" "$combined_png_5w"
 
 

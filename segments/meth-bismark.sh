@@ -51,6 +51,10 @@ bismark_cov_gz="${bismark_cov}.gz"
 
 bismark_cpg_report_gz="${bismark_meth_dir}/${sample}.CpG_report.txt.gz"
 
+# unload all loaded modulefiles
+module purge
+module load local
+
 
 #########################
 

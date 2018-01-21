@@ -111,6 +111,8 @@ fi
 # bismark can't use sorted bam at the next step, but other tools may need sorted bam
 
 # bismark 0.15.0 and 0.16.0 and 0.18.1 load bowtie2/2.2.6 and samtools/1.3
+module purge
+module load local
 module load bismark/0.18.1
 
 # "In order to work properly the current working directory must contain the sequence files to be analysed" (as of v0.14)

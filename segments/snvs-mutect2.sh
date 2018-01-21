@@ -81,6 +81,10 @@ vcf_original="${vcf_dir}/${sample_t}-${sample_n}.original.vcf"
 idx_original="${vcf_original}.idx"
 vcf_fixed="${vcf_dir}/${sample_t}-${sample_n}.vcf"
 
+# unload all loaded modulefiles
+module purge
+module load local
+
 
 #########################
 
@@ -96,7 +100,7 @@ if [ -s "$vcf_fixed" ] ; then
 	exit 1
 fi
 
-if [ -s "$vcf_original" ] ; then
+if [ -f "$vcf_original" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	exit 1
 fi
@@ -107,7 +111,6 @@ fi
 
 # GATK settings
 
-module unload java
 module load java/1.8
 
 # command

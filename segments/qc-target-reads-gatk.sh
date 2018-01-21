@@ -5,7 +5,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -26,46 +27,6 @@ bam=$4
 #########################
 
 
-# check that inputs exist
-
-if [ ! -d "$proj_dir" ] ; then
-	echo -e "\n $script_name ERROR: PROJ DIR $proj_dir DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-if [ ! -s "$bam" ] ; then
-	echo -e "\n $script_name ERROR: BAM $bam DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
-
-ref_fasta=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-FASTA);
-
-if [ ! -s "$ref_fasta" ] ; then
-	echo -e "\n $script_name ERROR: FASTA $ref_fasta DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-ref_dict=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-DICT);
-
-if [ ! -s "$ref_dict" ] ; then
-	echo -e "\n $script_name ERROR: DICT $ref_dict DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-found_bed=$(find $proj_dir -maxdepth 1 -type f -iname "*.bed" | grep -v "probes" | sort | head -1)
-bed=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-TARGETS-BED $found_bed);
-
-if [ ! -s "$bed" ] ; then
-	echo -e "\n $script_name ERROR: BED $bed DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-
-#########################
-
-
 # settings and files
 
 summary_dir="${proj_dir}/summary"
@@ -80,8 +41,9 @@ out_prefix_pad500="${out_prefix}.pad500"
 out_prefix_pad100="${out_prefix}.pad100"
 out_prefix_bed="${out_prefix}.bed"
 
-# logs_dir="${proj_dir}/logs-${segment_name}"
-# mkdir -p "$logs_dir"
+# unload all loaded modulefiles
+module purge
+module load local
 
 
 #########################
@@ -98,9 +60,48 @@ fi
 #########################
 
 
+# check that inputs exist
+
+if [ ! -d "$proj_dir" ] ; then
+	echo -e "\n $script_name ERROR: PROJ DIR $proj_dir DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+if [ ! -s "$bam" ] ; then
+	echo -e "\n $script_name ERROR: BAM $bam DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+code_dir=$(dirname $(dirname "$script_path"))
+
+ref_fasta=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-FASTA);
+
+if [ ! -s "$ref_fasta" ] ; then
+	echo -e "\n $script_name ERROR: FASTA $ref_fasta DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+ref_dict=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-DICT);
+
+if [ ! -s "$ref_dict" ] ; then
+	echo -e "\n $script_name ERROR: DICT $ref_dict DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+found_bed=$(find "$proj_dir" -maxdepth 1 -type f -iname "*.bed" | grep -v "probes" | sort | head -1)
+bed=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-TARGETS-BED "$found_bed");
+
+if [ ! -s "$bed" ] ; then
+	echo -e "\n $script_name ERROR: BED $bed DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+
+#########################
+
+
 # GATK settings
 
-module unload java
 module load java/1.8
 
 # command

@@ -60,6 +60,13 @@ if [ ! -s "$ref_fasta" ] ; then
 	exit 1
 fi
 
+chrom_sizes=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-CHROMSIZES)
+
+if [ ! -s "$chrom_sizes" ] ; then
+	echo -e "\n $script_name ERROR: CHROM SIZES $chrom_sizes DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
 found_probes_bed=$(find $proj_dir -maxdepth 1 -type f -iname "*probes*.bed" | head -1)
 probes_bed_original=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-PROBES-BED "$found_probes_bed")
 
@@ -87,6 +94,7 @@ config_txt="${sample_freec_logs_dir}/config.txt"
 probes_bed_fixed="${sample_freec_logs_dir}/probes.bed"
 chrs_txt="${sample_freec_logs_dir}/chrs.txt"
 chrs_len_txt="${sample_freec_logs_dir}/chrs.len.txt"
+snps_bed_fixed="${sample_freec_logs_dir}/snps.bed"
 
 out_base_sample="${sample_freec_logs_dir}/$(basename $bam_t)"
 out_base_control="${sample_freec_logs_dir}/$(basename $bam_n)"
@@ -95,11 +103,16 @@ fixed_base="${cnv_freec_dir}/${sample_t}-${sample_n}"
 cpn_sample="${out_base_sample}_sample.cpn"
 cpn_control="${out_base_control}_control.cpn"
 
+minipileup_sample="${out_base_sample}_minipileup.pileup"
+minipileup_control="${out_base_control}_minipileup.pileup"
+
 cnvs_original="${out_base_sample}_CNVs"
 ratio_original="${out_base_sample}_ratio.txt"
+bafs_original="${out_base_sample}_BAF.txt"
 
 cnvs_fixed="${fixed_base}.CNVs.txt"
 ratio_fixed="${fixed_base}.ratio.txt"
+bafs_fixed="${fixed_base}.BAFs.txt"
 
 graph_fixed="${fixed_base}.png"
 
@@ -107,17 +120,7 @@ graph_fixed="${fixed_base}.png"
 #########################
 
 
-# skip to annotation if output exits already
-
-# annot_cmd="bash ${code_dir}/segments/annot-annovar.sh $proj_dir $sample $vcf_fixed"
-# annot_cmd="bash ${code_dir}/segments/annot-regions-annovar.sh $proj_dir $sample $cnvs_fixed"
-
-# if [ -s "$vcf_fixed" ] ; then
-# 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
-# 	echo -e "\n CMD: $annot_cmd \n"
-# 	($annot_cmd)
-# 	exit 1
-# fi
+# skip if output exits already
 
 if [ -s "$cpn_sample" ] || [ -s "$cnvs_original" ] || [ -s "$cnvs_fixed" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
@@ -132,7 +135,17 @@ fi
 
 genome_build=$(basename "$genome_dir")
 if [[ "$genome_build" == "hg19" ]] ; then
-	true
+	chr_files_dir="/ifs/home/id460/ref/iGenomes/Homo_sapiens/UCSC/hg19/Sequence/Chromosomes/"
+	gem="/ifs/home/id460/ref/hg19/FREEC/out100m2_hg19.gem"
+	snps_vcf="/ifs/home/id460/ref/hg19/dbSNP/common_all_20170710.snv.maf5.vcf"
+	snps_bed="/ifs/home/id460/ref/hg19/dbSNP/common_all_20170710.snv.maf5.bed"
+elif [[ "$genome_build" == "mm10" ]] ; then
+	chr_files_dir="/ifs/home/id460/ref/iGenomes/Mus_musculus/UCSC/mm10/Sequence/Chromosomes/"
+	gem="/ifs/home/id460/ref/mm10/FREEC/out100m4_mm10.gem"
+	snps_vcf=""
+	snps_bed=""
+	echo -e "\n $script_name ERROR: UNSUPPORTED GENOME \n" >&2
+	exit 1
 else
 	echo -e "\n $script_name ERROR: UNSUPPORTED GENOME \n" >&2
 	exit 1
@@ -144,7 +157,10 @@ fi
 
 # generate FREEC-compatible references
 
+# bedtools to create .pileup files for WES data
 module load bedtools/2.26.0
+# samtools to create .pileup files (for BAF) (even with sambamba enabled)
+module load samtools/1.3
 
 # clean up probes BED
 fix_probes_cmd="
@@ -166,17 +182,28 @@ cat ${ref_fasta}.fai | cut -f 1-2 | grep -F -w -f $chrs_txt > $chrs_len_txt
 echo -e "\n CMD: $chrs_len_txt_cmd \n"
 eval "$chrs_len_txt_cmd"
 
+# filter SNPs BED file to only include positions covered by probes +/- 500bp
+fix_snps_bed_cmd="
+bedtools slop -i $probes_bed_fixed -g $chrom_sizes -b 500 \
+| bedtools merge -i stdin -d 10 \
+| bedtools intersect -wa -a $snps_bed -b stdin \
+> $snps_bed_fixed
+"
+echo -e "\n CMD: $fix_snps_bed_cmd \n"
+eval "$fix_snps_bed_cmd"
+
+sleep 30
+
 
 #########################
 
 
 # create config
 
-config_contents="
-
 # whole exome sequencing config
 # based on: https://github.com/BoevaLab/FREEC/blob/master/data/config_exome.txt
 
+config_contents="
 
 [general]
 
@@ -186,19 +213,16 @@ outputDir = .
 # number of threads
 maxThreads = 4
 
-# path to sambamba (used only to read .BAM files)
-sambamba = /ifs/home/id460/software/sambamba/sambamba_v0.6.6
-
 # file with chromosome lengths
 # files of type hg19.fa.fai are also accepted starting from v9.3
 chrLenFile = $chrs_len_txt
 
 # path to the directory with chromosomes fasta files
 # necessary to calculate a GC-content profile if a control dataset and GC-content profile are not available
-chrFiles = /ifs/home/id460/ref/iGenomes/Homo_sapiens/UCSC/hg19/Sequence/Chromosomes/
+chrFiles = $chr_files_dir
 
 # information about mappable positions (GEM output)
-gemMappabilityFile = /ifs/home/id460/ref/hg19/FREEC/out100m2_hg19.gem
+gemMappabilityFile = $gem
 
 # genome ploidy
 # you can set different values and Control-FREEC will select the one that explains most observed CNAs
@@ -237,7 +261,7 @@ printNA = FALSE
 
 # threshold on the minimal number of reads per window in the control sample
 # recommended value >=50 for for exome data
-readCountThreshold = 50
+readCountThreshold = 25
 
 # minimal number of consecutive windows to call a CNA
 # Default: 3 for WES and 1 for WGS
@@ -270,6 +294,24 @@ inputFormat = BAM
 mateOrientation = FR
 
 
+[BAF]
+
+# file with known SNPs (.vcf or .vcf.gz files are also accepted in >v9.3)
+SNPfile = $snps_vcf
+
+# BED or VCF file with SNP positions to create a pileup file from the BAM file provided in mateFile
+makePileup = $snps_bed_fixed
+
+# one fasta file for the whole genome (need to be provided only when makePileup is used)
+fastaFile = $ref_fasta
+
+# minimal read coverage for a position to be considered in BAF analysis (default 0)
+minimalCoveragePerPosition = 10
+
+# basis for Phred quality (Default: 0; usually 33 or 64)
+shiftInQuality = 33
+
+
 [target]
 
 # file with capture regions in .BED format
@@ -289,7 +331,7 @@ sleep 30
 
 cd "$sample_freec_logs_dir"
 
-freec_dir="/ifs/home/id460/software/FREEC/FREEC-10.6"
+freec_dir="/ifs/home/id460/software/FREEC/FREEC-11.0"
 freec_bin="${freec_dir}/src/freec"
 
 echo " * FREEC: $(readlink -f $freec_bin) "
@@ -301,6 +343,8 @@ echo " * probes original: $probes_bed_original "
 echo " * probes fixed: $probes_bed_fixed "
 echo " * CNVs original: $cnvs_original "
 echo " * CNVs fixed: $cnvs_fixed "
+echo " * BAFs original: $bafs_original "
+echo " * BAFs fixed: $bafs_fixed "
 echo " * ratio original: $ratio_original "
 echo " * ratio fixed: $ratio_fixed "
 echo " * graph: $graph_fixed "
@@ -337,6 +381,10 @@ fi
 rm -fv "$cpn_sample"
 rm -fv "$cpn_control"
 
+# delete minipileups
+rm -fv "$minipileup_sample"
+rm -fv "$minipileup_control"
+
 
 #########################
 
@@ -354,6 +402,9 @@ eval "$freec_asses_sig_cmd"
 
 # add "chr" to CNV table chromosomes names
 cat ${cnvs_original}.p.value.txt | sed 's/^\([0-9XY]\)/chr\1/' | LC_ALL=C sort -k1,1 -k2,2n | uniq > $cnvs_fixed
+
+# add "chr" to BAF table chromosomes names
+cat $bafs_original | sed 's/^\([0-9XY]\)/chr\1/' | LC_ALL=C sort -k1,1 -k2,2n | uniq > $bafs_fixed
 
 # visualize normalized copy number profile with predicted CNAs as well as BAF profile by running makeGraph.R
 freec_makegraph_cmd="cat ${freec_dir}/scripts/makeGraph.R | R --slave --args 2 $ratio_original"

@@ -7,7 +7,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 route_name=${script_name/%.sh/}
 echo -e "\n ========== ROUTE: $route_name ========== \n" >&2
 
@@ -24,7 +25,7 @@ sample=$2
 
 # additional settings
 threads=$NSLOTS
-code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
+code_dir=$(dirname $(dirname "$script_path"))
 qsub_dir="${proj_dir}/logs-qsub"
 
 # display settings
@@ -84,16 +85,17 @@ if [ -z "$bam_star" ] ; then
 fi
 
 # generate BigWig (deeptools)
-segment_bigwig_deeptools="bigwig-deeptools"
-bash_cmd="bash ${code_dir}/segments/${segment_bigwig_deeptools}.sh $proj_dir $sample 4 $bam_star"
-qsub_cmd="qsub -N sns.${segment_bigwig_deeptools}.${sample} -M ${USER}@nyumc.org -m a -j y -cwd -pe threaded 4 -b y ${bash_cmd}"
+segment_bw_deeptools="bigwig-deeptools"
+bash_cmd="bash ${code_dir}/segments/${segment_bw_deeptools}.sh $proj_dir $sample 4 $bam_star"
+qsub_common_cmd="qsub -q all.q -M ${USER}@nyumc.org -m a -j y -b y -cwd"
+qsub_cmd="${qsub_common_cmd} -N sns.${segment_bw_deeptools}.${sample} -pe threaded 4 ${bash_cmd}"
 $qsub_cmd
 
 # generate BigWig (bedtools)
-segment_bigwig_bedtools="bigwig-bedtools"
-bash_cmd="bash ${code_dir}/segments/${segment_bigwig_bedtools}.sh $proj_dir $sample $bam_star"
-qsub_cmd="qsub -N sns.${segment_bigwig_bedtools}.${sample} -M ${USER}@nyumc.org -m a -j y -cwd -b y ${bash_cmd}"
-$qsub_cmd
+# segment_bw_bedtools="bigwig-bedtools"
+# bash_cmd="bash ${code_dir}/segments/${segment_bw_bedtools}.sh $proj_dir $sample $bam_star"
+# qsub_cmd="qsub -q all.q -N sns.${segment_bw_bedtools}.${sample} -M ${USER}@nyumc.org -m a -j y -cwd -b y ${bash_cmd}"
+# $qsub_cmd
 
 # Picard CollectRnaSeqMetrics
 segment_qc_picard="qc-picard-rnaseqmetrics"
@@ -108,7 +110,7 @@ else
 fi
 
 # determine strand
-exp_strand=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-STRAND);
+exp_strand=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-STRAND);
 
 # generate counts
 segment_quant="quant-featurecounts"

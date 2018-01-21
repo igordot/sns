@@ -5,7 +5,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -29,6 +30,7 @@ vcf_file=$3
 
 vcf_type=$(basename "$(dirname "$vcf_file")")
 
+# adjust segment name to reflect input variant type
 segment_name="${vcf_type}-annot"
 
 summary_dir="${proj_dir}/summary"
@@ -46,6 +48,10 @@ annovar_out_prefix="${annovar_dir}/${sample_clean}"
 annovar_out_fixed="${annovar_out_prefix}.annot.txt"
 annovar_combined="${annovar_out_prefix}.combined.txt"
 vcf_table="${annovar_out_prefix}.vcf.txt"
+
+# unload all loaded modulefiles
+module purge
+module load local
 
 
 #########################
@@ -74,9 +80,9 @@ if [ ! -s "$vcf_file" ] ; then
 	exit 1
 fi
 
-code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
+code_dir=$(dirname $(dirname "$script_path"))
 
-genome_dir=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" GENOME-DIR);
+genome_dir=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" GENOME-DIR);
 
 if [ ! -d "$genome_dir" ] ; then
 	echo -e "\n $script_name ERROR: GENOME DIR $genome_dir DOES NOT EXIST \n" >&2
@@ -107,11 +113,21 @@ if [[ "$genome_build" == "hg19" ]] ; then
 	annovar_operation="g,f,f,f,f,f,f,f"
 	annovar_argument="'--splicing_threshold 10',,,,,,,"
 	annovar_cols_grep="^Ref|^Alt|refGene|avsnp|gnomAD_exome_ALL|gnomAD_genome_ALL|Kaviar_AF|cosmic|CADD13_PHRED|FATHMM"
+elif [[ "$genome_build" == "hg38" ]] ; then
+	annovar_protocol="refGene,avsnp150,gnomad_exome,gnomad_genome,kaviar_20150923,revel,dbnsfp33a"
+	annovar_operation="g,f,f,f,f,f,f"
+	annovar_argument="'--splicing_threshold 10',,,,,,"
+	annovar_cols_grep="^Ref|^Alt|refGene|avsnp|gnomAD_exome_ALL|gnomAD_genome_ALL|Kaviar_AF|REVEL|CADD|fathmm"
 elif [[ "$genome_build" == "mm10" ]] ; then
 	annovar_protocol="refGene,snp142,snp142Common"
 	annovar_operation="g,f,f"
 	annovar_argument="'--splicing_threshold 10',,"
 	annovar_cols_grep="^Ref|^Alt|refGene|snp"
+elif [[ "$genome_build" == "canFam3" ]] ; then
+	annovar_protocol="refGene,ensGene"
+	annovar_operation="g,g"
+	annovar_argument="'--splicing_threshold 10','--splicing_threshold 10'"
+	annovar_cols_grep="^Ref|^Alt|Gene"
 elif [[ "$genome_build" == "sacCer3" ]] ; then
 	annovar_protocol="sgdGene,ensGene"
 	annovar_operation="g,g"
@@ -153,9 +169,11 @@ fi
 
 # ANNOVAR convert2annovar - convert VCF to ANNOVAR input format
 
+echo
 echo " * convert2annovar path: $(readlink -f ${annovar_path}/convert2annovar.pl) "
 echo " * ANNOVAR out dir: $annovar_dir "
 echo " * convert2annovar out : $annovar_input "
+echo
 
 # 8/2013: vcf4 changed behavior (only first sample processed) and vcf4old introduced
 # 7/2014: annovar can take vcf files as input, but output will be vcf
@@ -185,10 +203,12 @@ fi
 
 # ANNOVAR table_annovar - run a pipeline on a list of variants and summarize their functional effects
 
+echo
 echo " * table_annovar path: $(readlink -f ${annovar_path}/table_annovar.pl) "
 echo " * ANNOVAR out dir: $annovar_dir "
 echo " * table_annovar out prefix : $annovar_out_prefix "
 echo " * table_annovar out : $annovar_multianno "
+echo
 
 # annotate with annovar (outputs $annovar_multianno)
 table_cmd="
