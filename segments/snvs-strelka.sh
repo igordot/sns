@@ -5,7 +5,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -45,7 +46,7 @@ if [ ! -s "$bam_n" ] ; then
 	exit 1
 fi
 
-code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
+code_dir=$(dirname $(dirname "$script_path"))
 
 genome_dir=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" GENOME-DIR)
 
@@ -88,19 +89,43 @@ vcf_snvs_fixed="${vcf_dir}/${sample_t}-${sample_n}.snvs.vcf"
 vcf_indels_fixed="${vcf_dir}/${sample_t}-${sample_n}.indels.vcf"
 vcf_combined="${vcf_dir}/${sample_t}-${sample_n}.all.vcf"
 
+# annotation command (next segment)
+annot_cmd="bash ${code_dir}/segments/annot-annovar.sh $proj_dir $sample $vcf_combined"
+
+# unload all loaded modulefiles
+module purge
+module load local
+
 
 #########################
 
 
-# skip to annotation if output exists already
+# check for output
 
-annot_cmd="bash ${code_dir}/segments/annot-annovar.sh $proj_dir $sample $vcf_combined"
-
+# skip to annotation if final output exists already
 if [ -s "$vcf_combined" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	echo -e "\n CMD: $annot_cmd \n"
 	($annot_cmd)
 	exit 1
+fi
+
+# delete candidateSmallIndels.vcf.gz (likely incomplete since the final VCF was not generated)
+if [ -s "$manta_indels_vcf" ] ; then
+	echo -e "\n $script_name WARNING: POTENTIALLY CORRUPT VCF $manta_indels_vcf EXISTS \n" >&2
+	rm -fv "$manta_indels_vcf"
+fi
+
+# delete original SNVs VCF (likely incomplete since the final VCF was not generated)
+if [ -s "$vcf_snvs_original" ] ; then
+	echo -e "\n $script_name WARNING: POTENTIALLY CORRUPT VCF $vcf_snvs_original EXISTS \n" >&2
+	rm -fv "$vcf_snvs_original"
+fi
+
+# delete original indels VCF (likely incomplete since the final VCF was not generated)
+if [ -s "$vcf_indels_original" ] ; then
+	echo -e "\n $script_name WARNING: POTENTIALLY CORRUPT VCF $vcf_indels_original EXISTS \n" >&2
+	rm -fv "$vcf_indels_original"
 fi
 
 
@@ -110,7 +135,6 @@ fi
 # configure Manta
 
 # Manta/Strelka use python-based config scripts
-module unload python
 module load python/2.7.3
 
 manta_dir="/ifs/home/id460/software/manta/manta-1.2.1"
@@ -299,7 +323,6 @@ rm -rf "${strelka_logs_dir}/workspace"
 
 # adjust VCF for ANNOVAR compatibility (http://annovar.openbioinformatics.org/en/latest/articles/VCF/)
 
-module unload samtools
 module load samtools/1.3
 
 # 1) keep header and only passing variants
@@ -374,9 +397,9 @@ fi
 
 #########################
 
+
 # annotate
 
-annot_cmd="bash ${code_dir}/segments/annot-annovar.sh $proj_dir $sample $vcf_combined"
 echo -e "\n CMD: $annot_cmd \n"
 ($annot_cmd)
 

@@ -71,8 +71,18 @@ module load local
 #########################
 
 
-# exit if output exists already
+# check for output
 
+# delete trimmed FASTQs (likely incomplete since the unpaired FASTQ was not deleted)
+if [ -s "$fastq_R1_trim_unpaired" ] ; then
+	echo -e "\n $script_name WARNING: POTENTIALLY CORRUPT FASTQ $fastq_R1_trim_unpaired EXISTS \n" >&2
+	rm -fv "$fastq_R1_trim"
+	rm -fv "$fastq_R2_trim"
+	rm -fv "$fastq_R1_trim_unpaired"
+	rm -fv "$fastq_R2_trim_unpaired"
+fi
+
+# exit if output exists already
 if [ -s "$fastq_R1_trim" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	echo "${sample},${fastq_R1_trim},${fastq_R2_trim}" >> "$samples_csv"
@@ -102,13 +112,13 @@ fi
 
 echo
 echo " * trimmomatic: $trimmomatic_jar "
-echo " * RUN TYPE: $run_type_arg "
+echo " * run type: $run_type_arg "
 echo " * FASTQ R1: $fastq_R1 "
 echo " * FASTQ R2: $fastq_R2 "
-echo " * FASTQ R1 TRIMMED: $fastq_R1_trim "
-echo " * FASTQ R2 TRIMMED: $fastq_R2_trim "
-echo " * FASTQ R1 TRIMMED UNPAIRED: $fastq_R1_trim_unpaired "
-echo " * FASTQ R2 TRIMMED UNPAIRED: $fastq_R2_trim_unpaired "
+echo " * FASTQ R1 trimmed: $fastq_R1_trim "
+echo " * FASTQ R2 trimmed: $fastq_R2_trim "
+echo " * FASTQ R1 trimmed unpaired: $fastq_R1_trim_unpaired "
+echo " * FASTQ R2 trimmed unpaired: $fastq_R2_trim_unpaired "
 echo
 
 bash_cmd="

@@ -7,7 +7,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 route_name=${script_name/%.sh/}
 echo -e "\n ========== ROUTE: $route_name ========== \n" >&2
 
@@ -25,7 +26,7 @@ sample_n=$3
 sample_clean="${sample_t}-${sample_n}"
 
 # additional settings
-code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
+code_dir=$(dirname $(dirname "$script_path"))
 qsub_dir="${proj_dir}/logs-qsub"
 
 # display settings

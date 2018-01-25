@@ -81,6 +81,9 @@ vcf_original="${vcf_dir}/${sample_t}-${sample_n}.original.vcf"
 idx_original="${vcf_original}.idx"
 vcf_fixed="${vcf_dir}/${sample_t}-${sample_n}.vcf"
 
+# annotation command (next segment)
+annot_cmd="bash ${code_dir}/segments/annot-annovar.sh $proj_dir $sample $vcf_fixed"
+
 # unload all loaded modulefiles
 module purge
 module load local
@@ -89,10 +92,9 @@ module load local
 #########################
 
 
-# skip to annotation if output exists already
+# check for output
 
-annot_cmd="bash ${code_dir}/segments/annot-annovar.sh $proj_dir $sample $vcf_fixed"
-
+# skip to annotation if final VCF exists already
 if [ -s "$vcf_fixed" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	echo -e "\n CMD: $annot_cmd \n"
@@ -100,9 +102,10 @@ if [ -s "$vcf_fixed" ] ; then
 	exit 1
 fi
 
-if [ -f "$vcf_original" ] ; then
-	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
-	exit 1
+# delete original VCF (likely incomplete since the final VCF was not generated)
+if [ -s "$vcf_original" ] ; then
+	echo -e "\n $script_name WARNING: POTENTIALLY CORRUPT VCF $vcf_original EXISTS \n" >&2
+	rm -fv "$vcf_original"
 fi
 
 
@@ -239,7 +242,6 @@ fi
 
 # annotate
 
-annot_cmd="bash ${code_dir}/segments/annot-annovar.sh $proj_dir $sample $vcf_fixed"
 echo -e "\n CMD: $annot_cmd \n"
 ($annot_cmd)
 

@@ -59,14 +59,20 @@ module load local
 
 # exit if output exists already
 
-# if final BAM exists
-if [ -s "$bam" ] ; then
+# skip if final BAM and BAI exist
+if [ -s "$bam" ] && [ -s "$bai" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	echo "${sample},${bam}" >> "$samples_csv"
 	exit 1
 fi
 
-# if run is in progress
+# delete BAM (likely incomplete since the corresponding BAI was not generated)
+if [ -s "$bam" ] ; then
+	echo -e "\n $script_name WARNING: POTENTIALLY CORRUPT BAM $bam EXISTS \n" >&2
+	rm -fv "$bam"
+fi
+
+# skip if run is in progress
 if [ -s "${star_prefix}.bam" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	exit 1

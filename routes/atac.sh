@@ -7,7 +7,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 route_name=${script_name/%.sh/}
 echo -e "\n ========== ROUTE: $route_name ========== \n" >&2
 
@@ -24,7 +25,7 @@ sample=$2
 
 # additional settings
 threads=$NSLOTS
-code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
+code_dir=$(dirname $(dirname "$script_path"))
 qsub_dir="${proj_dir}/logs-qsub"
 
 # display settings
@@ -57,7 +58,12 @@ if [ -z "$fastq_R1" ] ; then
 	fastq_R1=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_clean}.csv" | cut -d ',' -f 2)
 	fastq_R2=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_clean}.csv" | cut -d ',' -f 3)
 fi
-[ "$fastq_R1" ] || exit 1
+
+# if FASTQ is not set, there was a problem
+if [ -z "$fastq_R1" ] ; then
+	echo -e "\n $script_name ERROR: SEGMENT $segment_fastq_clean DID NOT FINISH \n" >&2
+	exit 1
+fi
 
 # run alignment
 segment_align="align-bowtie2-atac"
@@ -67,7 +73,12 @@ if [ -z "$bam_bt2" ] ; then
 	($bash_cmd)
 	bam_bt2=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_align}.csv" | cut -d ',' -f 2)
 fi
-[ "$bam_bt2" ] || exit 1
+
+# if BAM is not set, there was a problem
+if [ -z "$bam_bt2" ] ; then
+	echo -e "\n $script_name ERROR: SEGMENT $segment_align DID NOT FINISH \n" >&2
+	exit 1
+fi
 
 # remove duplicates
 segment_dedup="bam-dedup-sambamba"
@@ -77,7 +88,12 @@ if [ -z "$bam_dd" ] ; then
 	($bash_cmd)
 	bam_dd=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_dedup}.csv" | cut -d ',' -f 2)
 fi
-[ "$bam_dd" ] || exit 1
+
+# if BAM is not set, there was a problem
+if [ -z "$bam_dd" ] ; then
+	echo -e "\n $script_name ERROR: SEGMENT $segment_dedup DID NOT FINISH \n" >&2
+	exit 1
+fi
 
 # generate BigWig (deeptools)
 segment_bigwig_deeptools="bigwig-deeptools"

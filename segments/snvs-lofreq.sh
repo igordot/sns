@@ -73,6 +73,9 @@ mkdir -p "$vcf_dir"
 vcf_original="${vcf_dir}/${sample}.original.vcf"
 vcf_fixed="${vcf_dir}/${sample}.vcf"
 
+# annotation command (next segment)
+annot_cmd="bash ${code_dir}/segments/annot-annovar.sh $proj_dir $sample $vcf_fixed"
+
 # unload all loaded modulefiles
 module purge
 module load local
@@ -81,16 +84,20 @@ module load local
 #########################
 
 
-# exit if output exists already
+# check for output
 
-if [ -s "$vcf_original" ] ; then
+# skip to annotation if final output exists already
+if [ -s "$vcf_fixed" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
+	echo -e "\n CMD: $annot_cmd \n"
+	($annot_cmd)
 	exit 1
 fi
 
-if [ -s "$vcf_fixed" ] ; then
-	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
-	exit 1
+# delete original VCF (likely incomplete since the fixed VCF was not generated)
+if [ -s "$vcf_original" ] ; then
+	echo -e "\n $script_name WARNING: POTENTIALLY CORRUPT VCF $vcf_original EXISTS \n" >&2
+	rm -fv "$vcf_original"
 fi
 
 
@@ -111,15 +118,14 @@ cat $bed \
 > $bed_padded
 "
 
-if [ ! -s $bed_padded ] ; then
+if [ ! -s "$bed_padded" ] ; then
 	module load bedtools/2.26.0
-	# bedtools slop -i $bed -g $chrom_sizes -b 10 > $bed_padded
 	echo -e "\n CMD: $bed_pad_cmd \n"
 	eval "$bed_pad_cmd"
 	sleep 30
 fi
 
-if [ ! -s $bed_padded ] ; then
+if [ ! -s "$bed_padded" ] ; then
 	echo -e "\n $script_name ERROR: BED $bed_padded DOES NOT EXIST \n" >&2
 	exit 1
 fi
@@ -169,7 +175,6 @@ fi
 
 # adjust the vcf for annovar compatibility (http://www.openbioinformatics.org/annovar/annovar_vcf.html)
 
-module unload samtools
 module load samtools/1.3
 
 # create indexed VCF file
@@ -198,7 +203,7 @@ echo -e "\n CMD: $fix_vcf_cmd \n"
 eval "$fix_vcf_cmd"
 
 # add FORMAT and sample ID columns so VCF is compatible with some other scripts
-sed -i "s/FILTER\tINFO/FILTER\tINFO\tFORMAT\t${sample}/g" $vcf_fixed
+sed -i "s/FILTER\tINFO/FILTER\tINFO\tFORMAT\t${sample}/g" "$vcf_fixed"
 
 
 #########################
@@ -208,6 +213,11 @@ sed -i "s/FILTER\tINFO/FILTER\tINFO\tFORMAT\t${sample}/g" $vcf_fixed
 
 if [ ! -s "$vcf_fixed" ] ; then
 	echo -e "\n $script_name ERROR: VCF $vcf_fixed NOT GENERATED \n" >&2
+	# delete all VCFs since something went wrong and they might be corrupted
+	rm -fv "$vcf_original"
+	rm -fv "${vcf_original}.bgz"
+	rm -fv "${vcf_original}.bgz.csi"
+	rm -fv "$vcf_fixed"
 	exit 1
 fi
 
@@ -217,7 +227,6 @@ fi
 
 # annotate
 
-annot_cmd="bash ${code_dir}/segments/annot-annovar.sh $proj_dir $sample $vcf_fixed"
 echo -e "\n CMD: $annot_cmd \n"
 ($annot_cmd)
 
