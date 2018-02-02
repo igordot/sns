@@ -5,7 +5,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -21,53 +22,6 @@ proj_dir=$1
 sample=$2
 bam=$3
 qvalue=$4
-
-
-#########################
-
-
-# check that inputs exist
-
-if [ ! -d "$proj_dir" ] ; then
-	echo -e "\n $script_name ERROR: PROJ DIR $proj_dir DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-if [ ! -s "$bam" ] ; then
-	echo -e "\n $script_name ERROR: BAM $bam DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
-
-genome_dir=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" GENOME-DIR);
-
-if [ ! -d "$genome_dir" ] ; then
-	echo -e "\n $script_name ERROR: GENOME DIR $genome_dir DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-chrom_sizes=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-CHROMSIZES);
-
-if [ ! -s "$chrom_sizes" ] ; then
-	echo -e "\n $script_name ERROR: CHROM SIZES $chrom_sizes DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-
-#########################
-
-
-# MACS-stlye genome (mm,hs,dm,ce)
-
-# keep first two characters of build name
-genome_build=$(basename "$genome_dir")
-macs_genome="${genome_build:0:2}"
-
-# fix if hgXX
-if [ "$macs_genome" == "hg" ] ; then
-	macs_genome="hs"
-fi
 
 
 #########################
@@ -94,6 +48,57 @@ bigwig_dir="${proj_dir}/BIGWIG"
 mkdir -p "$bigwig_dir"
 macs_bw="${bigwig_dir}/${sample}.macs.bw"
 
+# unload all loaded modulefiles
+module purge
+module load local
+
+
+#########################
+
+
+# check that inputs exist
+
+if [ ! -d "$proj_dir" ] ; then
+	echo -e "\n $script_name ERROR: PROJ DIR $proj_dir DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+if [ ! -s "$bam" ] ; then
+	echo -e "\n $script_name ERROR: BAM $bam DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+code_dir=$(dirname $(dirname "$script_path"))
+
+genome_dir=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" GENOME-DIR);
+
+if [ ! -d "$genome_dir" ] ; then
+	echo -e "\n $script_name ERROR: GENOME DIR $genome_dir DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+chrom_sizes=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-CHROMSIZES);
+
+if [ ! -s "$chrom_sizes" ] ; then
+	echo -e "\n $script_name ERROR: CHROM SIZES $chrom_sizes DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+
+#########################
+
+
+# MACS-style genome (mm,hs,dm,ce)
+
+# keep first two characters of build name
+genome_build=$(basename "$genome_dir")
+macs_genome="${genome_build:0:2}"
+
+# fix if hgXX
+if [ "$macs_genome" == "hg" ] ; then
+	macs_genome="hs"
+fi
+
 
 #########################
 
@@ -112,14 +117,15 @@ fi
 # MACS
 
 # MACS is part of python/2.7.3 module
-module unload python
 module load python/2.7.3
 
+echo
 echo " * MACS: $(readlink -f $(which macs2)) "
 echo " * MACS version: $(macs2 --version 2>&1) "
 echo " * BAM: $bam "
 echo " * MACS genome: $macs_genome "
 echo " * MACS dir: $macs_dir "
+echo
 
 cd "$macs_dir" || exit 1
 

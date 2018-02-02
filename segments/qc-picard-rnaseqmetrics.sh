@@ -13,7 +13,7 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 # check for correct number of arguments
 if [ ! $# == 3 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
-	echo -e "\n USAGE: $script_name [project dir] [sample] [BAM] \n" >&2
+	echo -e "\n USAGE: $script_name project_dir sample_name BAM \n" >&2
 	exit 1
 fi
 
@@ -93,37 +93,39 @@ module load picard-tools/2.6.0
 # fwd | transcript             | cufflinks "fr-secondstrand" | htseq "yes"     | picard "FIRST_READ"
 # rev | rev comp of transcript | cufflinks "fr-firststrand"  | htseq "reverse" | picard "SECOND_READ"
 
+echo
 echo " * Picard: ${PICARD_ROOT}/picard.jar "
 echo " * BAM: $bam "
 echo " * refFlat: $refflat "
 echo " * ribosomal intervals: $rrna_interval_list "
 echo " * out TXT: $metrics_txt "
 echo " * out PDF: $metrics_pdf "
+echo
 
-PICARD_CMD="java -Xms16G -Xmx16G -jar ${PICARD_ROOT}/picard.jar CollectRnaSeqMetrics \
+picard_base_cmd="java -Xms16G -Xmx16G -jar ${PICARD_ROOT}/picard.jar CollectRnaSeqMetrics \
 VERBOSITY=WARNING QUIET=true VALIDATION_STRINGENCY=LENIENT MAX_RECORDS_IN_RAM=2500000 \
 REF_FLAT=${refflat} \
 INPUT=${bam}"
 
-CMD="$PICARD_CMD \
+picard_unstranded_cmd="$picard_base_cmd \
 STRAND_SPECIFICITY=NONE \
 RIBOSOMAL_INTERVALS=${rrna_interval_list} \
 CHART_OUTPUT=${metrics_pdf} \
 OUTPUT=${metrics_txt}"
-echo "CMD: $CMD"
-$CMD
+echo "CMD: $picard_unstranded_cmd"
+$picard_unstranded_cmd
 
-CMD="$PICARD_CMD \
+picard_strand1_cmd="$picard_base_cmd \
 STRAND_SPECIFICITY=FIRST_READ_TRANSCRIPTION_STRAND \
 OUTPUT=${metrics_txt}.1READ"
-echo "CMD: $CMD"
-$CMD
+echo "CMD: $picard_strand1_cmd"
+$picard_strand1_cmd
 
-CMD="$PICARD_CMD \
+picard_strand2_cmd="$picard_base_cmd \
 STRAND_SPECIFICITY=SECOND_READ_TRANSCRIPTION_STRAND \
 OUTPUT=${metrics_txt}.2READ"
-echo "CMD: $CMD"
-$CMD
+echo "CMD: $picard_strand2_cmd"
+$picard_strand2_cmd
 
 
 #########################

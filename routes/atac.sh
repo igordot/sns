@@ -65,6 +65,15 @@ if [ -z "$fastq_R1" ] ; then
 	exit 1
 fi
 
+# run FastQC (separately for paired-end reads)
+segment_qc_fastqc="qc-fastqc"
+bash_cmd="bash ${code_dir}/segments/${segment_qc_fastqc}.sh $proj_dir $sample $threads $fastq_R1"
+($bash_cmd)
+if [ -n "$fastq_R2" ] ; then
+	bash_cmd="bash ${code_dir}/segments/${segment_qc_fastqc}.sh $proj_dir $sample $threads $fastq_R2"
+	($bash_cmd)
+fi
+
 # run alignment
 segment_align="align-bowtie2-atac"
 bam_bt2=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_align}.csv" | cut -d ',' -f 2)
