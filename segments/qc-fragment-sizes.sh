@@ -35,7 +35,7 @@ summary_csv="${summary_dir}/${sample}.${segment_name}.csv"
 frag_sizes_dir="${proj_dir}/QC-fragment-sizes"
 mkdir -p "$frag_sizes_dir"
 frag_sizes_png="${frag_sizes_dir}/${sample}.png"
-frag_sizes_freq_csv="${frag_sizes_dir}/${sample}.freq.csv"
+frag_sizes_csv="${frag_sizes_dir}/${sample}.sizes.csv"
 frag_sizes_stats_csv="${frag_sizes_dir}/${sample}.stats.csv"
 
 # unload all loaded modulefiles
@@ -48,7 +48,7 @@ module load local
 
 # exit if output exits already
 
-if [ -s "$frag_sizes_freq_csv" ] ; then
+if [ -s "$frag_sizes_csv" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	exit 1
 fi
@@ -75,14 +75,16 @@ code_dir=$(dirname $(dirname "$script_path"))
 #########################
 
 
-# plot distribution
+# calculate and plot fragment size distribution
 
 module load r/3.3.0
 
+echo
 echo " * R: $(readlink -f $(which R)) "
 echo " * R version: $(R --version | head -1) "
 echo " * Rscript: $(readlink -f $(which Rscript)) "
 echo " * Rscript version: $(Rscript --version 2>&1) "
+echo
 
 # navigate to frag sizes dir
 cd "$frag_sizes_dir" || exit 1
@@ -103,8 +105,8 @@ if [ ! -s "$frag_sizes_png" ] ; then
 	exit 1
 fi
 
-if [ ! -s "$frag_sizes_freq_csv" ] ; then
-	echo -e "\n $script_name ERROR: FILE $frag_sizes_freq_csv NOT GENERATED \n" >&2
+if [ ! -s "$frag_sizes_csv" ] ; then
+	echo -e "\n $script_name ERROR: FILE $frag_sizes_csv NOT GENERATED \n" >&2
 	exit 1
 fi
 
@@ -116,14 +118,17 @@ fi
 
 # combine charts into a single png
 
+combined_png_2w=${proj_dir}/summary.${segment_name}.2w.png
 combined_png_3w=${proj_dir}/summary.${segment_name}.3w.png
 combined_png_4w=${proj_dir}/summary.${segment_name}.4w.png
 
+rm -f "$combined_png_2w"
 rm -f "$combined_png_3w"
 rm -f "$combined_png_4w"
 
 # -geometry +20+20 = 20px x and y padding
 # -tile 4x = 4 images wide
+montage -geometry +20+20 -tile 2x "${frag_sizes_dir}/*.png" "$combined_png_2w"
 montage -geometry +20+20 -tile 3x "${frag_sizes_dir}/*.png" "$combined_png_3w"
 montage -geometry +20+20 -tile 4x "${frag_sizes_dir}/*.png" "$combined_png_4w"
 

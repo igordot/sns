@@ -48,7 +48,7 @@ if [ ! -s "$ref_fasta" ] ; then
 	exit 1
 fi
 
-bed=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-TARGETS-BED $found_bed)
+bed=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-TARGETS-BED)
 
 if [ ! -s "$bed" ] ; then
 	echo -e "\n $script_name ERROR: BED $bed DOES NOT EXIST \n" >&2
@@ -67,6 +67,9 @@ vcf_original="${vcf_dir}/${sample}.original.vcf"
 idx_original="${vcf_original}.idx"
 vcf_fixed="${vcf_dir}/${sample}.vcf"
 
+# annotation command (next segment)
+annot_cmd="bash ${code_dir}/segments/annot-annovar.sh $proj_dir $sample $vcf_fixed"
+
 # unload all loaded modulefiles
 module purge
 module load local
@@ -75,16 +78,21 @@ module load local
 #########################
 
 
-# exit if output exists already
+# check for output
 
-if [ -s "$vcf_original" ] ; then
+# skip to annotation if final output exists already
+if [ -s "$vcf_fixed" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
+	echo -e "\n CMD: $annot_cmd \n"
+	($annot_cmd)
+	exit 1
 	exit 1
 fi
 
-if [ -s "$vcf_fixed" ] ; then
-	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
-	exit 1
+# delete original VCF (likely incomplete since the fixed VCF was not generated)
+if [ -s "$vcf_original" ] ; then
+	echo -e "\n $script_name WARNING: POTENTIALLY CORRUPT VCF $vcf_original EXISTS \n" >&2
+	rm -fv "$vcf_original"
 fi
 
 
@@ -142,17 +150,18 @@ $gatk_hc_cmd
 
 # check that output generated
 
-# check if VCF file is present
-if [ ! -s "$vcf_original" ] ; then
-	echo -e "\n $script_name ERROR: VCF $vcf_original NOT GENERATED \n" >&2
-	exit 1
-fi
-
 # check if VCF index is present (should be present if VCF is complete)
 if [ ! -s "$idx_original" ] ; then
 	echo -e "\n $script_name ERROR: VCF IDX $idx_original NOT GENERATED \n" >&2
 	# delete VCF since something went wrong and it might be corrupted
 	rm -fv "$vcf_original"
+	rm -fv "$idx_original"
+	exit 1
+fi
+
+# check if VCF is present
+if [ ! -s "$vcf_original" ] ; then
+	echo -e "\n $script_name ERROR: VCF $vcf_original NOT GENERATED \n" >&2
 	exit 1
 fi
 
@@ -162,7 +171,6 @@ fi
 
 # adjust the vcf for annovar compatibility (http://www.openbioinformatics.org/annovar/annovar_vcf.html)
 
-module unload samtools
 module load samtools/1.3
 
 # 1) GATK HC is defining the AD field as "Number=." (VCF 4.1 specification) rather than "Number=R" (VCF 4.2 specification)
@@ -190,6 +198,10 @@ eval "$fix_vcf_cmd"
 
 if [ ! -s "$vcf_fixed" ] ; then
 	echo -e "\n $script_name ERROR: VCF $vcf_fixed NOT GENERATED \n" >&2
+	# delete all VCFs since something went wrong and they might be corrupted
+	rm -fv "$vcf_original"
+	rm -fv "$idx_original"
+	rm -fv "$vcf_fixed"
 	exit 1
 fi
 
@@ -199,7 +211,6 @@ fi
 
 # annotate
 
-annot_cmd="bash ${code_dir}/segments/annot-annovar.sh $proj_dir $sample $vcf_fixed"
 echo -e "\n CMD: $annot_cmd \n"
 ($annot_cmd)
 

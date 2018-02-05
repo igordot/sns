@@ -30,11 +30,13 @@ code_dir=$(dirname $(dirname "$script_path"))
 qsub_dir="${proj_dir}/logs-qsub"
 
 # display settings
+echo
 echo " * proj_dir: $proj_dir "
 echo " * sample T: $sample_t "
 echo " * sample N: $sample_n "
 echo " * code_dir: $code_dir "
 echo " * qsub_dir: $qsub_dir "
+echo
 
 
 #########################
@@ -75,7 +77,7 @@ fi
 
 # segments
 
-qsub_settings="-M ${USER}@nyumc.org -m a -j y -cwd -b y -hard -l mem_free=64G"
+qsub_settings="-q all.q -M ${USER}@nyumc.org -m a -j y -cwd -b y -hard -l mem_free=150G"
 
 # MuTect2
 segment_mutect2="snvs-mutect2"

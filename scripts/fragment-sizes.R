@@ -9,14 +9,16 @@
 
 
 # increase output width
-options(width = 150)
+options(width = 120)
+# print warnings as they occur
+options(warn = 1)
 
 # get scripts directory (directory of this file) and load relevant functions
 args_all = commandArgs(trailingOnly = FALSE)
 scripts_dir = normalizePath(dirname(sub("^--file=", "", args_all[grep("^--file=", args_all)])))
 source(paste0(scripts_dir, "/load-install-packages.R"))
 
-# relevent arguments
+# relevant arguments
 args = commandArgs(trailingOnly = TRUE)
 sample_name = args[1]
 bam_file = args[2]
@@ -26,9 +28,8 @@ if (!file.exists(bam_file)) stop("file does not exist: ", bam_file)
 
 # load relevant packages
 load_install_packages("Rsamtools")
-load_install_packages("readr")
-load_install_packages("reshape2")
-load_install_packages("ggplot2")
+load_install_packages("tidyverse")
+load_install_packages("glue")
 load_install_packages("cowplot")
 
 # import fragment size for only one mate of paired reads (other mate will be opposite)
@@ -45,7 +46,7 @@ sizes = abs(sizes)
 # remove unreasonable values
 sizes = sizes[!is.na(sizes)]
 sizes = sizes[sizes > 0]
-sizes = sizes[sizes < 5000]
+sizes = sizes[sizes < 2500]
 
 # display stats
 message("mean: ", round(mean(sizes), digits = 1))
@@ -60,25 +61,34 @@ stats_table = data.frame(SAMPLE = sample_name,
 stats_table_file = paste0(sample_name, ".stats.csv")
 write_csv(x = stats_table, path = stats_table_file)
 
-# calculate frequency table
-freq_table = as.data.frame(table(sizes), stringsAsFactors = FALSE)
-colnames(freq_table) = c("#SIZE", sample_name)
+# create a table of fragment sizes
+sizes_tbl = as_tibble(list(size = sizes)) %>%
+  group_by(size) %>%
+  summarize(n = n())
 
-# export frequency table
-freq_table_file = paste0(sample_name, ".freq.csv")
-write_csv(x = freq_table, path = freq_table_file)
+# change column names for export and export fragment sizes table
+colnames(sizes_tbl) = c("#SIZE", sample_name)
+write_csv(x = sizes_tbl, path = glue("{sample_name}.sizes.csv"))
 
-# filter out fragments that will not be plotted (with bin width padding)
-sizes = sizes[sizes < 1010]
+# calculate size frequencies and remove rare occurrences (10/1M)
+colnames(sizes_tbl) = c("size", "n")
+sizes_tbl = sizes_tbl %>%
+  mutate(freq = n/sum(n)) %>%
+  filter(n > 10, freq > 0.00001, size < 1000)
 
-# plot
+# plot (all points with loess smoothing)
 plot_file = paste0(sample_name, ".png")
-freq_plot = ggplot(melt(sizes, value.name = "size"), aes(size)) +
-geom_freqpoly(binwidth = 10, size = 1.5) +
-scale_x_continuous(limits = c(min(sizes), 1000), breaks = 1:10*100) +
-background_grid(major = "x", minor = "none") +
-ggtitle(sample_name)
+freq_plot = ggplot(sizes_tbl, aes(x = size, y = freq)) +
+  geom_point(size = 1.2, shape = 16, color = "steelblue", alpha = 0.7) +
+  geom_smooth(method = "loess", span = 0.05, se = FALSE, color = "black", size = 1.5) +
+  scale_x_continuous(name = "fragment size", limits = c(0, 1020), expand = c(0, 0), breaks = 0:10 * 100) +
+  scale_y_continuous(name = "frequency", limits = c(0, max(sizes_tbl$freq) * 1.02), expand = c(0, 0)) +
+  background_grid(major = "x", minor = "none") +
+  ggtitle(sample_name)
 ggsave(filename = plot_file, plot = freq_plot, width = 8, height = 5, units = "in")
+
+# delete Rplots.pdf
+if (file.exists("Rplots.pdf")) file.remove("Rplots.pdf")
 
 
 

@@ -60,7 +60,7 @@ module load local
 # exit if output exits already
 
 if [ -s "$annovar_combined" ] ; then
-	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
+	echo -e "\n $script_name $segment_name SKIP SAMPLE $sample \n" >&2
 	exit 1
 fi
 

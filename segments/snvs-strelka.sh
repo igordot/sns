@@ -137,9 +137,10 @@ fi
 # Manta/Strelka use python-based config scripts
 module load python/2.7.3
 
-manta_dir="/ifs/home/id460/software/manta/manta-1.2.1"
+manta_dir="/ifs/home/id460/software/manta/manta-1.3.0"
 manta_config_py="${manta_dir}/bin/configManta.py"
 
+echo
 echo " * Manta config: $(readlink -f $manta_config_py) "
 echo " * Manta version: $($manta_config_py --version) "
 echo " * sample T : $sample_t "
@@ -148,6 +149,7 @@ echo " * sample N : $sample_n "
 echo " * BAM N : $bam_n "
 echo " * output dir : $manta_logs_dir "
 echo " * indels VCF : $manta_indels_vcf "
+echo
 
 manta_config_cmd="
 $manta_config_py \
@@ -214,9 +216,10 @@ fi
 
 # configure Strelka
 
-strelka_dir="/ifs/home/id460/software/strelka/strelka-2.8.3"
+strelka_dir="/ifs/home/id460/software/strelka/strelka-2.8.4"
 strelka_config_py="${strelka_dir}/bin/configureStrelkaSomaticWorkflow.py"
 
+echo
 echo " * Strelka config: $(readlink -f $strelka_config_py) "
 echo " * Strelka version: $($strelka_config_py --version) "
 echo " * sample T : $sample_t "
@@ -228,6 +231,7 @@ echo " * VCF original: $vcf_snvs_original "
 echo " * VCF original: $vcf_indels_original "
 echo " * VCF fixed: $vcf_snvs_fixed "
 echo " * VCF fixed: $vcf_indels_fixed "
+echo
 
 strelka_config_cmd="
 $strelka_config_py \

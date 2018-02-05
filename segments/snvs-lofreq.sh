@@ -55,7 +55,7 @@ if [ ! -s "$chrom_sizes" ] ; then
 	exit 1
 fi
 
-bed=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-TARGETS-BED $found_bed)
+bed=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-TARGETS-BED)
 
 if [ ! -s "$bed" ] ; then
 	echo -e "\n $script_name ERROR: BED $bed DOES NOT EXIST \n" >&2

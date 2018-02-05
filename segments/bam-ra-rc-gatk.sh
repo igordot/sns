@@ -61,14 +61,31 @@ module load local
 #########################
 
 
-# exit if output exists already
+# check for output
 
-if [ -s "$bam_ra_rc" ] ; then
+# skip if final BAM and BAI exist
+if [ -s "$bam_ra_rc" ] && [ -s "${bam_ra_rc}.bai" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	echo "${sample},${bam_ra_rc}" >> "$samples_csv"
 	exit 1
 fi
 
+# delete potentially incomplete files (since the corresponding BAM index was not generated)
+if [ -s "$bam_ra_rc" ] ; then
+	echo -e "\n $script_name WARNING: POTENTIALLY CORRUPT BAM $bam_ra_rc EXISTS \n" >&2
+	# delete BAMs
+	rm -fv "$bam_ra_rc"
+	rm -fv "$bam_ra"
+	# delete realignment files that are no longer needed
+	rm -fv "$bam_ra"
+	rm -fv "$bai_ra"
+	rm -fv "$gatk_ra_intervals"
+	# delete recalibration files that are no longer needed
+	rm -fv "$gatk_rc_table1"
+	rm -fv "$gatk_rc_table2"
+fi
+
+# if realigned BAM exists, assume that there is another process that is currently running and skip
 if [ -s "$bam_ra" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	exit 1
@@ -113,6 +130,7 @@ if [ ! -s "$ref_dict" ] ; then
 	exit 1
 fi
 
+# check for BED files in the project directory and set as project BED file if it is not already defined
 found_bed=$(find "$proj_dir" -maxdepth 1 -type f -iname "*.bed" | grep -v "probes" | sort | head -1)
 bed=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-TARGETS-BED "$found_bed")
 
@@ -242,8 +260,18 @@ sleep 30
 
 # check that output generated
 
+# if BAM not generated, delete any related files since something went wrong and they might be corrupted
 if [ ! -s "$bam_ra" ] ; then
 	echo -e "\n $script_name ERROR: BAM $bam_ra NOT GENERATED \n" >&2
+	rm -fv "$gatk_ra_intervals"
+	exit 1
+fi
+
+# if BAM index not generated, delete any related files since something went wrong and they might be corrupted
+if [ ! -s "$bai_ra" ] ; then
+	echo -e "\n $script_name ERROR: BAM INDEX $bai_ra NOT GENERATED \n" >&2
+	rm -fv "$bam_ra"
+	rm -fv "$gatk_ra_intervals"
 	exit 1
 fi
 
@@ -315,8 +343,20 @@ sleep 30
 
 # check that output generated
 
+# if BAM not generated, delete any related files since something went wrong and they might be corrupted
 if [ ! -s "$bam_ra_rc" ] ; then
 	echo -e "\n $script_name ERROR: BAM $bam_ra_rc NOT GENERATED \n" >&2
+	rm -fv "$gatk_rc_table1"
+	rm -fv "$gatk_rc_table2"
+	exit 1
+fi
+
+# if BAM index not generated, delete any related files since something went wrong and they might be corrupted
+if [ ! -s "$bai_ra_rc" ] ; then
+	echo -e "\n $script_name ERROR: BAM INDEX $bai_ra_rc NOT GENERATED \n" >&2
+	rm -fv "$bam_ra_rc"
+	rm -fv "$gatk_rc_table1"
+	rm -fv "$gatk_rc_table2"
 	exit 1
 fi
 
@@ -328,10 +368,6 @@ fi
 
 # move .bai (GATK convention) to .bam.bai (samtools convention) since some tools expect that
 mv -v "$bai_ra_rc" "${bam_ra_rc}.bai"
-
-# delete input BAM
-rm -fv "$bam"
-rm -fv "${bam}.bai"
 
 # delete realignment files that are no longer needed
 rm -fv "$bam_ra"

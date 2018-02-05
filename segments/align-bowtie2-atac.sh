@@ -103,16 +103,18 @@ module load samtools/1.3
 
 sambamba_bin="/ifs/home/id460/software/sambamba/sambamba_v0.6.7"
 
+echo
 echo " * bowtie2: $(readlink -f $(which bowtie2)) "
 echo " * bowtie2 version: $(bowtie2 --version 2>&1 | head -1) "
 echo " * sambamba: $(readlink -f $sambamba_bin) "
 echo " * sambamba version: $($sambamba_bin 2>&1 | head -1) "
 echo " * samtools: $(readlink -f $(which samtools)) "
 echo " * samtools version: $(samtools --version | head -1) "
-echo " * BOWTIE2 REF: $ref_bowtie2 "
+echo " * bowtie2 ref: $ref_bowtie2 "
 echo " * FASTQ R1: $fastq_R1 "
 echo " * FASTQ R2: $fastq_R2 "
 echo " * BAM: $bam "
+echo
 
 # step 1: align with Bowtie2
 # step 2: convert SAM to BAM and remove low quality reads
@@ -122,7 +124,7 @@ echo " * BAM: $bam "
 bash_cmd="
 bowtie2 \
 --local \
---minins 50 \
+--minins 25 \
 --maxins 2000 \
 --no-mixed \
 --no-discordant \
