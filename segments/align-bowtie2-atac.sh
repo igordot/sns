@@ -45,7 +45,8 @@ if [ ! -s "$fastq_R2" ] ; then
 	exit 1
 fi
 
-code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
+code_dir=$(dirname $(dirname "$script_path"))
+
 ref_bowtie2=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-BOWTIE2);
 
 if [ ! -s "${ref_bowtie2}.fa" ] ; then
@@ -84,12 +85,25 @@ module load local
 #########################
 
 
-# exit if output exists already
+# check for output
 
-if [ -s "$bam" ] ; then
+# skip if final BAM and BAI exist
+if [ -s "$bam" ] && [ -s "$bai" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	echo "${sample},${bam}" >> "$samples_csv"
 	exit 1
+fi
+
+# delete BAM (likely incomplete since the corresponding BAI was not generated)
+if [ -s "$bam" ] ; then
+	echo -e "\n $script_name WARNING: POTENTIALLY CORRUPT BAM $bam EXISTS \n" >&2
+	rm -fv "$bam"
+fi
+
+# delete SAM (likely incomplete since the BAM was not generated)
+if [ -s "$unfiltered_sam" ] ; then
+	echo -e "\n $script_name WARNING: SAM $unfiltered_sam EXISTS \n" >&2
+	rm -fv "$unfiltered_sam"
 fi
 
 
@@ -128,6 +142,7 @@ bowtie2 \
 --maxins 2000 \
 --no-mixed \
 --no-discordant \
+--dovetail \
 --threads $threads \
 -x $ref_bowtie2 \
 -1 $fastq_R1 -2 $fastq_R2 \

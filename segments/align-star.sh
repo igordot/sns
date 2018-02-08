@@ -57,7 +57,7 @@ module load local
 #########################
 
 
-# exit if output exists already
+# check for output
 
 # skip if final BAM and BAI exist
 if [ -s "$bam" ] && [ -s "$bai" ] ; then

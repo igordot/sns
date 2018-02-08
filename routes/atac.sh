@@ -105,9 +105,10 @@ if [ -z "$bam_dd" ] ; then
 fi
 
 # generate BigWig (deeptools)
-segment_bigwig_deeptools="bigwig-deeptools"
-bash_cmd="bash ${code_dir}/segments/${segment_bigwig_deeptools}.sh $proj_dir $sample 4 $bam_dd"
-qsub_cmd="qsub -N sns.${segment_bigwig_deeptools}.${sample} -M ${USER}@nyumc.org -m a -j y -cwd -pe threaded 4 -b y ${bash_cmd}"
+segment_bw_deeptools="bigwig-deeptools"
+bash_cmd="bash ${code_dir}/segments/${segment_bw_deeptools}.sh $proj_dir $sample 4 $bam_dd"
+qsub_common_cmd="qsub -q all.q -M ${USER}@nyumc.org -m a -j y -b y -cwd"
+qsub_cmd="${qsub_common_cmd} -N sns.${segment_bw_deeptools}.${sample} -pe threaded 4 ${bash_cmd}"
 $qsub_cmd
 
 # fragment size distribution
@@ -118,8 +119,6 @@ bash_cmd="bash ${code_dir}/segments/${segment_qc_frag_size}.sh $proj_dir $sample
 # call peaks
 segment_peaks="peaks-macs-atac"
 bash_cmd="bash ${code_dir}/segments/${segment_peaks}.sh $proj_dir $sample $bam_dd 0.05"
-($bash_cmd)
-bash_cmd="bash ${code_dir}/segments/${segment_peaks}.sh $proj_dir $sample $bam_dd 0.20"
 ($bash_cmd)
 
 # call nucleosomes
