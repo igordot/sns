@@ -14,6 +14,7 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 if [ ! $# == 5 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
 	echo -e "\n USAGE: $script_name project_dir sample_name num_threads FASTQ_R1 FASTQ_R2 \n" >&2
+	if [ $# -gt 0 ] ; then echo -e "\n ARGS: $* \n" >&2 ; fi
 	exit 1
 fi
 
@@ -90,6 +91,7 @@ module load local
 # skip if final BAM and BAI exist
 if [ -s "$bam" ] && [ -s "$bai" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
+	echo -e "\n $script_name ADD $sample TO $samples_csv \n" >&2
 	echo "${sample},${bam}" >> "$samples_csv"
 	exit 1
 fi
@@ -112,7 +114,12 @@ fi
 
 # Bowtie2
 
-module load bowtie2/2.3.1
+# step 1: align with Bowtie2
+# step 2: convert SAM to BAM and remove low quality reads
+# step 3: sort BAM
+# to do: add Picard AddOrReplaceReadGroups for extra compatibility
+
+module load bowtie2/2.3.4.1
 module load samtools/1.3
 
 sambamba_bin="/ifs/home/id460/software/sambamba/sambamba_v0.6.7"
@@ -130,10 +137,14 @@ echo " * FASTQ R2: $fastq_R2 "
 echo " * BAM: $bam "
 echo
 
-# step 1: align with Bowtie2
-# step 2: convert SAM to BAM and remove low quality reads
-# step 3: sort BAM
-# to do: add Picard AddOrReplaceReadGroups for extra compatibility
+# --no-mixed
+#  by default, bowtie2 tries to align each mate if it cannot find a concordant or discordant alignment for a pair
+# --no-discordant
+#  a discordant alignment does not satisfy the paired-end constraints (--fr/--rf/--ff, -I, -X)
+# --dovetail
+#  if one mate alignment extends past the beginning of the other, consider that to be concordant
+# --soft-clipped-unmapped-tlen
+#  consider soft-clipped bases unmapped when calculating TLEN
 
 bash_cmd="
 bowtie2 \
@@ -143,6 +154,7 @@ bowtie2 \
 --no-mixed \
 --no-discordant \
 --dovetail \
+--soft-clipped-unmapped-tlen \
 --threads $threads \
 -x $ref_bowtie2 \
 -1 $fastq_R1 -2 $fastq_R2 \

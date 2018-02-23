@@ -14,6 +14,7 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 if [ ! $# == 2 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
 	echo -e "\n USAGE: $script_name project_dir sample_name \n" >&2
+	if [ $# -gt 0 ] ; then echo -e "\n ARGS: $* \n" >&2 ; fi
 	exit 1
 fi
 
@@ -23,14 +24,14 @@ sample=$2
 
 # check if input exists
 if [ ! -d "$proj_dir" ] || [ ! -n "$proj_dir" ] ; then
-	echo -e "\n $script_name ERROR: PROJ DIR $proj_dir DOES NOT EXIST \n"
+	echo -e "\n $script_name ERROR: PROJ DIR $proj_dir DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
 # sample sheet
 samples_csv="${proj_dir}/samples.fastq-raw.csv"
 if [ ! -s "$samples_csv" ] || [ ! -n "$samples_csv" ] ; then
-	echo -e "\n $script_name ERROR: SAMPLES CSV $samples_csv DOES NOT EXIST \n"
+	echo -e "\n $script_name ERROR: SAMPLES CSV $samples_csv DOES NOT EXIST \n" >&2
 	exit 1
 fi
 samples_csv_clean="${proj_dir}/samples.${segment_name}.csv"
@@ -49,6 +50,7 @@ fastq_R2_clean="${fastq_clean_dir}/${sample}_R2.fastq.gz"
 # check if output already exists
 if [ -s "$fastq_R1_clean" ] || [ -s "$fastq_R2_clean" ]; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
+	echo -e "\n $script_name ADD $sample TO $samples_csv_clean \n" >&2
 	if [ -s "$fastq_R2_clean" ] ; then
 		echo "${sample},${fastq_R1_clean},${fastq_R2_clean}" >> "$samples_csv_clean"
 	else
@@ -70,19 +72,19 @@ grep "^${sample}," "${samples_csv}" | LC_ALL=C sort | while read -r LINE ; do
 
 	# check that R1 file is not set to null and exists
 	if [ ! -n "$fastq_R1" ] || [ ! -e "$fastq_R1" ] ; then
-		echo -e "\n $script_name ERROR: INPUT FASTQ R1 $fastq_R1 DOES NOT EXIST \n"
+		echo -e "\n $script_name ERROR: INPUT FASTQ R1 $fastq_R1 DOES NOT EXIST \n" >&2
 		exit 1
 	fi
 
 	# check that R2 file exists if specified
 	if [ -n "$fastq_R2" ] && [ ! -e "$fastq_R2" ] ; then
-		echo -e "\n $script_name ERROR: INPUT FASTQ R2 $fastq_R2 DOES NOT EXIST \n"
+		echo -e "\n $script_name ERROR: INPUT FASTQ R2 $fastq_R2 DOES NOT EXIST \n" >&2
 		exit 1
 	fi
 
 	# check R1 file integrity and clear the output file if there is a problem
 	if ! gzip --test "$fastq_R1" ; then
-		echo -e "\n $script_name ERROR: INPUT FASTQ R1 $fastq_R1 IS CORRUPT \n"
+		echo -e "\n $script_name ERROR: INPUT FASTQ R1 $fastq_R1 IS CORRUPT \n" >&2
 		num_files="0"
 		echo "." > "$fastq_R1_clean"
 		exit 1
@@ -91,7 +93,7 @@ grep "^${sample}," "${samples_csv}" | LC_ALL=C sort | while read -r LINE ; do
 	# check R2 file integrity if specified and clear the output file if there is a problem
 	if [ -n "$fastq_R2" ] ; then
 		if ! gzip --test "$fastq_R2" ; then
-			echo -e "\n $script_name ERROR: INPUT FASTQ R2 $fastq_R2 IS CORRUPT \n"
+			echo -e "\n $script_name ERROR: INPUT FASTQ R2 $fastq_R2 IS CORRUPT \n" >&2
 			num_files="0"
 			echo "." > "$fastq_R2_clean"
 			exit 1
@@ -183,7 +185,7 @@ cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "
 
 # check if output exists at all
 if [ ! -s "$fastq_R1_clean" ] || [ ! -n "$fastq_R1_clean" ] ; then
-	echo -e "\n $script_name ERROR: OUTPUT FASTQ $fastq_R1_clean DOES NOT EXIST \n"
+	echo -e "\n $script_name ERROR: OUTPUT FASTQ $fastq_R1_clean DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
