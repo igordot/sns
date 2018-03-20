@@ -14,6 +14,7 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 if [ ! $# == 3 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
 	echo -e "\n USAGE: $script_name project_dir sample_name BAM \n" >&2
+	if [ $# -gt 0 ] ; then echo -e "\n ARGS: $* \n" >&2 ; fi
 	exit 1
 fi
 
@@ -68,7 +69,9 @@ if [ ! -s "$bam" ] || [ ! "$bam" ] ; then
 fi
 
 code_dir=$(dirname $(dirname "$script_path"))
+
 refflat=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-REFFLAT)
+
 rrna_interval_list=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-RRNAINTERVALLIST)
 
 if [ ! -s "$refflat" ] || [ ! "$refflat" ] ; then
@@ -89,9 +92,9 @@ fi
 
 module load picard-tools/2.6.0
 
-# strand:
-# fwd | transcript             | cufflinks "fr-secondstrand" | htseq "yes"     | picard "FIRST_READ"
-# rev | rev comp of transcript | cufflinks "fr-firststrand"  | htseq "reverse" | picard "SECOND_READ"
+# strand                       | cufflinks       | htseq   | picard      |
+# fwd (transcript)             | fr-secondstrand | yes     | FIRST_READ  |
+# rev (rev comp of transcript) | fr-firststrand  | reverse | SECOND_READ |
 
 echo
 echo " * Picard: ${PICARD_ROOT}/picard.jar "
@@ -169,9 +172,9 @@ fi
 
 paste \
 <(echo -e "#SAMPLE\n${sample}") \
-<(cat "${metrics_txt}" | grep -A 1 "PF_ALIGNED_BASES" | cut -f 2,11,12,13,14,15,22) \
-<(cat "${metrics_txt}.1READ" | grep -A 1 "PF_ALIGNED_BASES" | cut -f 18 | sed 's/PCT_CORRECT_STRAND_READS/FWD_STRAND/') \
-<(cat "${metrics_txt}.2READ" | grep -A 1 "PF_ALIGNED_BASES" | cut -f 18 | sed 's/PCT_CORRECT_STRAND_READS/REV_STRAND/') \
+<(cat "${metrics_txt}" | grep -A 1 "PF_ALIGNED_BASES" | cut -f 2,12,13,14,15,22) \
+<(cat "${metrics_txt}.1READ" | grep -A 1 "PF_ALIGNED_BASES" | cut -f 18 | sed 's/CORRECT_STRAND_READS/F_STRAND/') \
+<(cat "${metrics_txt}.2READ" | grep -A 1 "PF_ALIGNED_BASES" | cut -f 18 | sed 's/CORRECT_STRAND_READS/R_STRAND/') \
 | tr '\t' ',' \
 > $summary_csv
 
@@ -181,7 +184,7 @@ rm -fv "${metrics_txt}.2READ"
 
 # combine charts into a single pdf
 
-combined_pdf=${proj_dir}/summary.${segment_name}.pdf
+combined_pdf="${proj_dir}/summary.${segment_name}.pdf"
 
 rm -f "$combined_pdf"
 
@@ -190,8 +193,8 @@ gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=${combined_pdf} ${metrics
 
 # combine charts into a single png
 
-combined_png_3w=${proj_dir}/summary.${segment_name}.3w.png
-combined_png_5w=${proj_dir}/summary.${segment_name}.5w.png
+combined_png_3w="${proj_dir}/summary.${segment_name}.3w.png"
+combined_png_5w="${proj_dir}/summary.${segment_name}.5w.png"
 
 rm -f "$combined_png_3w"
 rm -f "$combined_png_5w"

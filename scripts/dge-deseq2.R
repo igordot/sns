@@ -20,8 +20,9 @@ args_all = commandArgs(trailingOnly = FALSE)
 scripts_dir = normalizePath(dirname(sub("^--file=", "", args_all[grep("^--file=", args_all)])))
 source(paste0(scripts_dir, "/load-install-packages.R"))
 source(paste0(scripts_dir, "/deseq2-pca.R"))
-source(paste0(scripts_dir, "/deseq2-results.R"))
-source(paste0(scripts_dir, "/deseq2-heatmap.R"))
+source(paste0(scripts_dir, "/deseq2-compare.R"))
+source(paste0(scripts_dir, "/plot-volcano.R"))
+source(paste0(scripts_dir, "/plot-heatmap.R"))
 
 # relevent arguments
 args = commandArgs(trailingOnly = TRUE)
@@ -40,16 +41,26 @@ if (!file.exists(groups_table_file)) stop("file does not exist: ", groups_table_
 r_dir = "r-data"
 if (!dir.exists(r_dir)) dir.create(r_dir)
 
-# load relevant packages
-load_install_packages("magrittr")
+# for general data manipulation
+load_install_packages("tibble")
+load_install_packages("dplyr")
+load_install_packages("tidyr")
+load_install_packages("readr")
+load_install_packages("glue")
+# for differenial expression
 load_install_packages("DESeq2")
 load_install_packages("genefilter")
+# for processing GTF (for gene lengths for FPKMs)
 load_install_packages("rtracklayer")
+# for exporting Excel xlsx files
+load_install_packages("writexl")
+# for color scheme
 load_install_packages("RColorBrewer")
+# for standard plotting
 load_install_packages("ggplot2")
 load_install_packages("ggrepel")
 load_install_packages("cowplot")
-load_install_packages("xlsx")
+# for heatmaps
 load_install_packages("pheatmap")
 
 message(" ========== import inputs ========== ")
@@ -62,23 +73,23 @@ message("GTF total entries: ", length(genes_granges))
 exons_granges = genes_granges[genes_granges$type == "exon"]
 exons_by_gene = split(exons_granges, exons_granges$gene_name)
 message("GTF genes: ", length(exons_by_gene))
-gene_lengths = exons_by_gene %>% reduce %>% width %>% sum
+gene_lengths = exons_by_gene %>% reduce() %>% width() %>% sum()
 message("GTF mean gene length: ", round(mean(gene_lengths), 1))
 message("GTF median gene length: ", median(gene_lengths))
 message("")
 
 # import counts table
 counts_table = read.delim(file = counts_table_file, header = TRUE, row.names = 1, check.names = FALSE, stringsAsFactors = FALSE)
-message("input counts table gene num: ", nrow(counts_table))
-message("input counts table sample num: ", ncol(counts_table))
-message("input counts table samples: ", toString(colnames(counts_table)))
+message("input counts table gene num:      ", nrow(counts_table))
+message("input counts table sample num:    ", ncol(counts_table))
+message("input counts table sample names:  ", toString(colnames(counts_table)))
 message("")
 
 # import groups table
 groups_table = read.csv(file = groups_table_file, header = TRUE, row.names = 1, colClasses = "factor")
-message("sample groups table sample num: ", nrow(groups_table))
-message("sample groups table samples: ", toString(rownames(groups_table)))
-message("sample groups table groups: ", toString(colnames(groups_table)))
+message("sample groups table sample num:   ", nrow(groups_table))
+message("sample groups table sample names: ", toString(rownames(groups_table)))
+message("sample groups table group names:  ", toString(colnames(groups_table)))
 message("")
 
 # check that all samples from the groups table are found in the counts table
@@ -99,7 +110,7 @@ message("group levels: ", toString(group_levels))
 message("")
 
 # design formula
-design_formula = formula(paste("~", group_name))
+design_formula = formula(glue("~ {group_name}"))
 message("design formula: ", design_formula)
 
 message(" ========== normalize ========== ")
@@ -113,9 +124,9 @@ dds = DESeq(dds, betaPrior = TRUE, parallel = TRUE, BPPARAM = BiocParallel::Mult
 if (identical(sort(names(gene_lengths)), sort(rownames(dds)))) {
   mcols(dds)$basepairs = gene_lengths[rownames(dds)]
 } else {
-  message("GTF num genes: ", length(gene_lengths))
+  message("GTF num genes:          ", length(gene_lengths))
   message("counts table num genes: ", nrow(counts_table))
-  message("dds genes: ", nrow(dds))
+  message("dds genes:              ", nrow(dds))
   stop("genes in the GTF and the DESeq dataset object do not match")
 }
 
@@ -123,22 +134,24 @@ if (identical(sort(names(gene_lengths)), sort(rownames(dds)))) {
 vsd = varianceStabilizingTransformation(dds, blind = TRUE)
 
 # save DESeqDataSet and VST DESeqTransform objects
-saveRDS(dds, file = paste0(r_dir, "/deseq2.dds.rds"))
-saveRDS(vsd, file = paste0(r_dir, "/deseq2.vsd.rds"))
+saveRDS(dds, file = glue("{r_dir}/deseq2.dds.rds"))
+saveRDS(vsd, file = glue("{r_dir}/deseq2.vsd.rds"))
 
 # export counts
-write.csv(counts(dds, normalized = FALSE), file = "counts.raw.csv")
-norm_counts_table = counts(dds, normalized = TRUE) %>% round(2)
-write.csv(norm_counts_table, file = "counts.normalized.csv")
-write.xlsx2(x = norm_counts_table, file = "counts.normalized.xlsx", sheetName = "normalized counts")
+raw_counts = counts(dds, normalized = FALSE) %>% as.data.frame() %>% rownames_to_column("gene")
+write_excel_csv(raw_counts, path = "counts.raw.csv")
+norm_counts = counts(dds, normalized = TRUE) %>% round(2) %>% as.data.frame() %>% rownames_to_column("gene")
+write_excel_csv(norm_counts, path = "counts.normalized.csv")
+write_xlsx(list(normalized_counts = norm_counts), path = "counts.normalized.xlsx")
 
 # export FPKMs (fragment counts normalized per kilobase of feature length per million mapped fragments)
-fpkm_table = fpkm(dds, robust = TRUE) %>% round(2)
-write.csv(fpkm_table, file = "counts.fpkm.csv")
-write.xlsx2(x = fpkm_table, file = "counts.fpkm.xlsx", sheetName = "FPKMs")
+fpkm_table = fpkm(dds, robust = TRUE) %>% round(2) %>% as.data.frame() %>% rownames_to_column("gene")
+write_excel_csv(fpkm_table, path = "counts.fpkm.csv")
+write_xlsx(list(FPKMs = fpkm_table), path = "counts.fpkm.xlsx")
 
 # export variance stabilized counts
-write.csv(round(assay(vsd), digits = 2), file = "counts.vst.csv")
+vsd_table = assay(vsd) %>% round(2) %>% as.data.frame() %>% rownames_to_column("gene")
+write_excel_csv(vsd_table, path = "counts.vst.csv")
 
 message(" ========== QC ========== ")
 
@@ -160,8 +173,8 @@ for (combination_num in 1:ncol(group_levels_combinations)) {
   # numerator is second in order (usually second alphabetically, at least for timepoints)
   level_numerator = group_levels_combinations[2, combination_num]
   level_denominator = group_levels_combinations[1, combination_num]
-  message("comparison: ", paste(group_name, ":", level_numerator, "vs", level_denominator))
-  deseq2_results(deseq_dataset = dds, contrast = c(group_name, level_numerator, level_denominator))
+  message(glue("comparison : {group_name} : {level_numerator} vs {level_denominator}"))
+  deseq2_compare(deseq_dataset = dds, contrast = c(group_name, level_numerator, level_denominator))
 }
 
 # delete Rplots.pdf (generated by pheatmap)
