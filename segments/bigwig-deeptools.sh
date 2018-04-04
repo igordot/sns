@@ -48,8 +48,9 @@ bigwig_dir="${proj_dir}/BIGWIG"
 mkdir -p "$bigwig_dir"
 bigwig="${bigwig_dir}/${sample}.bin1.rpkm.bw"
 
-# BIGWIG_RPKM_BIN1=${BIGWIG_RPKM_DIR}/${ID}.bin1.rpkm.bw
-# BIGWIG_RPKM_BIN10=${BIGWIG_RPKM_DIR}/${ID}.bin10.smooth50.rpkm.bw
+# unload all loaded modulefiles
+module purge
+module load local
 
 
 #########################
@@ -66,18 +67,21 @@ fi
 #########################
 
 
-# generate bigwig using deeptools
+# generate bigWig using deepTools
 
-module unload python
 module load python/2.7.3
 module load deeptools/2.2.4
+# deepTools bamCoverage requires bedGraphToBigWig
 module load kentutils/329
 
+echo
 echo " * bamCoverage: $(readlink -f $(which bamCoverage)) "
+echo " * bamCoverage version: $(bamCoverage --version 2>&1 | head -1) "
 echo " * BAM: $bam "
 echo " * BIGWIG: $bigwig "
+echo
 
-bash_cmd="
+bamcov_cmd="
 bamCoverage \
 --verbose \
 --numberOfProcessors $threads \
@@ -87,25 +91,8 @@ bamCoverage \
 --bam $bam \
 --outFileName $bigwig
 "
-echo "CMD: $bash_cmd"
-eval "$bash_cmd"
-
-# echo " * BIGWIG: $BIGWIG_RPKM_BIN10 "
-
-# CMD="
-# bamCoverage \
-# --verbose \
-# --numberOfProcessors $THREADS \
-# --binSize 10 \
-# --fragmentLength 1 \
-# --smoothLength 50 \
-# --normalizeUsingRPKM \
-# --outFileFormat bigwig \
-# --bam $BAM \
-# --outFileName $BIGWIG_RPKM_BIN10
-# "
-# echo "CMD: $CMD"
-# eval "$CMD"
+echo "CMD: $bamcov_cmd"
+eval "$bamcov_cmd"
 
 
 #########################

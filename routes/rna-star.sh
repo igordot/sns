@@ -97,7 +97,8 @@ fi
 segment_bw_deeptools="bigwig-deeptools"
 bash_cmd="bash ${code_dir}/segments/${segment_bw_deeptools}.sh $proj_dir $sample 4 $bam_star"
 qsub_common_cmd="qsub -q all.q -M ${USER}@nyumc.org -m a -j y -b y -cwd"
-qsub_cmd="${qsub_common_cmd} -N sns.${segment_bw_deeptools}.${sample} -pe threaded 4 ${bash_cmd}"
+qsub_mem="-hard -l mem_free=150G -l mem_token=15G"
+qsub_cmd="${qsub_common_cmd} -N sns.${segment_bw_deeptools}.${sample} -pe threaded 4 ${qsub_mem} ${bash_cmd}"
 $qsub_cmd
 
 # generate BigWig (bedtools)
