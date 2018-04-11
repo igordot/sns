@@ -89,7 +89,7 @@ echo
 # --nogroup    disable grouping of bases for reads >50bp
 
 fastqc_cmd="fastqc \
---quiet --nogroup --noextract \
+--quiet --noextract \
 --threads $threads \
 --outdir $out_dir \
 $fastq

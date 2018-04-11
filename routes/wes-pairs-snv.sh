@@ -2,7 +2,7 @@
 
 
 ##
-## whole genome/exome/targeted sequencing somatic single/short nucleotide variant calling
+## whole genome/exome/targeted sequencing somatic single/simple/short nucleotide variant calling
 ##
 
 
@@ -79,19 +79,19 @@ fi
 
 qsub_settings="-q all.q -M ${USER}@nyumc.org -m a -j y -cwd -b y -hard -l mem_free=150G"
 
-# MuTect2
+# Mutect2
 segment_mutect2="snvs-mutect2"
-bash_cmd="bash ${code_dir}/segments/${segment_mutect2}.sh $proj_dir $sample_t $bam_t $sample_n $bam_n"
-qsub_cmd="qsub -N sns.${segment_mutect2}.${sample_clean} ${qsub_settings} ${bash_cmd}"
+bash_cmd="bash ${code_dir}/segments/${segment_mutect2}.sh $proj_dir $sample_t $bam_t $sample_n $bam_n 4"
+qsub_cmd="qsub -N sns.${segment_mutect2}.${sample_clean} ${qsub_settings} -pe threaded 4 ${bash_cmd}"
 echo "CMD: $qsub_cmd"
 ($qsub_cmd)
 
-sleep 30
+sleep 10
 
 # Strelka
 segment_strelka="snvs-strelka"
-bash_cmd="bash ${code_dir}/segments/${segment_strelka}.sh $proj_dir $sample_t $bam_t $sample_n $bam_n 8"
-qsub_cmd="qsub -N sns.${segment_strelka}.${sample_clean} ${qsub_settings} -pe threaded 8 ${bash_cmd}"
+bash_cmd="bash ${code_dir}/segments/${segment_strelka}.sh $proj_dir $sample_t $bam_t $sample_n $bam_n 4"
+qsub_cmd="qsub -N sns.${segment_strelka}.${sample_clean} ${qsub_settings} -pe threaded 4 ${bash_cmd}"
 echo "CMD: $qsub_cmd"
 ($qsub_cmd)
 

@@ -14,6 +14,7 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 if [ ! $# == 6 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
 	echo -e "\n USAGE: $script_name project_dir tumor_sample_name tumor_bam normal_sample_name normal_bam threads \n" >&2
+	if [ $# -gt 0 ] ; then echo -e "\n ARGS: $* \n" >&2 ; fi
 	exit 1
 fi
 
@@ -88,6 +89,7 @@ vcf_indels_original="${vcf_dir}/${sample_t}-${sample_n}.indels.original.vcf.gz"
 vcf_snvs_fixed="${vcf_dir}/${sample_t}-${sample_n}.snvs.vcf"
 vcf_indels_fixed="${vcf_dir}/${sample_t}-${sample_n}.indels.vcf"
 vcf_combined="${vcf_dir}/${sample_t}-${sample_n}.all.vcf"
+idx_combined="${vcf_dir}/${sample_t}-${sample_n}.all.vcf.idx"
 
 # annotation command (next segment)
 annot_cmd="bash ${code_dir}/segments/annot-annovar.sh $proj_dir $sample $vcf_combined"
@@ -137,7 +139,7 @@ fi
 # Manta/Strelka use python-based config scripts
 module load python/2.7.3
 
-manta_dir="/ifs/home/id460/software/manta/manta-1.3.0"
+manta_dir="/ifs/home/id460/software/manta/manta-1.3.2"
 manta_config_py="${manta_dir}/bin/configManta.py"
 
 echo
@@ -216,7 +218,7 @@ fi
 
 # configure Strelka
 
-strelka_dir="/ifs/home/id460/software/strelka/strelka-2.8.4"
+strelka_dir="/ifs/home/id460/software/strelka/strelka-2.9.2"
 strelka_config_py="${strelka_dir}/bin/configureStrelkaSomaticWorkflow.py"
 
 echo
@@ -329,6 +331,11 @@ rm -rf "${strelka_logs_dir}/workspace"
 
 module load samtools/1.3
 
+echo
+echo " * samtools: $(readlink -f $(which samtools)) "
+echo " * samtools version: $(samtools --version | head -1) "
+echo
+
 # 1) keep header and only passing variants
 # 2) split multi-allelic variants calls into separate lines (uses VCF 4.2 specification)
 # 3) perform indel left-normalization (start position shifted to the left until it is no longer possible to do so)
@@ -375,15 +382,28 @@ fi
 #########################
 
 
-# create a combined VCF (produces a valid VCF according to bcftools)
+# create a combined VCF with Picard MergeVcfs (proper handling of header and tags)
 
-cat \
-<(cat "$vcf_snvs_fixed" | grep '^##' | grep -E -v '##content|##cmdline|##prior|##bcftools' ) \
-<(cat "$vcf_indels_fixed" | grep '^##INFO') \
-<(cat "$vcf_indels_fixed" | grep '^##FORMAT') \
-<(cat "$vcf_indels_fixed" | grep '^#CHROM') \
-<(cat "$vcf_snvs_fixed" "$vcf_indels_fixed" | grep -v '^#' | LC_ALL=C sort -k1,1 -k2,2n) \
-> "$vcf_combined"
+module load picard-tools/2.6.0
+
+picard_base_cmd="java -Xms16G -Xmx16G -jar ${PICARD_ROOT}/picard.jar MergeVcfs VERBOSITY=WARNING QUIET=true"
+
+echo
+echo " * Picard: ${PICARD_ROOT}/picard.jar "
+echo " * Picard version: $($picard_base_cmd --version 2>&1 | head -1) "
+echo " * INPUT: $vcf_snvs_fixed "
+echo " * INPUT: $vcf_indels_fixed "
+echo " * OUTPUT: $vcf_combined "
+echo
+
+picard_cmd="
+$picard_base_cmd \
+INPUT=${vcf_snvs_fixed} \
+INPUT=${vcf_indels_fixed} \
+OUTPUT=${vcf_combined} \
+"
+echo -e "\n CMD: $picard_cmd \n"
+$picard_cmd
 
 sleep 30
 
@@ -395,6 +415,14 @@ sleep 30
 
 if [ ! -s "$vcf_combined" ] ; then
 	echo -e "\n $script_name ERROR: VCF $vcf_combined NOT GENERATED \n" >&2
+	exit 1
+fi
+
+# check if VCF index is present (should be present if VCF is complete)
+if [ ! -s "$idx_combined" ] ; then
+	echo -e "\n $script_name ERROR: VCF IDX $idx_combined NOT GENERATED \n" >&2
+	# delete VCF since something went wrong and it might be corrupted
+	rm -fv "$vcf_combined"
 	exit 1
 fi
 

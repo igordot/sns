@@ -81,6 +81,13 @@ if [ ! -s "$vcf_file" ] ; then
 	exit 1
 fi
 
+# check if the VCF file has variants
+num_variants=$(cat "$vcf_file" | grep -v '^#' | wc -l)
+if [ "$num_variants" -eq 0 ] ; then
+	echo -e "\n $script_name ERROR: VCF $vcf_file HAS NO VARIANTS \n" >&2
+	exit 1
+fi
+
 code_dir=$(dirname $(dirname "$script_path"))
 
 genome_dir=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" GENOME-DIR);
@@ -107,6 +114,7 @@ genome_build=$(basename "$genome_dir")
 annovar_multianno="${annovar_out_prefix}.${genome_build}_multianno.txt"
 
 # genome-specific settings (available annotations differ)
+# protocol, operation, and argument must have the same number of fields/commas
 # annovar_protocol, annovar_operation - table_annovar parameters
 # annovar_cols_grep - column names to grep for the final fixed table
 if [[ "$genome_build" == "hg19" ]] ; then
@@ -115,10 +123,10 @@ if [[ "$genome_build" == "hg19" ]] ; then
 	annovar_argument="'--splicing_threshold 10',,,,,,,"
 	annovar_cols_grep="^Ref|^Alt|refGene|avsnp|gnomAD_exome_ALL|gnomAD_genome_ALL|Kaviar_AF|cosmic|CADD13_PHRED|FATHMM"
 elif [[ "$genome_build" == "hg38" ]] ; then
-	annovar_protocol="refGene,avsnp150,gnomad_exome,gnomad_genome,kaviar_20150923,revel,dbnsfp33a"
-	annovar_operation="g,f,f,f,f,f,f"
-	annovar_argument="'--splicing_threshold 10',,,,,,"
-	annovar_cols_grep="^Ref|^Alt|refGene|avsnp|gnomAD_exome_ALL|gnomAD_genome_ALL|Kaviar_AF|REVEL|CADD|fathmm"
+	annovar_protocol="refGene,avsnp150,gnomad_exome,gnomad_genome,kaviar_20150923,cosmic84,intervar_20180118,revel,dbnsfp33a"
+	annovar_operation="g,f,f,f,f,f,f,f,f"
+	annovar_argument="'--splicing_threshold 10',,,,,,,,"
+	annovar_cols_grep="^Ref|^Alt|refGene|avsnp|gnomAD_exome_ALL|gnomAD_genome_ALL|Kaviar_AF|cosmic|InterVar|REVEL|CADD|fathmm"
 elif [[ "$genome_build" == "mm10" ]] ; then
 	annovar_protocol="refGene,snp142,snp142Common"
 	annovar_operation="g,f,f"
@@ -145,11 +153,31 @@ fi
 
 # extract variant info (quality, depth, frequency) from a VCF in a table format for merging with annotations
 
-vcf_table_cmd="
-perl ${code_dir}/scripts/vcf-table.pl $vcf_file $sample | LC_ALL=C sort -k1,1 > $vcf_table
-"
+module load r/3.3.0
+
+echo
+echo " * R: $(readlink -f $(which R)) "
+echo " * R version: $(R --version | head -1) "
+echo " * Rscript: $(readlink -f $(which Rscript)) "
+echo " * Rscript version: $(Rscript --version 2>&1) "
+echo
+
+# test relevant R packages
+Rscript --vanilla "${code_dir}/scripts/test-package.R" tidyverse
+Rscript --vanilla "${code_dir}/scripts/test-package.R" glue
+Rscript --vanilla "${code_dir}/scripts/test-package.R" vcfR
+
+vcf_table_cmd="Rscript --vanilla ${code_dir}/scripts/vcf-table.R $sample $vcf_file $vcf_table"
 echo -e "\n CMD: $vcf_table_cmd \n"
-eval "$vcf_table_cmd"
+($vcf_table_cmd)
+
+# for VCF types not yet compatible with vcf-table.R
+if [ ! -s "$vcf_table" ] ; then
+	echo -e "\n $script_name ERROR: vcf-table.R DID NOT PRODUCE OUTPUT, TRYING vcf-table.pl \n" >&2
+	vcf_table_pl_cmd="perl ${code_dir}/scripts/vcf-table.pl $vcf_file $sample | LC_ALL=C sort -k1,1 > $vcf_table"
+	echo -e "\n CMD: $vcf_table_pl_cmd \n"
+	eval "$vcf_table_pl_cmd"
+fi
 
 sleep 30
 
@@ -157,7 +185,7 @@ sleep 30
 #########################
 
 
-# check that vcf-table.pl completed
+# check that vcf to table conversion completed
 
 if [ ! -s "$vcf_table" ] ; then
 	echo -e "\n $script_name ERROR: $vcf_table IS EMPTY \n" >&2
@@ -289,7 +317,10 @@ fi
 # merge variant info from VCF with annotations from ANNOVAR
 
 join_cmd="
-LC_ALL=C join -a1 -t $'\t' $vcf_table $annovar_out_fixed > $annovar_combined
+LC_ALL=C join -a1 -t $'\t' \
+<(LC_ALL=C sort -k1,1 $vcf_table) \
+<(LC_ALL=C sort -k1,1 $annovar_out_fixed) \
+> $annovar_combined
 "
 echo -e "\n CMD: $join_cmd \n"
 eval "$join_cmd"

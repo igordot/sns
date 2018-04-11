@@ -14,6 +14,7 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 if [ ! $# == 4 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
 	echo -e "\n USAGE: $script_name project_dir sample_name threads BAM \n" >&2
+	if [ $# -gt 0 ] ; then echo -e "\n ARGS: $* \n" >&2 ; fi
 	exit 1
 fi
 
@@ -55,7 +56,8 @@ if [ ! -s "$chrom_sizes" ] ; then
 	exit 1
 fi
 
-bed=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-TARGETS-BED)
+found_bed=$(find "$proj_dir" -maxdepth 1 -type f -iname "*.bed" | grep -v "probes" | sort | head -1)
+bed=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-TARGETS-BED "$found_bed")
 
 if [ ! -s "$bed" ] ; then
 	echo -e "\n $script_name ERROR: BED $bed DOES NOT EXIST \n" >&2
@@ -71,6 +73,7 @@ fi
 vcf_dir="${proj_dir}/VCF-LoFreq"
 mkdir -p "$vcf_dir"
 vcf_original="${vcf_dir}/${sample}.original.vcf"
+vcf_add_gt="${vcf_dir}/${sample}.gt.vcf"
 vcf_fixed="${vcf_dir}/${sample}.vcf"
 
 # annotation command (next segment)
@@ -137,6 +140,7 @@ fi
 # LoFreq
 
 lofreq_bin="/ifs/home/id460/bin/lofreq"
+lofreq_gt_py="/ifs/home/id460/bin/lofreq2_add_fake_gt.py"
 
 echo
 echo " * LoFreq: $(readlink -f $(which $lofreq_bin)) "
@@ -173,15 +177,57 @@ fi
 #########################
 
 
+# complement VCF with unknown genotype (adds FORMAT and SAMPLE fields for improved compatibility)
+# https://github.com/CSB5/lofreq/blob/master/src/tools/scripts/lofreq2_add_fake_gt.py
+# "you can just add fake columns"
+# http://csb5.github.io/lofreq/2015/11/23/where-are-the-format-and-sample-fields/
+
+module load python/2.7.3
+
+echo
+echo " * lofreq2_add_fake_gt.py: $(readlink -f $(which $lofreq_gt_py)) "
+echo " * VCF original: $vcf_original "
+echo " * VCF with GT: $vcf_add_gt "
+echo
+
+lofreq_gt_cmd="
+python $lofreq_gt_py \
+--vcf-in $vcf_original \
+--samples $sample \
+--vcf-out $vcf_add_gt \
+"
+echo -e "\n CMD: $lofreq_gt_cmd \n"
+$lofreq_gt_cmd
+
+
+#########################
+
+
+# check that output generated
+
+if [ ! -s "$vcf_add_gt" ] ; then
+	echo -e "\n $script_name ERROR: VCF $vcf_add_gt NOT GENERATED \n" >&2
+	exit 1
+fi
+
+
+#########################
+
+
 # adjust the vcf for annovar compatibility (http://www.openbioinformatics.org/annovar/annovar_vcf.html)
 
 module load samtools/1.3
+
+echo
+echo " * samtools: $(readlink -f $(which samtools)) "
+echo " * samtools version: $(samtools --version | head -1) "
+echo
 
 # create indexed VCF file
 # warnings: "contig 'chr1' is not defined in the header. (Quick workaround: index the file with tabix.)"
 
 # bgzip VCF file so it can be indexed
-bgzip_cmd="bgzip -c $vcf_original > ${vcf_original}.bgz"
+bgzip_cmd="bgzip -c $vcf_add_gt > ${vcf_original}.bgz"
 echo -e "\n CMD: $bgzip_cmd \n"
 eval "$bgzip_cmd"
 
@@ -202,9 +248,6 @@ bcftools norm --multiallelics -both --output-type v ${vcf_original}.bgz \
 echo -e "\n CMD: $fix_vcf_cmd \n"
 eval "$fix_vcf_cmd"
 
-# add FORMAT and sample ID columns so VCF is compatible with some other scripts
-sed -i "s/FILTER\tINFO/FILTER\tINFO\tFORMAT\t${sample}/g" "$vcf_fixed"
-
 
 #########################
 
@@ -220,6 +263,16 @@ if [ ! -s "$vcf_fixed" ] ; then
 	rm -fv "$vcf_fixed"
 	exit 1
 fi
+
+
+#########################
+
+
+# clean up
+
+rm -fv "$vcf_add_gt"
+rm -fv "${vcf_original}.bgz"
+rm -fv "${vcf_original}.bgz.csi"
 
 
 #########################

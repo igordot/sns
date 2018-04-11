@@ -48,7 +48,8 @@ if [ ! -s "$ref_fasta" ] ; then
 	exit 1
 fi
 
-bed=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-TARGETS-BED)
+found_bed=$(find "$proj_dir" -maxdepth 1 -type f -iname "*.bed" | grep -v "probes" | sort | head -1)
+bed=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-TARGETS-BED "$found_bed")
 
 if [ ! -s "$bed" ] ; then
 	echo -e "\n $script_name ERROR: BED $bed DOES NOT EXIST \n" >&2
@@ -172,6 +173,11 @@ fi
 # adjust the vcf for annovar compatibility (http://www.openbioinformatics.org/annovar/annovar_vcf.html)
 
 module load samtools/1.3
+
+echo
+echo " * samtools: $(readlink -f $(which samtools)) "
+echo " * samtools version: $(samtools --version | head -1) "
+echo
 
 # 1) GATK HC is defining the AD field as "Number=." (VCF 4.1 specification) rather than "Number=R" (VCF 4.2 specification)
 # CMD: sed 's/AD,Number=./AD,Number=R/g' $vcf_original

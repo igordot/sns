@@ -5,7 +5,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -37,23 +38,23 @@ if [ ! -s "$bam" ] ; then
 	exit 1
 fi
 
-code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
+code_dir=$(dirname $(dirname "$script_path"))
 
-ref_fasta=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-FASTA);
+ref_fasta=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-FASTA);
 
 if [ ! -s "$ref_fasta" ] ; then
 	echo -e "\n $script_name ERROR: FASTA $ref_fasta DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
-ref_dict=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-DICT);
+ref_dict=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-DICT);
 
 if [ ! -s "$ref_dict" ] ; then
 	echo -e "\n $script_name ERROR: DICT $ref_dict DOES NOT EXIST \n" >&2
 	exit 1
 fi
 
-gtf=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-GTF);
+gtf=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-GTF);
 
 if [ ! -s "$gtf" ] || [ ! "$gtf" ] ; then
 	echo -e "\n $script_name ERROR: GTF $gtf DOES NOT EXIST \n" >&2
@@ -76,6 +77,10 @@ bam_split_dir="${proj_dir}/BAM-SPLIT"
 mkdir -p "$bam_split_dir"
 bam_split="${bam_split_dir}/${bam_base}.bam"
 
+# unload all loaded modulefiles
+module purge
+module load local
+
 
 #########################
 
@@ -94,7 +99,6 @@ fi
 
 # GATK settings
 
-module unload java
 module load java/1.8
 module load r/3.3.0
 
@@ -116,10 +120,12 @@ gatk_log_level_arg="--logging_level ERROR"
 
 # GATK SplitNCigarReads
 
+echo
 echo " * GATK: $(readlink -f $gatk_jar) "
 echo " * GATK version: $($gatk_cmd --version) "
 echo " * BAM in: $bam "
 echo " * BAM out: $bam_split "
+echo
 
 gatk_split_cmd="
 $gatk_cmd -T SplitNCigarReads $gatk_log_level_arg \
@@ -148,8 +154,8 @@ fi
 
 # exons BED file (needed for future steps)
 
-found_bed=$(find $proj_dir -maxdepth 1 -type f -name "*.bed" | head -1)
-bed=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-TARGETS-BED $found_bed);
+found_bed=$(find "$proj_dir" -maxdepth 1 -type f -iname "*.bed" | grep -v "probes" | sort | head -1)
+bed=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-TARGETS-BED "$found_bed");
 
 # generate exons BED file if doesn't exist already
 if [ ! -s "$bed" ] ; then
@@ -166,7 +172,7 @@ if [ ! -s "$bed" ] ; then
 	> "${proj_dir}/exons.bed"
 
 	found_bed=$(find $proj_dir -maxdepth 1 -type f -name "exons.bed" | head -1)
-	bed=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-TARGETS-BED $found_bed);
+	bed=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-TARGETS-BED "$found_bed");
 
 fi
 
