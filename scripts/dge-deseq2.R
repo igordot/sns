@@ -65,19 +65,6 @@ load_install_packages("pheatmap")
 
 message(" ========== import inputs ========== ")
 
-# import genes GTF file
-genes_granges = import(genes_gtf)
-message("GTF total entries: ", length(genes_granges))
-
-# extract gene lengths (sum of exons)
-exons_granges = genes_granges[genes_granges$type == "exon"]
-exons_by_gene = split(exons_granges, exons_granges$gene_name)
-message("GTF genes: ", length(exons_by_gene))
-gene_lengths = exons_by_gene %>% reduce() %>% width() %>% sum()
-message("GTF mean gene length: ", round(mean(gene_lengths), 1))
-message("GTF median gene length: ", median(gene_lengths))
-message("")
-
 # import counts table
 counts_table = read.delim(file = counts_table_file, header = TRUE, row.names = 1, check.names = FALSE, stringsAsFactors = FALSE)
 message("input counts table gene num:      ", nrow(counts_table))
@@ -98,8 +85,8 @@ if (length(diff_samples)) stop("some samples not in counts table: ", toString(di
 
 # subset to samples in groups table (also sets samples to be in the same order)
 counts_table = counts_table[, rownames(groups_table)]
-message("subset counts table gene num: ", nrow(counts_table))
-message("subset counts table sample num: ", ncol(counts_table))
+message("subset counts table gene num:     ", nrow(counts_table))
+message("subset counts table sample num:   ", ncol(counts_table))
 message("")
 
 # group info (use the first column for grouped comparisons)
@@ -112,6 +99,21 @@ message("")
 # design formula
 design_formula = formula(glue("~ {group_name}"))
 message("design formula: ", design_formula)
+
+message(" ========== import GTF genes annotations ========== ")
+
+# import genes GTF file
+genes_granges = import(genes_gtf)
+message("GTF total entries:      ", length(genes_granges))
+
+# extract gene lengths (sum of exons)
+exons_granges = genes_granges[genes_granges$type == "exon"]
+exons_by_gene = split(exons_granges, exons_granges$gene_name)
+message("GTF num genes:          ", length(exons_by_gene))
+gene_lengths = exons_by_gene %>% reduce() %>% width() %>% sum()
+message("GTF mean gene length:   ", round(mean(gene_lengths), 2))
+message("GTF median gene length: ", median(gene_lengths))
+message("")
 
 message(" ========== normalize ========== ")
 

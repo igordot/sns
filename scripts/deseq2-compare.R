@@ -71,14 +71,14 @@ deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL) {
 
   # save differential expression results in Excel format
   res_xlsx = paste0("dge.", gsub(pattern = " ", replacement = "-", x = res_name), ".xlsx")
-  write_xlsx(setNames(list(res_df), res_name), path = res_xlsx)
+  write_xlsx(setNames(list(res_df), strtrim(res_name, 31)), path = res_xlsx)
   message("results genes: ", nrow(res_df))
   message("save results xlsx: ", res_xlsx)
 
   # save significant (padj<0.05) differential expression results in Excel format
   res_padj005_xlsx = gsub(pattern = ".xlsx", replacement = ".q005.xlsx", x = res_xlsx)
   res_padj005_df = subset(res_df, padj < 0.05)
-  write_xlsx(setNames(list(res_padj005_df), res_name), path = res_padj005_xlsx)
+  write_xlsx(setNames(list(res_padj005_df), strtrim(res_name, 31)), path = res_padj005_xlsx)
   message("save filtered results xlsx: ", res_padj005_xlsx)
 
   # generate volcano plot
