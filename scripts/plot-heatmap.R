@@ -30,10 +30,10 @@ plot_heatmap = function(mat, row_subset, col_subset, title, file_prefix = "plot.
   # adjust row font size based on number of rows
   fontsize_row = 4
   show_rownames = TRUE
-  if (length(nrow(mat)) < 80) {
+  if (nrow(mat) < 80) {
     fontsize_row = 6
   }
-  if (length(nrow(mat)) > 150) {
+  if (nrow(mat) > 150) {
     show_rownames = FALSE
   }
 

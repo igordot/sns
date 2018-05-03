@@ -6,7 +6,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -48,6 +49,10 @@ annovar_out_fixed="${annovar_out_prefix}.annot.txt"
 annovar_combined="${annovar_out_prefix}.combined.txt"
 regions_table_fixed="${annovar_out_prefix}.in.txt"
 
+# unload all loaded modulefiles
+module purge
+module load local
+
 
 #########################
 
@@ -75,9 +80,9 @@ if [ ! -s "$regions_table" ] ; then
 	exit 1
 fi
 
-code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
+code_dir=$(dirname $(dirname "$script_path"))
 
-genome_dir=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" GENOME-DIR);
+genome_dir=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" GENOME-DIR);
 
 if [ ! -d "$genome_dir" ] ; then
 	echo -e "\n $script_name ERROR: GENOME DIR $genome_dir DOES NOT EXIST \n" >&2
@@ -91,27 +96,32 @@ fi
 # ANNOVAR genome-specific settings
 
 # ANNOVAR directory
-annovar_path="/ifs/home/id460/software/annovar/annovar-160201"
+annovar_path="/ifs/home/id460/software/annovar/annovar-170716"
 annovar_db_path="/ifs/home/id460/ref/annovar"
 
 genome_build=$(basename "$genome_dir")
 
-# annovar_buildver, annovar_protocol, annovar_operation - table_annovar parameters
-# annovar_multianno - table_annovar output
-# annovar_keep_cols - columns to keep for final fixed table
+# table_annovar output file (automatically named)
+annovar_multianno="${annovar_out_prefix}.${genome_build}_multianno.txt"
 
+# genome-specific settings (available annotations differ)
+# annovar_buildver, annovar_protocol, annovar_operation - table_annovar parameters
+# annovar_keep_cols - columns to keep for final fixed table
 if [[ "$genome_build" == "hg19" ]] ; then
 	annovar_buildver="hg19"
 	annovar_protocol="cytoBand,refGene"
 	annovar_operation="r,g"
-	annovar_multianno="${annovar_out_prefix}.hg19_multianno.txt"
 	annovar_keep_cols="1,7-10"
 elif [[ "$genome_build" == "mm10" ]] ; then
 	annovar_buildver="mm10"
 	annovar_protocol="cytoBand,refGene"
 	annovar_operation="r,g"
-	annovar_multianno="${annovar_out_prefix}.mm10_multianno.txt"
 	annovar_keep_cols="1,7-10"
+elif [[ "$genome_build" == "canFam3" ]] ; then
+	annovar_buildver="canFam3"
+	annovar_protocol="refGene"
+	annovar_operation="g"
+	annovar_keep_cols="1,8-10"
 else
 	annovar_buildver=""
 	echo -e "\n $script_name ERROR: UNKNOWN GENOME $genome_build \n" >&2

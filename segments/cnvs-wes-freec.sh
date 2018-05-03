@@ -5,7 +5,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -44,7 +45,7 @@ if [ ! -s "$bam_n" ] ; then
 	exit 1
 fi
 
-code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
+code_dir=$(dirname $(dirname "$script_path"))
 
 genome_dir=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" GENOME-DIR)
 
@@ -83,6 +84,10 @@ fi
 
 sample="${sample_t}:${sample_n}"
 
+summary_dir="${proj_dir}/summary"
+mkdir -p "$summary_dir"
+summary_csv="${summary_dir}/${sample}.${segment_name}.csv"
+
 cnv_freec_dir="${proj_dir}/CNV-FREEC"
 mkdir -p "$cnv_freec_dir"
 
@@ -116,6 +121,10 @@ bafs_fixed="${fixed_base}.BAFs.txt"
 
 graph_fixed="${fixed_base}.png"
 
+# unload all loaded modulefiles
+module purge
+module load local
+
 
 #########################
 
@@ -146,6 +155,11 @@ elif [[ "$genome_build" == "mm10" ]] ; then
 	snps_bed=""
 	echo -e "\n $script_name ERROR: UNSUPPORTED GENOME \n" >&2
 	exit 1
+elif [[ "$genome_build" == "canFam3" ]] ; then
+	chr_files_dir="/ifs/home/id460/ref/canFam3/chromosomes/"
+	gem="/ifs/home/id460/ref/canFam3/genome.len100.mm2.mappability"
+	snps_vcf="/ifs/home/id460/ref/canFam3/dbSNP/dbsnp.151.snp.validated.vcf"
+	snps_bed="/ifs/home/id460/ref/canFam3/dbSNP/dbsnp.151.snp.validated.bed"
 else
 	echo -e "\n $script_name ERROR: UNSUPPORTED GENOME \n" >&2
 	exit 1
@@ -157,6 +171,8 @@ fi
 
 # generate FREEC-compatible references
 
+# FREEC compiled with GCC 6.1.0
+module load gcc/6.1.0
 # bedtools to create .pileup files for WES data
 module load bedtools/2.26.0
 # samtools to create .pileup files (for BAF) (even with sambamba enabled)
@@ -164,7 +180,7 @@ module load samtools/1.3
 
 # clean up probes BED
 fix_probes_cmd="
-cat $probes_bed_original | cut -f 1-3 | grep -v '^chrM' | LC_ALL=C sort -u -k1,1 -k2,2n \
+cat $probes_bed_original | cut -f 1-3 | grep -v '^chrM' | grep -v '^chrUn' | LC_ALL=C sort -u -k1,1 -k2,2n \
 > $probes_bed_fixed
 "
 echo -e "\n CMD: $fix_probes_cmd \n"
@@ -235,15 +251,6 @@ sex = XY
 # explicit window size
 # for whole exome sequencing: window=0
 window = 0
-
-# set to 1 or 2 to correct the Read Count (RC) for GC-content bias and low mappability
-# Default (WGS): 0
-# Default (WES): 1 (≥ v9.5) and 0 (< v9.5)
-# forceGCcontentNormalization = 1
-
-# degree of polynomial
-# Default: 3&4 (GC-content based normalization, WGS) or 1 (control-read-count-based normalization, WES)
-# degree = 1
 
 # desired behavior in the ambiguous regions
 # 4: make a separate fragment of this unknown region and do not assign any copy number to this region at all
@@ -331,9 +338,10 @@ sleep 30
 
 cd "$sample_freec_logs_dir"
 
-freec_dir="/ifs/home/id460/software/FREEC/FREEC-11.0"
+freec_dir="/ifs/home/id460/software/FREEC/FREEC-11.3"
 freec_bin="${freec_dir}/src/freec"
 
+echo
 echo " * FREEC: $(readlink -f $freec_bin) "
 echo " * sample T : $sample_t "
 echo " * BAM T : $bam_t "
@@ -341,17 +349,18 @@ echo " * sample N : $sample_n "
 echo " * BAM N : $bam_n "
 echo " * probes original: $probes_bed_original "
 echo " * probes fixed: $probes_bed_fixed "
+echo " * ratio original: $ratio_original "
+echo " * ratio fixed: $ratio_fixed "
 echo " * CNVs original: $cnvs_original "
 echo " * CNVs fixed: $cnvs_fixed "
 echo " * BAFs original: $bafs_original "
 echo " * BAFs fixed: $bafs_fixed "
-echo " * ratio original: $ratio_original "
-echo " * ratio fixed: $ratio_fixed "
 echo " * graph: $graph_fixed "
+echo
 
 freec_cmd="$freec_bin -conf $config_txt"
 echo -e "\n CMD: $freec_cmd \n"
-$freec_cmd
+($freec_cmd)
 
 sleep 30
 
@@ -361,14 +370,27 @@ sleep 30
 
 # check that output generated
 
+if [ ! -s "$ratio_original" ] ; then
+	echo -e "\n $script_name ERROR: $ratio_original NOT GENERATED \n" >&2
+	exit 1
+fi
+
 if [ ! -s "$cnvs_original" ] ; then
 	echo -e "\n $script_name ERROR: $cnvs_original NOT GENERATED \n" >&2
 	exit 1
 fi
 
-if [ ! -s "$ratio_original" ] ; then
-	echo -e "\n $script_name ERROR: $ratio_original NOT GENERATED \n" >&2
+if [ ! -s "$bafs_original" ] ; then
+	echo -e "\n $script_name ERROR: $bafs_original NOT GENERATED \n" >&2
 	exit 1
+fi
+
+if [ ! -s "$minipileup_sample" ] ; then
+	echo -e "\n $script_name ERROR: $minipileup_sample NOT GENERATED \n" >&2
+fi
+
+if [ ! -s "$minipileup_control" ] ; then
+	echo -e "\n $script_name ERROR: $minipileup_control NOT GENERATED \n" >&2
 fi
 
 
@@ -393,7 +415,15 @@ rm -fv "$minipileup_control"
 
 module load r/3.3.0
 
-# required libraries: rtracklayer
+echo
+echo " * R: $(readlink -f $(which R)) "
+echo " * R version: $(R --version | head -1) "
+echo " * Rscript: $(readlink -f $(which Rscript)) "
+echo " * Rscript version: $(Rscript --version 2>&1) "
+echo
+
+# test relevant R packages
+Rscript --vanilla "${code_dir}/scripts/test-package.R" rtracklayer
 
 # add p-values (Wilcoxon test and Kolmogorov-Smirnov test) and columns header to the predicted CNVs
 freec_asses_sig_cmd="cat ${freec_dir}/scripts/assess_significance.R | R --slave --args $cnvs_original $ratio_original"
@@ -401,10 +431,10 @@ echo -e "\n CMD: $freec_asses_sig_cmd \n"
 eval "$freec_asses_sig_cmd"
 
 # add "chr" to CNV table chromosomes names
-cat ${cnvs_original}.p.value.txt | sed 's/^\([0-9XY]\)/chr\1/' | LC_ALL=C sort -k1,1 -k2,2n | uniq > $cnvs_fixed
+cat "${cnvs_original}.p.value.txt" | sed 's/^\([0-9XY]\)/chr\1/' | LC_ALL=C sort -k1,1 -k2,2n | uniq > "$cnvs_fixed"
 
 # add "chr" to BAF table chromosomes names
-cat $bafs_original | sed 's/^\([0-9XY]\)/chr\1/' | LC_ALL=C sort -k1,1 -k2,2n | uniq > $bafs_fixed
+cat "$bafs_original" | sed 's/^\([0-9XY]\)/chr\1/' | LC_ALL=C sort -k1,1 -k2,2n | uniq > "$bafs_fixed"
 
 # visualize normalized copy number profile with predicted CNAs as well as BAF profile by running makeGraph.R
 freec_makegraph_cmd="cat ${freec_dir}/scripts/makeGraph.R | R --slave --args 2 $ratio_original"
@@ -417,11 +447,8 @@ eval "$freec_makegraph_cmd"
 
 # fix some of the names
 
-# mv -v "$cnvs_original" "$cnvs_fixed"
 mv -v "$ratio_original" "$ratio_fixed"
 mv -v "${ratio_original}.png" "$graph_fixed"
-
-sleep 30
 
 
 #########################
@@ -433,6 +460,35 @@ if [ ! -s "$cnvs_fixed" ] ; then
 	echo -e "\n $script_name ERROR: CNVs $cnvs_fixed NOT GENERATED \n" >&2
 	exit 1
 fi
+
+
+#########################
+
+
+# summary
+
+# ratios and predicted copy number alterations for each window
+num_bins=$(cat "$ratio_fixed" | grep -v 'MedianRatio' | wc -l)
+echo "num bins: $num_bins"
+
+# B-allele frequencies for each possibly heterozygous SNP position
+num_bafs=$(cat "$bafs_fixed" | grep -v 'FittedA' | wc -l)
+echo "num BAF SNPs: $num_bafs"
+
+# predicted copy number alterations
+num_cnas=$(cat "$cnvs_fixed" | grep -v 'uncertainty' | wc -l)
+echo "num CNAs: $num_cnas"
+
+# header for summary file
+echo "#SAMPLE,bins,BAF SNPs,CNAs" > "$summary_csv"
+
+# summarize log file
+echo "${sample},${num_bins},${num_bafs},${num_cnas}" >> "$summary_csv"
+
+sleep 30
+
+# combine all sample summaries
+cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.${segment_name}.csv"
 
 
 #########################

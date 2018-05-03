@@ -5,7 +5,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -46,7 +47,7 @@ if [ ! -s "$bam_n" ] ; then
 	exit 1
 fi
 
-code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
+code_dir=$(dirname $(dirname "$script_path"))
 
 genome_dir=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" GENOME-DIR)
 
@@ -146,6 +147,7 @@ elif [[ "$genome_build" == "hg38" ]] ; then
 	germline_resource_arg="--germline-resource ${genome_dir}/gatk-bundle/af-only-gnomad.hg38.vcf.gz"
 	pileup_variants="${genome_dir}/gatk-bundle/small_exac_common_3.hg38.vcf.gz"
 else
+	germline_resource_arg=""
 	pileup_variants=""
 fi
 
