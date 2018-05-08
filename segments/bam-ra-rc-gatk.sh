@@ -178,6 +178,11 @@ elif [[ "$genome_build" == "mm10" ]] ; then
 	gatk_snp_vcf="${genome_dir}/dbSNP/dbsnp.146.vcf"
 	gatk_ra_known_arg="-known $gatk_indel_vcf"
 	gatk_rc_known_arg="-knownSites $gatk_indel_vcf -knownSites $gatk_snp_vcf"
+elif [[ "$genome_build" == "dm6" ]] ; then
+	gatk_indel_vcf="${genome_dir}/dbSNP/dbsnp.149.indel.vcf"
+	gatk_snp_vcf="${genome_dir}/dbSNP/dbsnp.149.vcf"
+	gatk_ra_known_arg="-known $gatk_indel_vcf"
+	gatk_rc_known_arg="-knownSites $gatk_snp_vcf"
 elif [[ "$genome_build" == "canFam3" ]] ; then
 	gatk_indel_vcf="${genome_dir}/dbSNP/dbsnp.151.indel.vcf"
 	gatk_snp_vcf="${genome_dir}/dbSNP/dbsnp.151.vcf"

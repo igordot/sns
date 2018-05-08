@@ -28,7 +28,7 @@ Each line contains a single FASTQ (or FASTQ pair for paired-end experiments).
 If one sample has multiple FASTQs, each one will be on a different line.
 Multiple FASTQs for the same sample will be merged based on sample name.
 
-Specify a reference genome (only `hg19/mm10/dm3/dm6` are currently guaranteed to work).
+Specify the reference genome, such as `hg19`, `hg38`, `mm10`, `dm3`, or `dm6`.
 
 ```
 sns/generate-settings <genome>
@@ -52,9 +52,9 @@ Check the specific log files where the errors are found for more info.
 
 ## Routes
 
-Routes are different analysis workflows.
+Routes are the different analysis workflows.
 Generic routes are sample-centric (same analysis is performed for each sample).
-Available routes:
+The available routes:
 
 * [rna-star](https://github.com/igordot/sns/blob/master/routes/rna-star.md): RNA-seq using STAR. Generates BAMs, normalized bigWigs, counts matrix, and various QC metrics.
 * [rna-rsem](https://github.com/igordot/sns/blob/master/routes/rna-rsem.md): RNA-seq using RSEM. Generates FPKM/TPM/counts matrix and various QC metrics.
