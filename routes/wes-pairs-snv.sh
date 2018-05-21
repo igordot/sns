@@ -77,7 +77,7 @@ fi
 
 # segments
 
-qsub_settings="-q all.q -M ${USER}@nyumc.org -m a -j y -cwd -b y -hard -l mem_free=150G"
+qsub_settings="-q all.q -M ${USER}@nyumc.org -m a -j y -cwd -b y -hard -l mem_free=150G -l mem_token=15G"
 
 # Mutect2
 segment_mutect2="snvs-mutect2"
