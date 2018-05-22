@@ -139,7 +139,7 @@ fi
 # Manta/Strelka use python-based config scripts
 module load python/2.7.3
 
-manta_dir="/ifs/home/id460/software/manta/manta-1.3.2"
+manta_dir="/ifs/home/id460/software/manta/manta-1.4.0"
 manta_config_py="${manta_dir}/bin/configManta.py"
 
 echo
@@ -218,7 +218,7 @@ fi
 
 # configure Strelka
 
-strelka_dir="/ifs/home/id460/software/strelka/strelka-2.9.2"
+strelka_dir="/ifs/home/id460/software/strelka/strelka-2.9.3"
 strelka_config_py="${strelka_dir}/bin/configureStrelkaSomaticWorkflow.py"
 
 echo
@@ -321,7 +321,11 @@ fi
 # clean up
 
 rm -rf "${manta_logs_dir}/workspace"
+rm -rfv "${manta_logs_dir}/results/variants/diploidSV*"
+rm -rf "${manta_logs_dir}/results/variants/candidateSV*"
 rm -rf "${strelka_logs_dir}/workspace"
+rm -rfv "${strelka_logs_dir}/results/regions"
+rm -rfv "${strelka_logs_dir}/results/variants"
 
 
 #########################
