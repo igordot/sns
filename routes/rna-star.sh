@@ -78,11 +78,28 @@ fi
 bash_cmd="bash ${code_dir}/segments/qc-fastqscreen.sh $proj_dir $sample $fastq_R1"
 ($bash_cmd)
 
+# trim FASTQs with Trimmomatic
+segment_fastq_trim="fastq-trim-trimmomatic"
+fastq_R1_trimmed=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_trim}.csv" | cut -d ',' -f 2)
+fastq_R2_trimmed=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_trim}.csv" | cut -d ',' -f 3)
+if [ -z "$fastq_R1_trimmed" ] ; then
+	bash_cmd="bash ${code_dir}/segments/${segment_fastq_trim}.sh $proj_dir $sample $threads $fastq_R1 $fastq_R2"
+	($bash_cmd)
+	fastq_R1_trimmed=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_trim}.csv" | cut -d ',' -f 2)
+	fastq_R2_trimmed=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_trim}.csv" | cut -d ',' -f 3)
+fi
+
+# if trimmed FASTQ is not set, there was a problem
+if [ -z "$fastq_R1_trimmed" ] ; then
+	echo -e "\n $script_name ERROR: SEGMENT $segment_fastq_trim DID NOT FINISH \n" >&2
+	exit 1
+fi
+
 # run STAR
 segment_align="align-star"
 bam_star=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_align}.csv" | cut -d ',' -f 2)
 if [ -z "$bam_star" ] ; then
-	bash_cmd="bash ${code_dir}/segments/${segment_align}.sh $proj_dir $sample $threads $fastq_R1 $fastq_R2"
+	bash_cmd="bash ${code_dir}/segments/${segment_align}.sh $proj_dir $sample $threads $fastq_R1_trimmed $fastq_R2_trimmed"
 	($bash_cmd)
 	bam_star=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_align}.csv" | cut -d ',' -f 2)
 fi
@@ -96,9 +113,8 @@ fi
 # generate BigWig (deeptools)
 segment_bw_deeptools="bigwig-deeptools"
 bash_cmd="bash ${code_dir}/segments/${segment_bw_deeptools}.sh $proj_dir $sample 4 $bam_star"
-qsub_common_cmd="qsub -q all.q -M ${USER}@nyumc.org -m a -j y -b y -cwd"
-qsub_mem="-hard -l mem_free=150G -l mem_token=15G"
-qsub_cmd="${qsub_common_cmd} -N sns.${segment_bw_deeptools}.${sample} -pe threaded 4 ${qsub_mem} ${bash_cmd}"
+qsub_common_cmd="qsub -q all.q -M ${USER}@nyumc.org -m a -j y -b y -cwd -hard -l mem_free=150G -l mem_token=15G"
+qsub_cmd="${qsub_common_cmd} -N sns.${segment_bw_deeptools}.${sample} -pe threaded 4 ${bash_cmd}"
 $qsub_cmd
 
 # generate BigWig (bedtools)
@@ -146,6 +162,7 @@ summary_csv="${proj_dir}/summary-combined.${route_name}.csv"
 bash_cmd="
 bash ${code_dir}/scripts/join-many.sh , X \
 ${proj_dir}/summary.${segment_fastq_clean}.csv \
+${proj_dir}/summary.${segment_fastq_trim}.csv \
 ${proj_dir}/summary.${segment_align}.csv \
 ${proj_dir}/summary.${segment_quant}-unstr.csv \
 ${proj_dir}/summary.${segment_quant}-${exp_strand}.csv \

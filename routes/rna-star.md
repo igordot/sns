@@ -4,6 +4,7 @@ Alignment and quantification of RNA-seq data.
 
 Segments:
 
+* Trim adapters and low quality bases (Trimmomatic).
 * Align to the reference genome (STAR).
 * Align to other species and common contaminants (fastq_screen).
 * Generate normalized genome browser tracks.
