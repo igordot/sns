@@ -132,6 +132,11 @@ elif [[ "$genome_build" == "mm10" ]] ; then
 	annovar_operation="g,f,f"
 	annovar_argument="'--splicing_threshold 10',,"
 	annovar_cols_grep="^Ref|^Alt|refGene|snp"
+elif [[ "$genome_build" == "dm3" ]] ; then
+	annovar_protocol="refGene,ensGene"
+	annovar_operation="g,g"
+	annovar_argument="'--splicing_threshold 10','--splicing_threshold 10'"
+	annovar_cols_grep="^Ref|^Alt|Gene"
 elif [[ "$genome_build" == "dm6" ]] ; then
 	annovar_protocol="refGene,ensGene"
 	annovar_operation="g,g"
