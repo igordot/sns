@@ -41,14 +41,14 @@ plot_heatmap = function(mat, row_subset, col_subset, title, file_prefix = "plot.
   message("generate heatmap: ", filename_png)
   pheatmap(mat, color = cell_colors, border_color = NA, scale = "row", cluster_rows = TRUE, cluster_cols = TRUE,
            main = title, fontsize_row = fontsize_row, fontsize_col = 12, show_rownames = show_rownames,
-           filename = filename_png, width = 12, height = 8)
+           filename = filename_png, width = 8, height = 8)
   Sys.sleep(1)
 
   # pdf heatmap with clustering
   message("generate heatmap: ", filename_pdf)
   pheatmap(mat, color = cell_colors, border_color = NA, scale = "row", cluster_rows = TRUE, cluster_cols = TRUE,
            main = title, fontsize_row = fontsize_row, fontsize_col = 12, show_rownames = show_rownames,
-           filename = filename_pdf, width = 12, height = 8)
+           filename = filename_pdf, width = 8, height = 8)
   Sys.sleep(1)
 
 }
