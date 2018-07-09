@@ -147,6 +147,12 @@ norm_counts = counts(dds, normalized = TRUE) %>% round(2) %>% as.data.frame() %>
 write_excel_csv(norm_counts, path = "counts.normalized.csv")
 write_xlsx(list(normalized_counts = norm_counts), path = "counts.normalized.xlsx")
 
+# export FPMs/CPMs (fragments/counts per million mapped fragments)
+# robust version uses size factors to normalize rather than taking the column sums of the raw counts
+cpm_table = fpm(dds, robust = TRUE) %>% round(2) %>% as.data.frame() %>% rownames_to_column("gene")
+write_excel_csv(cpm_table, path = "counts.cpm.csv")
+write_xlsx(list(CPMs = cpm_table), path = "counts.cpm.xlsx")
+
 # export FPKMs (fragment counts normalized per kilobase of feature length per million mapped fragments)
 fpkm_table = fpkm(dds, robust = TRUE) %>% round(2) %>% as.data.frame() %>% rownames_to_column("gene")
 write_excel_csv(fpkm_table, path = "counts.fpkm.csv")
