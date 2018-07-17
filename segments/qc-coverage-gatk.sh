@@ -103,7 +103,7 @@ module load java/1.8
 # command
 # all other GATK segments work with 16G (hg19/mm10 WGS/WES)
 # this segment failed for canFam3 WES (1.1M targets) with error "adjust the maximum heap size provided to Java"
-gatk_jar="/ifs/home/id460/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-0/GenomeAnalysisTK.jar"
+gatk_jar="/ifs/home/id460/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-1/GenomeAnalysisTK.jar"
 gatk_cmd="java -Xms32G -Xmx32G -jar ${gatk_jar}"
 
 if [ ! -s "$gatk_jar" ] ; then

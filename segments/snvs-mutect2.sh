@@ -161,7 +161,7 @@ module load python/3.5.3
 module load java/1.8
 
 # command
-gatk_bin="/ifs/home/id460/software/GenomeAnalysisTK/gatk-4.0.4.0/gatk"
+gatk_bin="/ifs/home/id460/software/GenomeAnalysisTK/gatk-4.0.6.0/gatk"
 
 echo
 echo " * GATK: $(readlink -f $gatk_bin) "
