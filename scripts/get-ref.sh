@@ -136,6 +136,10 @@ if [ "$ref_type" == "RSEM" ] ; then
 	echo "$(find_dir rsem)/ref"
 fi
 
+if [ "$ref_type" == "SALMON" ] ; then
+	find_dir salmon
+fi
+
 
 # basename (file without suffix) references
 

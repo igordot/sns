@@ -58,6 +58,7 @@ The available routes:
 
 * [rna-star](https://github.com/igordot/sns/blob/master/routes/rna-star.md): RNA-seq using STAR. Generates BAMs, normalized bigWigs, counts matrix, and various QC metrics.
 * [rna-rsem](https://github.com/igordot/sns/blob/master/routes/rna-rsem.md): RNA-seq using RSEM. Generates FPKM/TPM/counts matrix and various QC metrics.
+* [rna-salmon](https://github.com/igordot/sns/blob/master/routes/rna-salmon.md): RNA-seq using Salmon. Generates TPM/counts matrix and various QC metrics.
 * [rna-snv](https://github.com/igordot/sns/blob/master/routes/rna-snv.md): RNA-seq variant detection. Generates BAMs, VCFs, and various QC metrics.
 * [wgbs](https://github.com/igordot/sns/blob/master/routes/rrbs.md): WGBS methylation analysis.
 * [rrbs](https://github.com/igordot/sns/blob/master/routes/rrbs.md): RRBS methylation analysis.
