@@ -42,7 +42,8 @@ salmon_tpms_txt="${salmon_quant_dir}/${sample}.tpms.txt"
 salmon_logs_dir="${proj_dir}/logs-Salmon"
 mkdir -p "$salmon_logs_dir"
 salmon_logs_dir="${salmon_logs_dir}/${sample}"
-salmon_quant_sf="${salmon_logs_dir}/quant.genes.sf"
+salmon_quant_sf="${salmon_logs_dir}/quant.sf"
+salmon_quant_genes_sf="${salmon_logs_dir}/quant.genes.sf"
 salmon_quant_log="${salmon_logs_dir}/logs/salmon_quant.log"
 
 # unload all loaded modulefiles
@@ -103,7 +104,19 @@ module purge
 module load local
 unset PYTHONPATH
 source /ifs/home/id460/anaconda3/etc/profile.d/conda.sh
-conda activate salmon-0.10.2
+conda activate salmon-0.11.3
+
+#  -l [ --libType ] arg       Format string describing the library type
+#  -i [ --index ] arg         salmon index
+#  -r [ --unmatedReads ] arg  List of files containing unmated reads of (e.g. single-end reads)
+#  -1 [ --mates1 ] arg        File containing the #1 mates
+#  -2 [ --mates2 ] arg        File containing the #2 mates
+#  --seqBias                  Perform sequence-specific bias correction.
+#  --gcBias                   [beta for single-end reads] Perform fragment GC bias correction
+#  -g [ --geneMap ] arg       File containing a mapping of transcripts to genes.  If this file is
+#                             provided salmon will output both quant.sf and quant.genes.sf files,
+#                             where the latter contains aggregated gene-level abundance estimates.
+#  -q [ --quiet ]             Be quiet while doing quantification (no log file generated either)
 
 # adjust for single/paired end
 if [ -n "$fastq_R2" ] ;then
@@ -113,7 +126,6 @@ else
 fi
 
 echo
-echo " * conda: $(readlink -f $(which conda)) "
 echo " * conda version: $(conda --version | head -1) "
 echo " * Salmon: $(readlink -f $(which salmon)) "
 echo " * Salmon version: $(salmon --version | head -1) "
@@ -122,7 +134,7 @@ echo " * GTF: $gtf "
 echo " * FASTQ R1: $fastq_R1 "
 echo " * FASTQ R2: $fastq_R2 "
 echo " * out dir: $salmon_logs_dir "
-echo " * quant.genes.sf: $salmon_quant_sf "
+echo " * quant.genes.sf: $salmon_quant_genes_sf "
 echo " * reads: $salmon_counts_txt "
 echo " * TPMs: $salmon_tpms_txt "
 echo
@@ -151,8 +163,8 @@ sleep 30
 
 # check that output generated
 
-if [ ! -s "$salmon_quant_sf" ] ; then
-	echo -e "\n $script_name ERROR: RESULTS FILE $salmon_quant_sf NOT GENERATED \n" >&2
+if [ ! -s "$salmon_quant_genes_sf" ] ; then
+	echo -e "\n $script_name ERROR: RESULTS FILE $salmon_quant_genes_sf NOT GENERATED \n" >&2
 	# delete supplementary files since something went wrong and they might be corrupted
 	rm -rfv "${salmon_logs_dir}/aux_info"
 	rm -rfv "${salmon_logs_dir}/libParams"
@@ -171,15 +183,18 @@ fi
 #########################
 
 
+# clean up
+
 # clean up the full output table
-
 # Name	Length	EffectiveLength	TPM	NumReads
-
 echo -e "#GENE\t${sample}" > "$salmon_counts_txt"
-cat "$salmon_quant_sf" | grep -v "EffectiveLength" | cut -f 1,5 | LC_ALL=C sort -k1,1 >> "$salmon_counts_txt"
-
+cat "$salmon_quant_genes_sf" | grep -v "EffectiveLength" | cut -f 1,5 | LC_ALL=C sort -k1,1 >> "$salmon_counts_txt"
 echo -e "#GENE\t${sample}" > "$salmon_tpms_txt"
-cat "$salmon_quant_sf" | grep -v "EffectiveLength" | cut -f 1,4 | LC_ALL=C sort -k1,1 >> "$salmon_tpms_txt"
+cat "$salmon_quant_genes_sf" | grep -v "EffectiveLength" | cut -f 1,4 | LC_ALL=C sort -k1,1 >> "$salmon_tpms_txt"
+
+# rename and gzip the quant.sf quantification file
+mv -v "$salmon_quant_sf" "${salmon_quant_dir}/${sample}.quant.sf"
+gzip "${salmon_quant_dir}/${sample}.quant.sf"
 
 
 #########################
@@ -210,20 +225,28 @@ cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "
 
 # generate counts matrix for all samples
 # this may be possible with "salmon quantmerge" in the future (does not currently support gene-level output)
-# add sample to temp merged filename to avoid conflicts during join process
+# "tximport is, and has been, the recommended way to aggregate transcript-level abundances to the gene-level"
 
-merged_reads_txt="${proj_dir}/quant.salmon.reads.txt"
-merged_tpms_txt="${proj_dir}/quant.salmon.tpms.txt"
+# load relevant modules
+module load r/3.3.0
 
-reads_file_list=$(find "$salmon_quant_dir" -type f -name "*.reads.txt" | LC_ALL=C sort | tr '\n' ' ')
-join_cmd="bash ${code_dir}/scripts/join-many.sh $'\t' 0 $reads_file_list > ${merged_reads_txt}.${sample}.tmp"
-(eval "$join_cmd")
-mv -fv "${merged_reads_txt}.${sample}.tmp" "$merged_reads_txt"
+echo
+echo " * R: $(readlink -f $(which R)) "
+echo " * R version: $(R --version | head -1) "
+echo " * Rscript: $(readlink -f $(which Rscript)) "
+echo " * Rscript version: $(Rscript --version 2>&1) "
+echo
 
-tpms_file_list=$(find "$salmon_quant_dir" -type f -name "*.tpms.txt" | LC_ALL=C sort | tr '\n' ' ')
-join_cmd="bash ${code_dir}/scripts/join-many.sh $'\t' 0 $tpms_file_list > ${merged_tpms_txt}.${sample}.tmp"
-(eval "$join_cmd")
-mv -fv "${merged_tpms_txt}.${sample}.tmp" "$merged_tpms_txt"
+Rscript --vanilla ${code_dir}/scripts/test-package.R optparse
+Rscript --vanilla ${code_dir}/scripts/test-package.R mnormt
+Rscript --vanilla ${code_dir}/scripts/test-package.R limma
+
+merged_counts_base="${proj_dir}/quant.salmon"
+
+# launch the analysis R script
+bash_cmd="Rscript --vanilla ${code_dir}/scripts/quant-merge-salmon.R $gtf $salmon_quant_dir $merged_counts_base"
+echo "CMD: $bash_cmd"
+($bash_cmd)
 
 
 #########################
@@ -231,7 +254,6 @@ mv -fv "${merged_tpms_txt}.${sample}.tmp" "$merged_tpms_txt"
 
 # clean up
 
-gzip "${salmon_logs_dir}/quant.sf"
 gzip "${salmon_logs_dir}/quant.genes.sf"
 rm -rfv "${salmon_logs_dir}/aux_info"
 rm -rfv "${salmon_logs_dir}/libParams"
