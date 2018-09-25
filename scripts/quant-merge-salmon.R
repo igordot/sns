@@ -55,17 +55,24 @@ quant_files_names = str_remove(quant_files_names, ".*/")
 names(quant_files) = quant_files_names
 
 # import transcript-level estimates and summarizes to the gene-level
+# "salmon" software type uses "TPM" column as abundances and "NumReads" as estimated counts
 # scale using the average transcript length over samples and the library size (lengthScaledTPM)
 txi = tximport(quant_files, type = "salmon", tx2gene = tx2gene, countsFromAbundance = "lengthScaledTPM")
-dim(txi$counts)
+
+# check that the counts table has a reasonable number of genes
+if (nrow(txi$counts) < 1000) stop("tximport counts table too small")
 
 # importing estimates for use with differential gene expression methods
 # use the tximport argument countsFromAbundance="lengthScaledTPM" or "scaledTPM"
 # use the gene-level matrix txi$counts as you would a regular count matrix ("bias corrected counts without an offset")
 
-# extract gene counts
+# extract bias corrected gene counts
 txi_counts = txi$counts
 txi_counts = round(txi_counts, 2)
+
+# extract TPMs
+txi_tpms = txi$abundance
+txi_tpms = round(txi_tpms, 2)
 
 # generate random string so the output files do not conflict if running multiple samples in parallel
 rand_str = paste0(sample(LETTERS, 10, replace = TRUE), collapse = "")
@@ -75,8 +82,12 @@ saveRDS(txi, file = glue("temp.{rand_str}.rds"))
 system(glue("mv -vf temp.{rand_str}.rds {out_base}.tximport.rds"))
 
 # save counts table
-write.table(txi_counts, file = glue("temp.{rand_str}.txt"), quote = FALSE, sep = "\t", col.names = NA)
-system(glue("mv -vf temp.{rand_str}.txt {out_base}.tpms.txt"))
+write.table(txi_counts, file = glue("temp.{rand_str}.counts.txt"), quote = FALSE, sep = "\t", col.names = NA)
+system(glue("mv -vf temp.{rand_str}.counts.txt {out_base}.tximport.counts.txt"))
+
+# save counts table
+write.table(txi_tpms, file = glue("temp.{rand_str}.tpms.txt"), quote = FALSE, sep = "\t", col.names = NA)
+system(glue("mv -vf temp.{rand_str}.tpms.txt {out_base}.tximport.tpms.txt"))
 
 
 
