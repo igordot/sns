@@ -1,5 +1,7 @@
 # Seq-N-Slide: illumina sequencing data analysis pipelines
 
+Automated workflows for common sequencing-based protocols, such as RNA-seq, ATAC-seq, WGBS/RRBS methylation, whole genome/exome/targeted variant detection, and contaminant screening.
+
 ## Usage overview
 
 Navigate to a clean new project directory. This is where all the results will end up.
@@ -8,14 +10,14 @@ Navigate to a clean new project directory. This is where all the results will en
 cd <project dir>
 ```
 
-Download the code from GitHub, which will create the `sns` sub-directory with all the code.
+Download the code from GitHub, which will create the `sns` sub-directory with all the relevant files.
 
 ```
 git clone --depth 1 https://github.com/igordot/sns
 ```
 
 Scan a directory that contains FASTQ files to be used as input.
-This can be run multiple times if there are FASTQs in different directories.
+This command can be run multiple times if there are FASTQs in different directories.
 
 ```
 sns/gather-fastqs <fastq dir>
@@ -60,10 +62,10 @@ The available routes:
 * [rna-rsem](https://github.com/igordot/sns/blob/master/routes/rna-rsem.md): RNA-seq using RSEM. Generates FPKM/TPM/counts matrix and various QC metrics.
 * [rna-salmon](https://github.com/igordot/sns/blob/master/routes/rna-salmon.md): RNA-seq using Salmon. Generates TPM/counts matrix and various QC metrics.
 * [rna-snv](https://github.com/igordot/sns/blob/master/routes/rna-snv.md): RNA-seq variant detection. Generates BAMs, VCFs, and various QC metrics.
+* [atac](https://github.com/igordot/sns/blob/master/routes/atac.md): ATAC-seq. Generates BAMs, bigWigs, peaks, nucleosome positions, and various QC metrics.
+* [wes](https://github.com/igordot/sns/blob/master/routes/wes.md): Whole genome/exome/targeted variant detection. Generates BAMs, VCFs, and various QC metrics.
 * [wgbs](https://github.com/igordot/sns/blob/master/routes/rrbs.md): WGBS methylation analysis.
 * [rrbs](https://github.com/igordot/sns/blob/master/routes/rrbs.md): RRBS methylation analysis.
-* [wes](https://github.com/igordot/sns/blob/master/routes/wes.md): Whole genome/exome/targeted variant detection. Generates BAMs, VCFs, and various QC metrics.
-* [atac](https://github.com/igordot/sns/blob/master/routes/atac.md): ATAC-seq. Generates BAMs, bigWigs, peaks, nucleosome positions, and various QC metrics.
 * [species](https://github.com/igordot/sns/blob/master/routes/species.md): Species/metagenomics/contamination analysis.
 
 There are additional routes for comparing groups of samples after individual samples are processed with a generic route.
