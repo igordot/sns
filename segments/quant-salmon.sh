@@ -39,12 +39,13 @@ mkdir -p "$salmon_quant_dir"
 salmon_counts_txt="${salmon_quant_dir}/${sample}.reads.txt"
 salmon_tpms_txt="${salmon_quant_dir}/${sample}.tpms.txt"
 
-salmon_logs_dir="${proj_dir}/logs-Salmon"
-mkdir -p "$salmon_logs_dir"
-salmon_logs_dir="${salmon_logs_dir}/${sample}"
+salmon_proj_logs_dir="${proj_dir}/logs-Salmon"
+mkdir -p "$salmon_proj_logs_dir"
+salmon_logs_dir="${salmon_proj_logs_dir}/${sample}"
 salmon_quant_sf="${salmon_logs_dir}/quant.sf"
 salmon_quant_genes_sf="${salmon_logs_dir}/quant.genes.sf"
 salmon_quant_log="${salmon_logs_dir}/logs/salmon_quant.log"
+salmon_quant_json="${salmon_logs_dir}/lib_format_counts.json"
 
 # unload all loaded modulefiles
 module purge
@@ -202,17 +203,27 @@ gzip "${salmon_quant_dir}/${sample}.quant.sf"
 
 # generate summary
 
-# extract stats (also consider parsing lib_format_counts.json)
-library_type=$(cat "$salmon_quant_log" | grep -m 1 "most likely library type" | sed 's/.*library type as //')
-echo "library type: $library_type"
+# jq binary (command-line JSON processor)
+jq="/ifs/home/id460/software/jq/jq-1.5-linux64"
+
+# extract stats
+# lib_type=$(cat "$salmon_quant_log" | grep -m 1 "most likely library type" | sed 's/.*library type as //')
+lib_type=$(cat "$salmon_quant_json" | "$jq" -r ".expected_format")
+echo "library type: $lib_type"
+# num_compatible_frags=$(cat "$salmon_quant_json" | "$jq" -r ".num_compatible_fragments")
+# echo "compatible fragments: $num_compatible_frags"
+num_assigned_frags=$(cat "$salmon_quant_json" | "$jq" -r ".num_assigned_fragments")
+echo "assigned fragments: $num_assigned_frags"
 map_rate=$(cat "$salmon_quant_log" | grep -m 1 "Mapping rate" | sed 's/.*rate = //')
 echo "mapping rate: $map_rate"
+num_genes=$(cat "$salmon_counts_txt" | grep -v "#GENE" | awk -F $'\t' '$2 > 0' | wc -l)
+echo "detected genes: $num_genes"
 
 # header for summary file
-echo "#SAMPLE,LIBRARY TYPE,MAPPING RATE" > "$summary_csv"
+echo "#SAMPLE,LIBRARY TYPE, NUM ASSIGNED FRAGMENTS, MAPPING RATE, NUM GENES" > "$summary_csv"
 
 # summarize log file
-echo "${sample},${library_type},${map_rate}" >> "$summary_csv"
+echo "${sample},${lib_type},${num_assigned_frags},${map_rate},${num_genes}" >> "$summary_csv"
 
 sleep 30
 
@@ -227,26 +238,38 @@ cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "
 # this may be possible with "salmon quantmerge" in the future (does not currently support gene-level output)
 # "tximport is, and has been, the recommended way to aggregate transcript-level abundances to the gene-level"
 
-# load relevant modules
-module load r/3.3.0
+# merge counts if many samples are not still processing ("aux_info" directory is deleted at the end of this segment)
+num_active_samples=$(find "$salmon_proj_logs_dir" -type d -name "aux_info" | wc -l)
+if [ "$num_active_samples" -lt 5 ] ; then
 
-echo
-echo " * R: $(readlink -f $(which R)) "
-echo " * R version: $(R --version | head -1) "
-echo " * Rscript: $(readlink -f $(which Rscript)) "
-echo " * Rscript version: $(Rscript --version 2>&1) "
-echo
+	# load relevant modules
+	module load r/3.3.0
 
-Rscript --vanilla ${code_dir}/scripts/test-package.R optparse
-Rscript --vanilla ${code_dir}/scripts/test-package.R mnormt
-Rscript --vanilla ${code_dir}/scripts/test-package.R limma
+	echo
+	echo " * R: $(readlink -f $(which R)) "
+	echo " * R version: $(R --version | head -1) "
+	echo " * Rscript: $(readlink -f $(which Rscript)) "
+	echo " * Rscript version: $(Rscript --version 2>&1) "
+	echo
 
-merged_counts_base="${proj_dir}/quant.salmon"
+	Rscript --vanilla ${code_dir}/scripts/test-package.R optparse
+	Rscript --vanilla ${code_dir}/scripts/test-package.R mnormt
+	Rscript --vanilla ${code_dir}/scripts/test-package.R limma
 
-# launch the analysis R script
-bash_cmd="Rscript --vanilla ${code_dir}/scripts/quant-merge-salmon.R $gtf $salmon_quant_dir $merged_counts_base"
-echo "CMD: $bash_cmd"
-($bash_cmd)
+	merged_counts_base="${proj_dir}/quant.salmon"
+
+	# launch the analysis R script
+	bash_cmd="Rscript --vanilla ${code_dir}/scripts/quant-merge-salmon.R $gtf $salmon_quant_dir $merged_counts_base"
+	echo "CMD: $bash_cmd"
+	($bash_cmd)
+
+else
+
+	echo
+	echo "skip merging counts (quant-merge-salmon.R) since many samples are still processing"
+	echo
+
+fi
 
 
 #########################

@@ -87,7 +87,7 @@ sub main {
 		# remove directory structure
 		$sample =~ s/.*\///;
 		# bcl2fastq2 format (with S sample number)
-		$sample =~ s/_S[0-9]{1,3}_L00[0-9]_R1.*//;
+		$sample =~ s/_S[0-9]{1,4}_L00[0-9]_R1.*//;
 		# bcl2fastq format with 2 barcodes
 		$sample =~ s/_[ACTG]{6,}-[ACTG]{6,}_L00[0-9]_R1.*//;
 		# bcl2fastq format with 1 barcode

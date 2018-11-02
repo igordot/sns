@@ -107,8 +107,8 @@ parse_lofreq = function(vcfr_obj, sample_name) {
 # Mutect 2.1 (GATK 4)
 parse_mutect21 = function(vcfr_obj, sample_T, sample_N) {
 
-  # confirm mutect version
-  if (!any(str_detect(vcfr_obj@meta, "##Mutect Version=2.1"))) {
+  # confirm mutect version (header changed from "Mutect Version" to "MutectVersion" in GATK 4.0.9.0)
+  if (!any(str_detect(vcfr_obj@meta, "##MutectVersion=2.1"))) {
     stop("version mismatch: expecting Mutect 2.1")
   }
 
