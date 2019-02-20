@@ -18,7 +18,7 @@ if [ ! $# == 4 ] ; then
 fi
 
 # arguments
-proj_dir=$1
+proj_dir=$(readlink -f "$1")
 sample=$2
 threads=$3
 bam=$4
@@ -63,7 +63,7 @@ bam_dd_flagstat="${dedup_logs_dir}/${sample}.flagstat.txt"
 
 # unload all loaded modulefiles
 module purge
-module load local
+module add default-environment
 
 
 #########################
@@ -75,7 +75,7 @@ if [ -s "$bam_dd" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	echo -e "\n $script_name ADD $sample TO $samples_csv \n" >&2
 	echo "${sample},${bam_dd}" >> "$samples_csv"
-	exit 1
+	exit 0
 fi
 
 
@@ -84,12 +84,16 @@ fi
 
 # sambamba markdup
 
-sambamba_bin="/ifs/home/id460/software/sambamba/sambamba_v0.6.7"
+module add sambamba/0.6.8
 
+sambamba_bin="sambamba-0.6.8"
+
+echo
 echo " * sambamba: $(readlink -f $(which $sambamba_bin)) "
-echo " * sambamba version: $($sambamba_bin 2>&1 | head -1) "
+echo " * sambamba version: $($sambamba_bin 2>&1 | grep -m 1 'sambamba') "
 echo " * BAM IN: $bam "
 echo " * BAM OUT: $bam_dd "
+echo
 
 bash_cmd="
 $sambamba_bin markdup \
@@ -104,7 +108,7 @@ $bam_dd \
 echo "CMD: $bash_cmd"
 eval "$bash_cmd"
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -134,7 +138,7 @@ bash_cmd="$sambamba_bin flagstat $bam_dd > $bam_dd_flagstat"
 echo "CMD: $bash_cmd"
 eval "$bash_cmd"
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -174,7 +178,7 @@ echo "#SAMPLE,MAPPED READS,DEDUPLICATED READS,DUPLICATES %" > "$summary_csv"
 # summarize log file
 echo "${sample},${reads_mapped},${reads_dedup},${reads_duplicates_pct}" >> "$summary_csv"
 
-sleep 30
+sleep 5
 
 # combine all sample summaries
 cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.${segment_name}.csv"
@@ -186,7 +190,7 @@ cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "
 # add sample and BAM to sample sheet
 echo "${sample},${bam_dd}" >> "$samples_csv"
 
-sleep 30
+sleep 5
 
 
 #########################

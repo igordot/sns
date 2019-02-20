@@ -14,11 +14,12 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 if [ ! $# == 3 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
 	echo -e "\n USAGE: $script_name project_dir sample_name BAM \n" >&2
+	if [ $# -gt 0 ] ; then echo -e "\n ARGS: $* \n" >&2 ; fi
 	exit 1
 fi
 
 # arguments
-proj_dir=$1
+proj_dir=$(readlink -f "$1")
 sample=$2
 bam=$3
 
@@ -39,7 +40,7 @@ gatk_sample_summary="${out_prefix}.sample_summary"
 
 # unload all loaded modulefiles
 module purge
-module load local
+module add default-environment
 
 
 #########################
@@ -49,7 +50,7 @@ module load local
 
 if [ -s "$gatk_sample_summary" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
-	exit 1
+	exit 0
 fi
 
 
@@ -98,13 +99,11 @@ fi
 
 # GATK settings
 
-module load java/1.8
-
 # command
 # all other GATK segments work with 16G (hg19/mm10 WGS/WES)
 # this segment failed for canFam3 WES (1.1M targets) with error "adjust the maximum heap size provided to Java"
-gatk_jar="/ifs/home/id460/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-1/GenomeAnalysisTK.jar"
-gatk_cmd="java -Xms32G -Xmx32G -jar ${gatk_jar}"
+gatk_jar="/gpfs/data/igorlab/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-1/GenomeAnalysisTK.jar"
+gatk_cmd="java -Xms16G -Xmx16G -jar ${gatk_jar}"
 
 if [ ! -s "$gatk_jar" ] ; then
 	echo -e "\n $script_name ERROR: GATK $gatk_jar DOES NOT EXIST \n" >&2
@@ -120,12 +119,14 @@ gatk_log_level_arg="--logging_level ERROR"
 
 # on-target coverage
 
+echo
 echo " * GATK: $(readlink -f $gatk_jar) "
 echo " * GATK version: $($gatk_cmd --version) "
 echo " * BAM: $bam "
 echo " * BED: $bed "
 echo " * output prefix: $out_prefix "
 echo " * sample_summary: $gatk_sample_summary "
+echo
 
 # using '-nt' with this combination of arguments causes an error
 
@@ -167,7 +168,7 @@ cat "$gatk_sample_summary" \
 | sed 's/sample_id,mean,granular_median/#SAMPLE,MEAN COVERAGE,MEDIAN COVERAGE/' \
 > "$summary_csv"
 
-sleep 30
+sleep 5
 
 # combine all sample summaries
 cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.${segment_name}.csv"

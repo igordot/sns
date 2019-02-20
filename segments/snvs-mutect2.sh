@@ -19,7 +19,7 @@ if [ ! $# == 6 ] ; then
 fi
 
 # arguments
-proj_dir=$1
+proj_dir=$(readlink -f "$1")
 sample_t=$2
 bam_t=$3
 sample_n=$4
@@ -102,7 +102,7 @@ annot_cmd="bash ${code_dir}/segments/annot-annovar.sh $proj_dir $sample $vcf_fix
 
 # unload all loaded modulefiles
 module purge
-module load local
+module add default-environment
 
 
 #########################
@@ -115,7 +115,7 @@ if [ -s "$vcf_fixed" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	echo -e "\n CMD: $annot_cmd \n"
 	($annot_cmd)
-	exit 1
+	exit 0
 fi
 
 # delete unfiltered VCF (likely incomplete since the final fixed VCF was not generated)
@@ -157,11 +157,10 @@ fi
 
 # GATK Mutect2
 
-module load python/3.5.3
-module load java/1.8
+module add python/cpu/3.6.5
 
 # command
-gatk_bin="/ifs/home/id460/software/GenomeAnalysisTK/gatk-4.0.11.0/gatk"
+gatk_bin="/gpfs/data/igorlab/software/GenomeAnalysisTK/gatk-4.1.0.0/gatk"
 
 echo
 echo " * GATK: $(readlink -f $gatk_bin) "
@@ -337,7 +336,7 @@ fi
 
 # adjust VCF for ANNOVAR compatibility (http://annovar.openbioinformatics.org/en/latest/articles/VCF/)
 
-module load samtools/1.3
+module add samtools/1.9
 
 echo
 echo " * samtools: $(readlink -f $(which samtools)) "

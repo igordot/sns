@@ -55,7 +55,7 @@ gatk_rc_pdf="${gatk_logs_dir}/${sample}.pdf"
 
 # unload all loaded modulefiles
 module purge
-module load local
+module add default-environment
 
 
 #########################
@@ -67,7 +67,7 @@ module load local
 if [ -s "$bam_ra_rc" ] && [ -s "${bam_ra_rc}.bai" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	echo "${sample},${bam_ra_rc}" >> "$samples_csv"
-	exit 1
+	exit 0
 fi
 
 # delete potentially incomplete files (since the corresponding BAM index was not generated)
@@ -145,11 +145,10 @@ fi
 
 # GATK settings
 
-module load java/1.8
-module load r/3.3.0
+module add r/3.5.1
 
 # command
-gatk_jar="/ifs/home/id460/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-1/GenomeAnalysisTK.jar"
+gatk_jar="/gpfs/data/igorlab/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-1/GenomeAnalysisTK.jar"
 gatk_cmd="java -Xms16G -Xmx16G -jar ${gatk_jar}"
 
 if [ ! -s "$gatk_jar" ] ; then
@@ -212,18 +211,18 @@ echo " * Rscript version: $(Rscript --version 2>&1) "
 echo
 
 # basic packages
-Rscript --vanilla ${code_dir}/scripts/test-package.R getopt
-Rscript --vanilla ${code_dir}/scripts/test-package.R optparse
+Rscript --vanilla "${code_dir}/scripts/test-package.R" getopt
+Rscript --vanilla "${code_dir}/scripts/test-package.R" optparse
 
 # required by GATK 3
-Rscript --vanilla ${code_dir}/scripts/test-package.R gsalib
-Rscript --vanilla ${code_dir}/scripts/test-package.R reshape
-Rscript --vanilla ${code_dir}/scripts/test-package.R gplots
-Rscript --vanilla ${code_dir}/scripts/test-package.R ggplot2
+Rscript --vanilla "${code_dir}/scripts/test-package.R" gsalib
+Rscript --vanilla "${code_dir}/scripts/test-package.R" reshape
+Rscript --vanilla "${code_dir}/scripts/test-package.R" gplots
+Rscript --vanilla "${code_dir}/scripts/test-package.R" ggplot2
 
 # required by GATK 4
-Rscript --vanilla ${code_dir}/scripts/test-package.R data.table
-Rscript --vanilla ${code_dir}/scripts/test-package.R naturalsort
+Rscript --vanilla "${code_dir}/scripts/test-package.R" data.table
+Rscript --vanilla "${code_dir}/scripts/test-package.R" naturalsort
 
 
 #########################
@@ -262,7 +261,7 @@ $gatk_ra_known_arg \
 echo "CMD: $gatk_ra2_cmd"
 $gatk_ra2_cmd
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -345,7 +344,7 @@ $gatk_cmd -T PrintReads $gatk_log_level_arg \
 echo "CMD: $gatk_rc4_cmd"
 $gatk_rc4_cmd
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -395,7 +394,7 @@ rm -fv "$gatk_rc_table2"
 # add sample and BAM to sample sheet
 echo "${sample},${bam_ra_rc}" >> "$samples_csv"
 
-sleep 30
+sleep 5
 
 
 #########################

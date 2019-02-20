@@ -52,7 +52,7 @@ vcf_table="${annovar_out_prefix}.vcf.txt"
 
 # unload all loaded modulefiles
 module purge
-module load local
+module add default-environment
 
 
 #########################
@@ -62,7 +62,7 @@ module load local
 
 if [ -s "$annovar_combined" ] ; then
 	echo -e "\n $script_name $segment_name SKIP SAMPLE $sample \n" >&2
-	exit 1
+	exit 0
 fi
 
 
@@ -104,8 +104,8 @@ fi
 # ANNOVAR genome-specific settings
 
 # ANNOVAR directory
-annovar_path="/ifs/home/id460/software/annovar/annovar-170716"
-annovar_db_path="/ifs/home/id460/ref/annovar"
+annovar_path="/gpfs/data/igorlab/software/annovar/annovar-170716"
+annovar_db_path="/gpfs/data/igorlab/ref/annovar"
 
 # genome build (used to define settings and as table_annovar.pl parameter)
 genome_build=$(basename "$genome_dir")
@@ -163,7 +163,7 @@ fi
 
 # extract variant info (quality, depth, frequency) from a VCF in a table format for merging with annotations
 
-module load r/3.3.0
+module add r/3.5.1
 
 echo
 echo " * R: $(readlink -f $(which R)) "
@@ -189,7 +189,7 @@ if [ ! -s "$vcf_table" ] ; then
 	eval "$vcf_table_pl_cmd"
 fi
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -223,7 +223,7 @@ perl ${annovar_path}/convert2annovar.pl --format vcf4old --includeinfo $vcf_file
 echo -e "\n CMD: $convert_cmd \n"
 eval "$convert_cmd"
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -263,7 +263,7 @@ perl ${annovar_path}/table_annovar.pl $annovar_input ${annovar_db_path}/${genome
 echo -e "\n CMD: $table_cmd \n"
 eval "$table_cmd"
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -307,7 +307,7 @@ cat $annovar_multianno \
 echo -e "\n CMD: $bash_cmd \n"
 eval "$bash_cmd"
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -335,7 +335,7 @@ LC_ALL=C join -a1 -t $'\t' \
 echo -e "\n CMD: $join_cmd \n"
 eval "$join_cmd"
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -378,7 +378,7 @@ echo "#SAMPLE,total muts,coding muts,nonsyn muts" > "$summary_csv"
 # summarize log file
 echo "${sample_clean},${total_muts},${coding_muts},${nonsyn_muts}" >> "$summary_csv"
 
-sleep 30
+sleep 5
 
 # combine all sample summaries
 cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.${segment_name}.csv"

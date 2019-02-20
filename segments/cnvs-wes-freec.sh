@@ -123,7 +123,6 @@ graph_fixed="${fixed_base}.png"
 
 # unload all loaded modulefiles
 module purge
-module load local
 
 
 #########################
@@ -144,22 +143,22 @@ fi
 
 genome_build=$(basename "$genome_dir")
 if [[ "$genome_build" == "hg19" ]] ; then
-	chr_files_dir="/ifs/home/id460/ref/iGenomes/Homo_sapiens/UCSC/hg19/Sequence/Chromosomes/"
-	gem="/ifs/home/id460/ref/hg19/FREEC/out100m2_hg19.gem"
-	snps_vcf="/ifs/home/id460/ref/hg19/dbSNP/common_all_20170710.snv.maf5.vcf"
-	snps_bed="/ifs/home/id460/ref/hg19/dbSNP/common_all_20170710.snv.maf5.bed"
+	chr_files_dir="/gpfs/data/igorlab/ref/iGenomes/Homo_sapiens/UCSC/hg19/Sequence/Chromosomes/"
+	gem="/gpfs/data/igorlab/ref/hg19/FREEC/out100m2_hg19.gem"
+	snps_vcf="/gpfs/data/igorlab/ref/hg19/dbSNP/common_all_20170710.snv.maf5.vcf"
+	snps_bed="/gpfs/data/igorlab/ref/hg19/dbSNP/common_all_20170710.snv.maf5.bed"
 elif [[ "$genome_build" == "mm10" ]] ; then
-	chr_files_dir="/ifs/home/id460/ref/iGenomes/Mus_musculus/UCSC/mm10/Sequence/Chromosomes/"
-	gem="/ifs/home/id460/ref/mm10/FREEC/out100m4_mm10.gem"
+	chr_files_dir="/gpfs/data/igorlab/ref/iGenomes/Mus_musculus/UCSC/mm10/Sequence/Chromosomes/"
+	gem="/gpfs/data/igorlab/ref/mm10/FREEC/out100m4_mm10.gem"
 	snps_vcf=""
 	snps_bed=""
 	echo -e "\n $script_name ERROR: UNSUPPORTED GENOME \n" >&2
 	exit 1
 elif [[ "$genome_build" == "canFam3" ]] ; then
-	chr_files_dir="/ifs/home/id460/ref/canFam3/chromosomes/"
-	gem="/ifs/home/id460/ref/canFam3/genome.len100.mm2.mappability"
-	snps_vcf="/ifs/home/id460/ref/canFam3/dbSNP/dbsnp.151.snp.validated.vcf"
-	snps_bed="/ifs/home/id460/ref/canFam3/dbSNP/dbsnp.151.snp.validated.bed"
+	chr_files_dir="/gpfs/data/igorlab/ref/canFam3/chromosomes/"
+	gem="/gpfs/data/igorlab/ref/canFam3/genome.len100.mm2.mappability"
+	snps_vcf="/gpfs/data/igorlab/ref/canFam3/dbSNP/dbsnp.151.snp.validated.vcf"
+	snps_bed="/gpfs/data/igorlab/ref/canFam3/dbSNP/dbsnp.151.snp.validated.bed"
 else
 	echo -e "\n $script_name ERROR: UNSUPPORTED GENOME \n" >&2
 	exit 1

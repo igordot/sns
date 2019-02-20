@@ -14,11 +14,12 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 if [ ! $# == 4 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
 	echo -e "\n USAGE: $script_name project_dir sample_name threads BAM \n" >&2
+	if [ $# -gt 0 ] ; then echo -e "\n ARGS: $* \n" >&2 ; fi
 	exit 1
 fi
 
 # arguments
-proj_dir=$1
+proj_dir=$(readlink -f "$1")
 sample=$2
 threads=$3
 bam=$4
@@ -73,7 +74,7 @@ annot_cmd="bash ${code_dir}/segments/annot-annovar.sh $proj_dir $sample $vcf_fix
 
 # unload all loaded modulefiles
 module purge
-module load local
+module add default-environment
 
 
 #########################
@@ -86,8 +87,7 @@ if [ -s "$vcf_fixed" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	echo -e "\n CMD: $annot_cmd \n"
 	($annot_cmd)
-	exit 1
-	exit 1
+	exit 0
 fi
 
 # delete original VCF (likely incomplete since the fixed VCF was not generated)
@@ -102,10 +102,8 @@ fi
 
 # GATK settings
 
-module load java/1.8
-
 # command
-gatk_jar="/ifs/home/id460/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-1/GenomeAnalysisTK.jar"
+gatk_jar="/gpfs/data/igorlab/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-1/GenomeAnalysisTK.jar"
 gatk_cmd="java -Xms16G -Xmx16G -jar ${gatk_jar}"
 
 # error log (DEBUG, INFO (default), WARN, ERROR, FATAL, OFF)
@@ -172,7 +170,7 @@ fi
 
 # adjust the vcf for annovar compatibility (http://www.openbioinformatics.org/annovar/annovar_vcf.html)
 
-module load samtools/1.3
+module add samtools/1.9
 
 echo
 echo " * samtools: $(readlink -f $(which samtools)) "
@@ -191,7 +189,7 @@ fix_vcf_cmd="
 cat $vcf_original \
 | bcftools norm --multiallelics -both --output-type v - \
 | bcftools norm --fasta-ref $ref_fasta --output-type v - \
-| bcftools view --exclude 'DP<5' --output-type v > $vcf_fixed
+| bcftools view --exclude 'FORMAT/DP<5' --output-type v > $vcf_fixed
 "
 echo -e "\n CMD: $fix_vcf_cmd \n"
 eval "$fix_vcf_cmd"

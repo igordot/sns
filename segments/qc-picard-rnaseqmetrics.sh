@@ -39,7 +39,7 @@ summary_csv="${summary_dir}/${sample}.${segment_name}.csv"
 
 # unload all loaded modulefiles
 module purge
-module load local
+module add default-environment
 
 
 #########################
@@ -88,16 +88,28 @@ fi
 #########################
 
 
-# run picard CollectRnaSeqMetrics
+# run Picard CollectRnaSeqMetrics
 
-module load picard-tools/2.6.0
+module add picard-tools/2.18.20
+# Picard requires R for some plotting
+module add r/3.5.1
+# ImageMagick for "montage" for combining plots
+module add imagemagick/7.0.8
+
+picard_jar="${PICARD_ROOT}/libs/picard.jar"
+
+# check if the picard jar file is present
+if [ ! -s "$picard_jar" ] ; then
+	echo -e "\n $script_name ERROR: FILE $picard_jar DOES NOT EXIST \n" >&2
+	exit 1
+fi
 
 # strand                       | cufflinks       | htseq   | picard      |
 # fwd (transcript)             | fr-secondstrand | yes     | FIRST_READ  |
 # rev (rev comp of transcript) | fr-firststrand  | reverse | SECOND_READ |
 
 echo
-echo " * Picard: ${PICARD_ROOT}/picard.jar "
+echo " * Picard: $picard_jar "
 echo " * BAM: $bam "
 echo " * refFlat: $refflat "
 echo " * ribosomal intervals: $rrna_interval_list "
@@ -105,7 +117,7 @@ echo " * out TXT: $metrics_txt "
 echo " * out PDF: $metrics_pdf "
 echo
 
-picard_base_cmd="java -Xms16G -Xmx16G -jar ${PICARD_ROOT}/picard.jar CollectRnaSeqMetrics \
+picard_base_cmd="java -Xms16G -Xmx16G -jar $picard_jar CollectRnaSeqMetrics \
 VERBOSITY=WARNING QUIET=true VALIDATION_STRINGENCY=LENIENT MAX_RECORDS_IN_RAM=2500000 \
 REF_FLAT=${refflat} \
 INPUT=${bam}"
@@ -117,18 +129,6 @@ CHART_OUTPUT=${metrics_pdf} \
 OUTPUT=${metrics_txt}"
 echo "CMD: $picard_unstranded_cmd"
 $picard_unstranded_cmd
-
-picard_strand1_cmd="$picard_base_cmd \
-STRAND_SPECIFICITY=FIRST_READ_TRANSCRIPTION_STRAND \
-OUTPUT=${metrics_txt}.1READ"
-echo "CMD: $picard_strand1_cmd"
-$picard_strand1_cmd
-
-picard_strand2_cmd="$picard_base_cmd \
-STRAND_SPECIFICITY=SECOND_READ_TRANSCRIPTION_STRAND \
-OUTPUT=${metrics_txt}.2READ"
-echo "CMD: $picard_strand2_cmd"
-$picard_strand2_cmd
 
 
 #########################
@@ -147,6 +147,9 @@ fi
 
 # generate a summary file
 
+# RnaSeqMetrics output
+# https://broadinstitute.github.io/picard/picard-metric-definitions.html#RnaSeqMetrics
+
 # 01 PF_BASES
 # 02 PF_ALIGNED_BASES
 # 03 RIBOSOMAL_BASES
@@ -157,29 +160,34 @@ fi
 # 08 IGNORED_READS
 # 09 CORRECT_STRAND_READS
 # 10 INCORRECT_STRAND_READS
-# 11 PCT_RIBOSOMAL_BASES
-# 12 PCT_CODING_BASES
-# 13 PCT_UTR_BASES
-# 14 PCT_INTRONIC_BASES
-# 15 PCT_INTERGENIC_BASES
-# 16 PCT_MRNA_BASES
-# 17 PCT_USABLE_BASES
-# 18 PCT_CORRECT_STRAND_READS
-# 19 MEDIAN_CV_COVERAGE
-# 20 MEDIAN_5PRIME_BIAS
-# 21 MEDIAN_3PRIME_BIAS
-# 22 MEDIAN_5PRIME_TO_3PRIME_BIAS
+# 11 NUM_R1_TRANSCRIPT_STRAND_READS
+# 12 NUM_R2_TRANSCRIPT_STRAND_READS
+# 13 NUM_UNEXPLAINED_READS
+# 14 PCT_R1_TRANSCRIPT_STRAND_READS
+# 15 PCT_R2_TRANSCRIPT_STRAND_READS
+# 16 PCT_RIBOSOMAL_BASES
+# 17 PCT_CODING_BASES
+# 18 PCT_UTR_BASES
+# 19 PCT_INTRONIC_BASES
+# 20 PCT_INTERGENIC_BASES
+# 21 PCT_MRNA_BASES
+# 22 PCT_USABLE_BASES
+# 23 PCT_CORRECT_STRAND_READS
+# 24 MEDIAN_CV_COVERAGE
+# 25 MEDIAN_5PRIME_BIAS
+# 26 MEDIAN_3PRIME_BIAS
+# 27 MEDIAN_5PRIME_TO_3PRIME_BIAS
+# 28 SAMPLE
+# 29 LIBRARY
+# 30 READ_GROUP
 
+# subset for specific metrics
+# splitting by read may not be needed with Picard 2.18
 paste \
 <(echo -e "#SAMPLE\n${sample}") \
-<(cat "${metrics_txt}" | grep -A 1 "PF_ALIGNED_BASES" | cut -f 2,12,13,14,15,22) \
-<(cat "${metrics_txt}.1READ" | grep -A 1 "PF_ALIGNED_BASES" | cut -f 18 | sed 's/CORRECT_STRAND_READS/F_STRAND/') \
-<(cat "${metrics_txt}.2READ" | grep -A 1 "PF_ALIGNED_BASES" | cut -f 18 | sed 's/CORRECT_STRAND_READS/R_STRAND/') \
+<(cat "${metrics_txt}" | grep -A 1 "PF_ALIGNED_BASES" | cut -f 2,14,15,17,18,19,20,21,27) \
 | tr '\t' ',' \
 > $summary_csv
-
-rm -fv "${metrics_txt}.1READ"
-rm -fv "${metrics_txt}.2READ"
 
 
 # combine charts into a single pdf

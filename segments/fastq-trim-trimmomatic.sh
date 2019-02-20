@@ -66,7 +66,7 @@ trimmomatic_log="${trimmomatic_logs_dir}/${sample}.txt"
 
 # unload all loaded modulefiles
 module purge
-module load local
+module add default-environment
 
 
 #########################
@@ -88,19 +88,24 @@ if [ -s "$fastq_R1_trim" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	echo -e "\n $script_name ADD $sample TO $samples_csv \n" >&2
 	echo "${sample},${fastq_R1_trim},${fastq_R2_trim}" >> "$samples_csv"
-	exit 1
+	exit 0
 fi
 
 
 #########################
 
 
-# trimmomatic
+# Trimmomatic
 
-module load java/1.7
-module load trimmomatic/0.33
+module add trimmomatic/0.36
 
-trimmomatic_jar="${TRIMMOMATIC_ROOT}/trimmomatic-0.33.jar"
+trimmomatic_jar="${TRIMMOMATIC_ROOT}/trimmomatic-0.36.jar"
+
+# check if the trimmomatic jar file is present
+if [ ! -s "$trimmomatic_jar" ] ; then
+	echo -e "\n $script_name ERROR: FILE $trimmomatic_jar DOES NOT EXIST \n" >&2
+	exit 1
+fi
 
 if [ -n "$fastq_R2" ] ; then
 	run_type_arg="PE"
@@ -113,7 +118,7 @@ else
 fi
 
 echo
-echo " * trimmomatic: $trimmomatic_jar "
+echo " * Trimmomatic: $trimmomatic_jar "
 echo " * run type: $run_type_arg "
 echo " * FASTQ R1: $fastq_R1 "
 echo " * FASTQ R2: $fastq_R2 "
@@ -128,14 +133,14 @@ java -Xms16G -Xmx16G -jar $trimmomatic_jar \
 $run_type_arg \
 -threads $threads \
 $files_arg \
-ILLUMINACLIP:/ifs/home/id460/ref/contaminants/trimmomatic.fa:2:30:10:1:true \
+ILLUMINACLIP:/gpfs/data/igorlab/ref/contaminants/trimmomatic.fa:2:30:10:1:true \
 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:35 \
 2> $trimmomatic_log
 "
 echo "CMD: $bash_cmd"
 eval "$bash_cmd"
 
-sleep 30
+sleep 5
 
 # delete unpaired files
 rm -fv "$fastq_R1_trim_unpaired"
@@ -188,7 +193,7 @@ echo "#SAMPLE,TRIM INPUT READS,TRIM SURVIVING READS,TRIM SURVIVING READS %" > "$
 # summarize log file
 echo "${sample},${reads_input},${reads_surviving},${reads_surviving_pct}" >> "$summary_csv"
 
-sleep 30
+sleep 5
 
 # combine all sample summaries
 cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.${segment_name}.csv"
@@ -200,7 +205,7 @@ cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "
 # add sample and FASTQ to sample sheet
 echo "${sample},${fastq_R1_trim},${fastq_R2_trim}" >> "$samples_csv"
 
-sleep 30
+sleep 5
 
 
 #########################

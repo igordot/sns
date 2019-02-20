@@ -19,7 +19,7 @@ if [ ! $# == 4 ] ; then
 fi
 
 # arguments
-proj_dir=$1
+proj_dir=$(readlink -f "$1")
 sample=$2
 threads=$3
 bam=$4
@@ -81,7 +81,7 @@ annot_cmd="bash ${code_dir}/segments/annot-annovar.sh $proj_dir $sample $vcf_fix
 
 # unload all loaded modulefiles
 module purge
-module load local
+module add default-environment
 
 
 #########################
@@ -94,7 +94,7 @@ if [ -s "$vcf_fixed" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	echo -e "\n CMD: $annot_cmd \n"
 	($annot_cmd)
-	exit 1
+	exit 0
 fi
 
 # delete original VCF (likely incomplete since the fixed VCF was not generated)
@@ -122,7 +122,7 @@ cat $bed \
 "
 
 if [ ! -s "$bed_padded" ] ; then
-	module load bedtools/2.26.0
+	module add bedtools/2.27.1
 	echo -e "\n CMD: $bed_pad_cmd \n"
 	eval "$bed_pad_cmd"
 	sleep 30
@@ -139,12 +139,14 @@ fi
 
 # LoFreq
 
-lofreq_bin="/ifs/home/id460/bin/lofreq"
-lofreq_gt_py="/ifs/home/id460/bin/lofreq2_add_fake_gt.py"
+lofreq_bin="/gpfs/data/igorlab/software/LoFreq/lofreq_star-2.1.3.1/bin/lofreq"
+lofreq_gt_py="/gpfs/data/igorlab/software/LoFreq/lofreq2_add_fake_gt.py"
 
 echo
 echo " * LoFreq: $(readlink -f $(which $lofreq_bin)) "
 echo " * LoFreq version: $($lofreq_bin version 2>&1 | head -1) "
+echo " * Python: $(readlink -f $(which python)) "
+echo " * Python version: $(python --version 2>&1) "
 echo " * BAM: $bam "
 echo " * BED: $bed_padded "
 echo " * VCF original: $vcf_original "
@@ -182,8 +184,6 @@ fi
 # "you can just add fake columns"
 # http://csb5.github.io/lofreq/2015/11/23/where-are-the-format-and-sample-fields/
 
-module load python/2.7.3
-
 echo
 echo " * lofreq2_add_fake_gt.py: $(readlink -f $(which $lofreq_gt_py)) "
 echo " * VCF original: $vcf_original "
@@ -216,11 +216,14 @@ fi
 
 # adjust the vcf for annovar compatibility (http://www.openbioinformatics.org/annovar/annovar_vcf.html)
 
-module load samtools/1.3
+module add htslib/1.9
+module add samtools/1.9
 
 echo
 echo " * samtools: $(readlink -f $(which samtools)) "
 echo " * samtools version: $(samtools --version | head -1) "
+echo " * bcftools: $(readlink -f $(which bcftools)) "
+echo " * bgzip: $(readlink -f $(which bgzip)) "
 echo
 
 # create indexed VCF file

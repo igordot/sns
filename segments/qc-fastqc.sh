@@ -39,7 +39,6 @@ report_zip="${out_dir}/${fastqc_basename}.zip"
 
 # unload all loaded modulefiles
 module purge
-module load local
 
 
 #########################
@@ -74,7 +73,7 @@ fi
 
 # run FastQC
 
-module load fastqc/0.11.7
+module add fastqc/0.11.7
 
 echo
 echo " * FastQC path: $(readlink -f $(which fastqc)) "

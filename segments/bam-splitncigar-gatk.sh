@@ -14,6 +14,7 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 if [ ! $# == 3 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
 	echo -e "\n USAGE: $script_name project_dir sample_name BAM \n" >&2
+	if [ $# -gt 0 ] ; then echo -e "\n ARGS: $* \n" >&2 ; fi
 	exit 1
 fi
 
@@ -79,7 +80,7 @@ bam_split="${bam_split_dir}/${bam_base}.bam"
 
 # unload all loaded modulefiles
 module purge
-module load local
+module add default-environment
 
 
 #########################
@@ -90,7 +91,7 @@ module load local
 if [ -s "$bam_split" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	echo "${sample},${bam_split}" >> "$samples_csv"
-	exit 1
+	exit 0
 fi
 
 
@@ -99,11 +100,10 @@ fi
 
 # GATK settings
 
-module load java/1.8
-module load r/3.3.0
+module add r/3.5.1
 
 # command
-gatk_jar="/ifs/home/id460/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-1/GenomeAnalysisTK.jar"
+gatk_jar="/gpfs/data/igorlab/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-1/GenomeAnalysisTK.jar"
 gatk_cmd="java -Xms16G -Xmx16G -jar ${gatk_jar}"
 
 if [ ! -s "$gatk_jar" ] ; then
@@ -162,7 +162,7 @@ if [ ! -s "$bed" ] ; then
 
 	echo -e "\n $script_name : CREATING TARGETS BED FROM GTF EXONS \n" >&2
 
-	module load bedtools/2.26.0
+	module add bedtools/2.27.1
 
 	cat "$gtf" \
 	| awk -F $'\t' '$3 == "exon" && $5 > $4' \
@@ -183,7 +183,7 @@ fi
 # add sample and BAM to sample sheet
 echo "${sample},${bam_split}" >> "$samples_csv"
 
-sleep 30
+sleep 5
 
 
 #########################

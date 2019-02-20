@@ -5,7 +5,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -40,8 +41,8 @@ if [ ! -s "$bam" ] || [ ! "$bam" ] ; then
 	exit 1
 fi
 
-code_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
-gtf=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-GTF);
+code_dir=$(dirname $(dirname "$script_path"))
+gtf=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-GTF);
 
 if [ ! -s "$gtf" ] || [ ! "$gtf" ] ; then
 	echo -e "\n $script_name ERROR: GTF $gtf DOES NOT EXIST \n" >&2
@@ -91,6 +92,9 @@ else
 	exit 1
 fi
 
+# unload all loaded modulefiles
+module purge
+
 
 #########################
 
@@ -108,7 +112,7 @@ fi
 
 # featureCounts
 
-module load subread/1.4.6-p3
+module add subread/1.6.3
 
 # featureCounts generates temp files in the current directory
 cd "$fc_logs_dir"

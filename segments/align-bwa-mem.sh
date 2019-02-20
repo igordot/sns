@@ -19,7 +19,7 @@ if [ $# -lt 4 ] ; then
 fi
 
 # arguments
-proj_dir=$1
+proj_dir=$(readlink -f "$1")
 sample=$2
 threads=$3
 fastq_R1=$4
@@ -48,7 +48,7 @@ bwa_flagstat="${bwa_logs_dir}/${sample}.flagstat.txt"
 
 # unload all loaded modulefiles
 module purge
-module load local
+module add default-environment
 
 
 #########################
@@ -60,7 +60,7 @@ if [ -s "$bam" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	echo -e "\n $script_name ADD $sample TO $samples_csv \n" >&2
 	echo "${sample},${bam}" >> "$samples_csv"
-	exit 1
+	exit 0
 fi
 
 
@@ -94,16 +94,17 @@ fi
 
 # BWA
 
-module load bwa/0.7.17
+module add bwa/0.7.17
+module add sambamba/0.6.8
 
-sambamba_bin="/ifs/home/id460/software/sambamba/sambamba_v0.6.7"
+sambamba_bin="sambamba-0.6.8"
 
 echo
-echo " * bwa: $(readlink -f $(which bwa)) "
-echo " * bwa version: $(bwa 2>&1 | grep -m 1 'Version') "
+echo " * BWA: $(readlink -f $(which bwa)) "
+echo " * BWA version: $(bwa 2>&1 | grep -m 1 'Version') "
 echo " * sambamba: $(readlink -f $(which $sambamba_bin)) "
-echo " * sambamba version: $($sambamba_bin 2>&1 | head -1) "
-echo " * BWA REF: $ref_bwa "
+echo " * sambamba version: $($sambamba_bin 2>&1 | grep -m 1 'sambamba') "
+echo " * BWA index: $ref_bwa "
 echo " * FASTQ R1: $fastq_R1 "
 echo " * FASTQ R2: $fastq_R2 "
 echo " * BAM: $bam "
@@ -125,14 +126,12 @@ $fastq_R1 $fastq_R2 \
 | \
 $sambamba_bin view \
 --sam-input \
---nthreads=${threads} \
 --filter='mapping_quality>=10' \
 --format=bam \
 --compression-level=0 \
 /dev/stdin \
 | \
 $sambamba_bin sort \
---nthreads=${threads} \
 --memory-limit=16GB \
 --out=${bam} \
 /dev/stdin
@@ -140,7 +139,7 @@ $sambamba_bin sort \
 echo "CMD: $bash_cmd"
 eval "$bash_cmd"
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -172,7 +171,7 @@ bash_cmd="$sambamba_bin flagstat $bam > $bwa_flagstat"
 echo "CMD: $bash_cmd"
 eval "$bash_cmd"
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -221,7 +220,7 @@ echo "#SAMPLE,INPUT READS,MAPPED READS (MQ10),MAPPED %,CHIMERIC %" > "$summary_c
 # summarize log file
 echo "${sample},${reads_input},${reads_mapped},${reads_mapped_pct},${reads_chimeric_pct}" >> "$summary_csv"
 
-sleep 30
+sleep 5
 
 # combine all sample summaries
 cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.${segment_name}.csv"
@@ -233,7 +232,7 @@ cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "
 # add sample and BAM to sample sheet
 echo "${sample},${bam}" >> "$samples_csv"
 
-sleep 30
+sleep 5
 
 
 #########################

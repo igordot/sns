@@ -4,6 +4,7 @@
 ##
 ## merge any number of tab or comma-separated files (coreutils join can only do 2 at a time)
 ## for tab field separator, use $'\t'
+## coreutils 8.12+ required (for "-o auto" support)
 ##
 
 
@@ -17,8 +18,6 @@ if [ $# -lt 3 ] ; then
 	exit 1
 fi
 
-# load recent coreutils ("-o auto" support added in release 8.12)
-module load coreutils/8.24
 
 # arguments
 separator="$1"

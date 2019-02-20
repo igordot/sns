@@ -5,7 +5,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -17,7 +18,7 @@ if [ ! $# == 4 ] ; then
 fi
 
 # arguments
-proj_dir=$1
+proj_dir=$(readlink -f "$1")
 sample=$2
 threads=$3
 bam=$4
@@ -50,7 +51,7 @@ bigwig="${bigwig_dir}/${sample}.bin1.rpkm.bw"
 
 # unload all loaded modulefiles
 module purge
-module load local
+module add default-environment
 
 
 #########################
@@ -60,7 +61,7 @@ module load local
 
 if [ -s "$bigwig" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
-	exit 1
+	exit 0
 fi
 
 
@@ -69,10 +70,9 @@ fi
 
 # generate bigWig using deepTools
 
-module load python/2.7.3
-module load deeptools/2.2.4
+module add deeptools/3.1.0
 # deepTools bamCoverage requires bedGraphToBigWig
-module load kentutils/329
+module add ucscutils/374
 
 echo
 echo " * bamCoverage: $(readlink -f $(which bamCoverage)) "
@@ -86,7 +86,7 @@ bamCoverage \
 --verbose \
 --numberOfProcessors $threads \
 --binSize 1 \
---normalizeUsingRPKM \
+--normalizeUsing RPKM \
 --outFileFormat bigwig \
 --bam $bam \
 --outFileName $bigwig

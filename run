@@ -51,11 +51,11 @@ sub main {
 		die "\n\n ERROR: $settings_txt DOES NOT EXIST \n\n";
 	}
 
-	# move to qsub logs dir so the qsub output ends up there
-	my $qsub_logs_dir = "${project_dir}/logs-qsub";
-	system("mkdir -p $qsub_logs_dir");
-	print "logs dir: $qsub_logs_dir \n";
-	chdir($qsub_logs_dir);
+	# move to sbatch logs dir so the sbatch output ends up there
+	my $sbatch_logs_dir = "${project_dir}/logs-sbatch";
+	system("mkdir -p $sbatch_logs_dir");
+	print "logs dir: $sbatch_logs_dir \n";
+	chdir($sbatch_logs_dir);
 
 	# determine sample sheet depending on route type
 	my $samples_csv = get_sample_sheet($project_dir, $code_dir, $route);
@@ -120,6 +120,14 @@ sub run_samples {
 	my $route_script = $_[3];
 	my $samples_csv = $_[4];
 
+	# get the maximum runtime for route (for sbatch)
+	my $route_time = `cat $route_script | grep -m 1 "SBATCHTIME="`;
+	chomp($route_time);
+	$route_time =~ s/.*=//;
+	if (length($route_time) < 3 || length($route_time) > 15) {
+		die "\n\n ERROR: ROUTE RUNTIME $route_time NOT PROPERLY SPECIFIED IN ROUTE \n\n";
+	}
+
 	# find unique samples based on the sample sheet
 	my @unique_samples = `cat $samples_csv | cut -d ',' -f 1 | LC_ALL=C sort | uniq`;
 	if ($route =~ "-pairs-") {
@@ -143,21 +151,22 @@ sub run_samples {
 		}
 	}
 
-	# adjust number of requested threads per sample depending on total number of samples
+	# request fewer threads per sample for larger projects (extra thread for overhead)
 	my $num_samples = @unique_samples;
 	my $threads;
-	my $sample_pause;
-	if ($num_samples < 10) {
-		$threads = "8-16";
-		$sample_pause = 5;
-	}
-	elsif ($num_samples < 50) {
-		$threads = "4-8";
-		$sample_pause = 2;
+	# my $sample_pause;
+	# if ($num_samples < 10) {
+	# 	$threads = "16";
+	# 	# $sample_pause = 5;
+	# }
+	# elsif ($num_samples < 50) {
+	if ($num_samples < 50) {
+		$threads = "9";
+		# $sample_pause = 2;
 	}
 	else {
-		$threads = "4";
-		$sample_pause = 1;
+		$threads = "5";
+		# $sample_pause = 1;
 	}
 
 	# process each sample
@@ -175,7 +184,7 @@ sub run_samples {
 			$cmd =~ s/:/ /;
 		}
 
-		# check for "test" argument to test one sample without qsub (for troubleshooting)
+		# check for "test" argument to test one sample without sbatch (for troubleshooting)
 		if (defined($ARGV[1]) && $ARGV[1] eq "test") {
 			print "\n\n test run started \n\n";
 			system("export NSLOTS=4 && $cmd");
@@ -183,27 +192,29 @@ sub run_samples {
 			exit;
 		}
 
-		# qsub command (run as binary bash script to keep all environment variables)
-		my $email = '${USER}@nyumc.org';
+		# sbatch command
+		my $email = '${USER}@nyulangone.org';
 		$email = `echo $email`;
 		chomp($email);
-		my $qsub_name = "sns.${route}.${sample}";
-		# using memory limits to avoid busy nodes and prevent many jobs going to the same node
-		my $qsub_mem = "-hard -l mem_free=150G -l mem_token=10G";
-		my $qsub_thread = "-pe threaded ${threads}";
-		my $qsub_cmd_base = "qsub -q all.q -cwd -b y -j y -N $qsub_name -M $email -m a $qsub_mem";
-		my $qsub_cmd = "$qsub_cmd_base $qsub_thread $cmd";
+		my $sbatch_name = "--job-name=sns.${route}.${sample}";
+		my $sbatch_mail = "--mail-user=${email} --mail-type=FAIL,REQUEUE";
+		# my $sbatch_cpu = "-p cpu_medium  --nodes=1 --ntasks=1 --cpus-per-task=${threads}";
+		my $sbatch_cpu = "--time=${route_time} --nodes=1 --ntasks=1 --cpus-per-task=${threads}";
+		my $sbatch_mem = "--mem-per-cpu=16G";
+		my $sbatch_cmd = "sbatch $sbatch_cpu $sbatch_mem $sbatch_name $sbatch_mail --export=NONE --wrap='${cmd}'";
 
 		# paired command is single-threaded (at least for now)
 		if ($route =~ "-pairs-") {
-			$qsub_cmd = "$qsub_cmd_base $cmd";
+			# $qsub_cmd = "$qsub_cmd_base $cmd";
+			$sbatch_cmd = ""
 		}
 
-		print "\n CMD: $qsub_cmd \n";
-		system($qsub_cmd);
+		print "\n CMD: $sbatch_cmd \n";
+		system($sbatch_cmd);
 
 		# pause between samples (sometimes job scheduler gets overwhelmed)
-		sleep($sample_pause);
+		# sleep($sample_pause);
+		sleep(1);
 
 		# extra pause for the first few samples so it's easier to fix obvious errors
 		if ($current_sample < 4) {

@@ -25,6 +25,9 @@ if [ ! -s "$csv" ] ; then
 	exit 1
 fi
 
+# load module
+module add dos2unix/7.4.0
+
 # fix newlines
 dos2unix --quiet $csv
 mac2unix --quiet $csv

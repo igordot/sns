@@ -13,11 +13,12 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 if [ ! $# == 3 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
 	echo -e "\n USAGE: $script_name project_dir sample_name BAM \n" >&2
+	if [ $# -gt 0 ] ; then echo -e "\n ARGS: $* \n" >&2 ; fi
 	exit 1
 fi
 
 # arguments
-proj_dir=$1
+proj_dir=$(readlink -f "$1")
 sample=$2
 bam=$3
 
@@ -53,6 +54,10 @@ bam_rg_dir="${proj_dir}/BAM-RG"
 mkdir -p "$bam_rg_dir"
 bam_rg="${bam_rg_dir}/${bam_base}.bam"
 
+# unload all loaded modulefiles
+module purge
+module add default-environment
+
 
 #########################
 
@@ -62,7 +67,7 @@ bam_rg="${bam_rg_dir}/${bam_base}.bam"
 if [ -s "$bam_rg" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	echo "${sample},${bam_rg}" >> "$samples_csv"
-	exit 1
+	exit 0
 fi
 
 
@@ -71,15 +76,18 @@ fi
 
 # Picard
 
-module unload java
-module load picard-tools/2.6.0
+module add picard-tools/2.18.20
 
-echo " * Picard: ${PICARD_ROOT}/picard.jar "
+picard_jar="${PICARD_ROOT}/libs/picard.jar"
+
+echo
+echo " * Picard: $picard_jar "
 echo " * BAM in: $bam "
 echo " * BAM out: $bam_rg "
+echo
 
 bash_cmd="
-java -Xms16G -Xmx16G -jar ${PICARD_ROOT}/picard.jar AddOrReplaceReadGroups \
+java -Xms16G -Xmx16G -jar $picard_jar AddOrReplaceReadGroups \
 VERBOSITY=WARNING QUIET=true VALIDATION_STRINGENCY=LENIENT MAX_RECORDS_IN_RAM=2500000 \
 SORT_ORDER=coordinate \
 CREATE_INDEX=true \
@@ -110,7 +118,7 @@ fi
 # add sample and BAM to sample sheet
 echo "${sample},${bam_rg}" >> "$samples_csv"
 
-sleep 30
+sleep 5
 
 
 #########################

@@ -56,7 +56,7 @@ if [ -s "$fastq_R1_clean" ] || [ -s "$fastq_R2_clean" ]; then
 	else
 		echo "${sample},${fastq_R1_clean}," >> "$samples_csv_clean"
 	fi
-	exit 1
+	exit 0
 fi
 
 # get number of files (or file pairs) for the sample (to decide if files need to be merged)
@@ -130,7 +130,7 @@ grep "^${sample}," "${samples_csv}" | LC_ALL=C sort | while read -r LINE ; do
 
 	fi
 
-	sleep 30
+	sleep 5
 
 	date
 
@@ -172,7 +172,7 @@ echo "READS R2: $reads_R2"
 echo "#SAMPLE,R1 RAW READS,R2 RAW READS" > "$summary_csv"
 echo "${sample},${reads_R1},${reads_R2}" >> "$summary_csv"
 
-sleep 30
+sleep 5
 
 # combine all sample summaries
 cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.${segment_name}.csv"
@@ -218,7 +218,7 @@ fi
 # add sample and FASTQ to sample sheet
 echo "${sample},${fastq_R1_clean},${fastq_R2_clean}" >> "$samples_csv_clean"
 
-sleep 30
+sleep 5
 
 
 #########################

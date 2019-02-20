@@ -24,19 +24,10 @@ proj_dir=$(readlink -f "$1")
 
 # additional settings
 code_dir=$(dirname $(dirname "$script_path"))
-qsub_dir="${proj_dir}/logs-qsub"
 
 # display settings
 echo " * proj_dir: $proj_dir "
 echo " * code_dir: $code_dir "
-echo " * qsub_dir: $qsub_dir "
-
-
-#########################
-
-
-# delete empty qsub .po files
-rm -f ${qsub_dir}/sns.*.po*
 
 
 #########################
@@ -49,7 +40,7 @@ if [ ! -d "$proj_dir" ] ; then
 	exit 1
 fi
 
-gtf=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-GTF);
+gtf=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-GTF);
 
 if [ ! -s "$gtf" ] || [ ! "$gtf" ] ; then
 	echo -e "\n $script_name ERROR: GTF $gtf DOES NOT EXIST \n" >&2
@@ -77,7 +68,7 @@ if [ ! -s "$gene_info_table" ] ; then
 	exit 1
 fi
 
-strand=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" EXP-STRAND);
+strand=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-STRAND);
 counts_table="${proj_dir}/quant.featurecounts.counts.${strand}.txt"
 
 if [ ! -s "$counts_table" ] ; then
@@ -87,7 +78,6 @@ fi
 
 # unload all loaded modulefiles
 module purge
-module load local
 
 
 #########################
@@ -146,8 +136,7 @@ sleep 3
 echo -e "\n ========== test R environment ========== \n"
 
 # load relevant modules
-module load java/1.8
-module load r/3.3.0
+module add r/3.5.1
 
 echo
 echo " * R: $(readlink -f $(which R)) "
@@ -156,11 +145,11 @@ echo " * Rscript: $(readlink -f $(which Rscript)) "
 echo " * Rscript version: $(Rscript --version 2>&1) "
 echo
 
-Rscript --vanilla ${code_dir}/scripts/test-package.R optparse
-Rscript --vanilla ${code_dir}/scripts/test-package.R mnormt
-Rscript --vanilla ${code_dir}/scripts/test-package.R limma
+Rscript --vanilla "${code_dir}/scripts/test-package.R" optparse
+Rscript --vanilla "${code_dir}/scripts/test-package.R" mnormt
+Rscript --vanilla "${code_dir}/scripts/test-package.R" limma
 
-sleep 3
+sleep 5
 
 
 #########################
@@ -174,13 +163,6 @@ cd "$dge_dir" || exit 1
 bash_cmd="Rscript --vanilla ${code_dir}/scripts/dge-deseq2.R $gtf $input_counts_table $input_groups_table"
 echo "CMD: $bash_cmd"
 ($bash_cmd)
-
-
-#########################
-
-
-# delete empty qsub .po files
-rm -f ${qsub_dir}/sns.*.po*
 
 
 #########################

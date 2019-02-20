@@ -14,11 +14,12 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 if [ ! $# == 4 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
 	echo -e "\n USAGE: $script_name project_dir sample_name threads BAM \n" >&2
+	if [ $# -gt 0 ] ; then echo -e "\n ARGS: $* \n" >&2 ; fi
 	exit 1
 fi
 
 # arguments
-proj_dir=$1
+proj_dir=$(readlink -f "$1")
 sample=$2
 threads=$3
 bam=$4
@@ -43,7 +44,7 @@ out_prefix_bed="${out_prefix}.bed"
 
 # unload all loaded modulefiles
 module purge
-module load local
+module add default-environment
 
 
 #########################
@@ -53,7 +54,7 @@ module load local
 
 if [ -s "${out_prefix_genome}.sample_summary" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
-	exit 1
+	exit 0
 fi
 
 
@@ -102,10 +103,8 @@ fi
 
 # GATK settings
 
-module load java/1.8
-
 # command
-gatk_jar="/ifs/home/id460/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-1/GenomeAnalysisTK.jar"
+gatk_jar="/gpfs/data/igorlab/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-1/GenomeAnalysisTK.jar"
 gatk_cmd="java -Xms16G -Xmx16G -jar $gatk_jar"
 
 gatk_omit_arg="--omitIntervalStatistics --omitLocusTable --omitDepthOutputAtEachBase"
@@ -129,13 +128,15 @@ fi
 
 # on-target coverage
 
+echo
 echo " * GATK: $(readlink -f $gatk_jar) "
 echo " * GATK version: $($gatk_cmd --version) "
-echo " * BAM IN: $bam "
-echo " * OUT PREFIX: $out_prefix_genome "
-echo " * OUT PREFIX: $out_prefix_pad500 "
-echo " * OUT PREFIX: $out_prefix_pad100 "
-echo " * OUT PREFIX: $out_prefix_bed "
+echo " * BAM in: $bam "
+echo " * out prefix: $out_prefix_genome "
+echo " * out prefix: $out_prefix_pad500 "
+echo " * out prefix: $out_prefix_pad100 "
+echo " * out prefix: $out_prefix_bed "
+echo
 
 # genome-wide coverage
 gatk_doc_genome_cmd="
@@ -226,7 +227,7 @@ echo "#SAMPLE,ON-TARGET,ON-TARGET 100BP PAD,ON-TARGET 500BP PAD" > "$summary_csv
 # summarize log file
 echo "${sample},${pct_bed},${pct_pad100},${pct_pad500}" >> "$summary_csv"
 
-sleep 30
+sleep 5
 
 # combine all sample summaries
 cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.${segment_name}.csv"

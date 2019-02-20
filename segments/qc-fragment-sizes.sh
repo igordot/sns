@@ -14,11 +14,12 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 if [ ! $# == 3 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
 	echo -e "\n USAGE: $script_name project_dir sample_name BAM \n" >&2
+	if [ $# -gt 0 ] ; then echo -e "\n ARGS: $* \n" >&2 ; fi
 	exit 1
 fi
 
 # arguments
-proj_dir=$1
+proj_dir=$(readlink -f "$1")
 sample=$2
 bam=$3
 
@@ -40,7 +41,7 @@ frag_sizes_stats_csv="${frag_sizes_dir}/${sample}.stats.csv"
 
 # unload all loaded modulefiles
 module purge
-module load local
+module add default-environment
 
 
 #########################
@@ -50,7 +51,7 @@ module load local
 
 if [ -s "$frag_sizes_csv" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
-	exit 1
+	exit 0
 fi
 
 
@@ -77,7 +78,7 @@ code_dir=$(dirname $(dirname "$script_path"))
 
 # calculate and plot fragment size distribution
 
-module load r/3.3.0
+module add r/3.5.1
 
 echo
 echo " * R: $(readlink -f $(which R)) "
@@ -85,6 +86,10 @@ echo " * R version: $(R --version | head -1) "
 echo " * Rscript: $(readlink -f $(which Rscript)) "
 echo " * Rscript version: $(Rscript --version 2>&1) "
 echo
+
+# test R
+Rscript --vanilla "${code_dir}/scripts/test-package.R" getopt
+Rscript --vanilla "${code_dir}/scripts/test-package.R" optparse
 
 # navigate to frag sizes dir
 cd "$frag_sizes_dir" || exit 1
@@ -116,6 +121,9 @@ fi
 
 # summary
 
+# "montage" is part of ImageMagick
+module add imagemagick/7.0.8
+
 # combine charts into a single png
 
 combined_png_2w=${proj_dir}/summary.${segment_name}.2w.png
@@ -139,7 +147,7 @@ echo "#SAMPLE,MEAN FRAGMENT,MEDIAN FRAGMENT,SD FRAGMENT" > "$summary_csv"
 # summarize log file
 grep -v "^SAMPLE" "$frag_sizes_stats_csv" >> "$summary_csv"
 
-sleep 30
+sleep 5
 
 # combine all sample summaries
 cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.${segment_name}.csv"

@@ -45,7 +45,7 @@ sns/run <route>
 Check for potential problems.
 
 ```
-grep "ERROR:" logs-qsub/*
+grep "ERROR:" logs-sbatch/*
 ```
 
 There should be no matches.

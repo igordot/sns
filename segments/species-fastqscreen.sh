@@ -37,7 +37,7 @@ if [ ! -s "$fastq" ] ; then
 	exit 1
 fi
 
-fastqscreen_conf="/ifs/home/id460/software/fastq_screen_v0.5.2/fastq_screen.species.conf"
+fastqscreen_conf="/gpfs/data/igorlab/software/fastq_screen_v0.13.0/fastq_screen.species.conf"
 
 if [ ! -s "$fastqscreen_conf" ] ; then
 	echo -e "\n $script_name ERROR: CONF $fastqscreen_conf DOES NOT EXIST \n" >&2
@@ -75,14 +75,16 @@ fi
 # ignore paired reads (in case of rna-seq, paired reads may be too far apart and will not align)
 
 bowtie2_bin=$(cat "$fastqscreen_conf" | grep "^BOWTIE2" | head -1 | tr '[:space:]' '\t' | tr -s '\t' | cut -f 2)
-fastqscreen_bin="/ifs/home/id460/software/fastq_screen_v0.5.2/fastq_screen"
+fastqscreen_bin="/gpfs/data/igorlab/software/fastq_screen_v0.13.0/fastq_screen"
 
+echo
 echo " * fastq_screen: $fastqscreen_bin "
 echo " * fastq_screen version: $($fastqscreen_bin --version) "
 echo " * bowtie2: $bowtie2_bin "
 echo " * bowtie2 version: $($bowtie2_bin --version 2>&1 | head -1) "
 echo " * FASTQ: $fastq "
 echo " * OUT TXT: $fastqscreen_txt "
+echo
 
 CMD="
 $fastqscreen_bin \

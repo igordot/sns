@@ -121,7 +121,7 @@ message(" ========== normalize ========== ")
 # import raw counts and create DESeq object
 # since v1.16 (11/2016), betaPrior is set to FALSE and shrunken LFCs are obtained afterwards using lfcShrink
 dds = DESeqDataSetFromMatrix(countData = counts_table, colData = groups_table, design = design_formula)
-dds = DESeq(dds, betaPrior = TRUE, parallel = TRUE, BPPARAM = BiocParallel::MulticoreParam(workers = 4))
+dds = DESeq(dds, betaPrior = TRUE, parallel = FALSE)
 
 # add gene lengths (used to generate FPKM values)
 if (identical(sort(names(gene_lengths)), sort(rownames(dds)))) {

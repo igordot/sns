@@ -36,8 +36,8 @@ sub main {
 		$genome_dir_setting = "GENOME-DIR|${genome_arg}\n";
 	}
 	else {
-		# use id460 dir as reference if genome name is provided
-		$genome_dir_setting = "GENOME-DIR|/ifs/home/id460/ref/${genome_arg}\n";
+		# use /gpfs/data/igorlab/ref if genome name is provided
+		$genome_dir_setting = "GENOME-DIR|/gpfs/data/igorlab/ref/${genome_arg}\n";
 	}
 
 	# save genome setting
@@ -45,9 +45,6 @@ sub main {
 	# print $fh $genome_setting;
 	print $fh $genome_dir_setting;
 	close $fh;
-
-	# set fasta to test genome dir setting
-	# system("bash ${pipeline_dir}/scripts/get-set-setting.sh $settings_file REF-FASTA");
 
 	# get values to make sure they were set properly
 	my $settings_genome = `bash ${pipeline_dir}/scripts/get-set-setting.sh $settings_file GENOME-DIR`;
