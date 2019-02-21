@@ -96,7 +96,7 @@ annot_cmd="bash ${code_dir}/segments/annot-annovar.sh $proj_dir $sample $vcf_com
 
 # unload all loaded modulefiles
 module purge
-module load local
+module add default-environment
 
 
 #########################
@@ -109,7 +109,7 @@ if [ -s "$vcf_combined" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	echo -e "\n CMD: $annot_cmd \n"
 	($annot_cmd)
-	exit 1
+	exit 0
 fi
 
 # delete candidateSmallIndels.vcf.gz (likely incomplete since the final VCF was not generated)
@@ -136,10 +136,7 @@ fi
 
 # configure Manta
 
-# Manta/Strelka use python-based config scripts
-module load python/2.7.3
-
-manta_dir="/ifs/home/id460/software/manta/manta-1.4.0"
+manta_dir="/gpfs/data/igorlab/software/manta/manta-1.5.0"
 manta_config_py="${manta_dir}/bin/configManta.py"
 
 echo
@@ -195,7 +192,7 @@ $manta_run_py \
 echo -e "\n CMD: $manta_run_cmd \n"
 $manta_run_cmd
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -218,7 +215,7 @@ fi
 
 # configure Strelka
 
-strelka_dir="/ifs/home/id460/software/strelka/strelka-2.9.3"
+strelka_dir="/gpfs/data/igorlab/software/strelka/strelka-2.9.10"
 strelka_config_py="${strelka_dir}/bin/configureStrelkaSomaticWorkflow.py"
 
 echo
@@ -280,13 +277,13 @@ $strelka_run_py \
 echo -e "\n CMD: $strelka_run_cmd \n"
 $strelka_run_cmd
 
-sleep 30
+sleep 5
 
 # move and rename the default VCFs
 mv -v "${strelka_logs_dir}/results/variants/somatic.snvs.vcf.gz" "$vcf_snvs_original"
 mv -v "${strelka_logs_dir}/results/variants/somatic.indels.vcf.gz" "$vcf_indels_original"
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -333,7 +330,7 @@ rm -rfv "${strelka_logs_dir}/results/variants"
 
 # adjust VCF for ANNOVAR compatibility (http://annovar.openbioinformatics.org/en/latest/articles/VCF/)
 
-module load samtools/1.3
+module add samtools/1.9
 
 echo
 echo " * samtools: $(readlink -f $(which samtools)) "
@@ -364,7 +361,7 @@ gzip -cd $vcf_indels_original \
 echo -e "\n CMD: $fix_indels_vcf_cmd \n"
 eval "$fix_indels_vcf_cmd"
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -388,16 +385,16 @@ fi
 
 # create a combined VCF with Picard MergeVcfs (proper handling of header and tags)
 
-module load picard-tools/2.6.0
+module add picard-tools/2.18.20
 
-picard_base_cmd="java -Xms16G -Xmx16G -jar ${PICARD_ROOT}/picard.jar MergeVcfs VERBOSITY=WARNING QUIET=true"
+picard_jar="${PICARD_ROOT}/libs/picard.jar"
+picard_base_cmd="java -Xms16G -Xmx16G -jar $picard_jar MergeVcfs VERBOSITY=WARNING QUIET=true"
 
 echo
-echo " * Picard: ${PICARD_ROOT}/picard.jar "
-echo " * Picard version: $($picard_base_cmd --version 2>&1 | head -1) "
-echo " * INPUT: $vcf_snvs_fixed "
-echo " * INPUT: $vcf_indels_fixed "
-echo " * OUTPUT: $vcf_combined "
+echo " * Picard: $picard_jar "
+echo " * SNVs VCF: $vcf_snvs_fixed "
+echo " * indels VCF: $vcf_indels_fixed "
+echo " * out VCF: $vcf_combined "
 echo
 
 picard_cmd="
@@ -409,7 +406,7 @@ OUTPUT=${vcf_combined} \
 echo -e "\n CMD: $picard_cmd \n"
 $picard_cmd
 
-sleep 30
+sleep 5
 
 
 #########################

@@ -15,6 +15,7 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 if [ ! $# == 3 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
 	echo -e "\n USAGE: $script_name project_dir sample_name regions_table \n" >&2
+	if [ $# -gt 0 ] ; then echo -e "\n ARGS: $* \n" >&2 ; fi
 	exit 1
 fi
 
@@ -51,7 +52,7 @@ regions_table_fixed="${annovar_out_prefix}.in.txt"
 
 # unload all loaded modulefiles
 module purge
-module load local
+module add default-environment
 
 
 #########################
@@ -61,7 +62,7 @@ module load local
 
 if [ -s "$annovar_combined" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
-	exit 1
+	exit 0
 fi
 
 
@@ -96,8 +97,8 @@ fi
 # ANNOVAR genome-specific settings
 
 # ANNOVAR directory
-annovar_path="/ifs/home/id460/software/annovar/annovar-170716"
-annovar_db_path="/ifs/home/id460/ref/annovar"
+annovar_path="/gpfs/data/igorlab/software/annovar/annovar-170716"
+annovar_db_path="/gpfs/data/igorlab/ref/annovar"
 
 genome_build=$(basename "$genome_dir")
 
@@ -134,10 +135,12 @@ fi
 
 # ANNOVAR convert2annovar - convert VCF to ANNOVAR input format
 
+echo
 echo " * convert2annovar path: $(readlink -f ${annovar_path}/convert2annovar.pl) "
 echo " * regions table : $regions_table "
 echo " * ANNOVAR out dir: $annovar_dir "
 echo " * convert2annovar out : $annovar_input "
+echo
 
 convert_cmd="
 cat $regions_table \
@@ -151,7 +154,7 @@ cat $regions_table \
 echo -e "\n CMD: $convert_cmd \n"
 eval "$convert_cmd"
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -188,7 +191,7 @@ perl ${annovar_path}/table_annovar.pl $annovar_input ${annovar_db_path}/${annova
 echo -e "\n CMD: $table_cmd \n"
 eval "$table_cmd"
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -226,7 +229,7 @@ cat $annovar_multianno \
 echo -e "\n CMD: $bash_cmd \n"
 eval "$bash_cmd"
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -255,7 +258,7 @@ cat $regions_table | grep -v 'start.*end' \
 | LC_ALL=C sort -k1,1 \
 >> "$regions_table_fixed"
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -280,7 +283,7 @@ LC_ALL=C join -a1 -t $'\t' $regions_table_fixed $annovar_out_fixed > $annovar_co
 echo -e "\n CMD: $join_cmd \n"
 eval "$join_cmd"
 
-sleep 30
+sleep 5
 
 
 #########################

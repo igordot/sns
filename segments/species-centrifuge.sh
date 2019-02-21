@@ -5,7 +5,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -13,6 +14,7 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 if [ ! $# == 4 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
 	echo -e "\n USAGE: $script_name project_dir sample_name num_threads FASTQ \n" >&2
+	if [ $# -gt 0 ] ; then echo -e "\n ARGS: $* \n" >&2 ; fi
 	exit 1
 fi
 
@@ -38,7 +40,7 @@ if [ ! -s "$fastq" ] ; then
 	exit 1
 fi
 
-centrifuge_index="/ifs/data/sequence/Illumina/igor/ref/Centrifuge/nt/nt"
+centrifuge_index="/gpfs/data/igorlab/ref/Centrifuge/nt_2018_3_3/nt"
 
 if [ ! -s "${centrifuge_index}.1.cf" ] ; then
 	echo -e "\n $script_name ERROR: REF $centrifuge_index DOES NOT EXIST \n" >&2
@@ -64,6 +66,10 @@ mkdir -p "$logs_dir"
 results_txt="${logs_dir}/${sample}.results.txt"
 report_txt="${logs_dir}/${sample}.report.txt"
 
+# unload all loaded modulefiles
+module purge
+module add default-environment
+
 
 #########################
 
@@ -72,7 +78,7 @@ report_txt="${logs_dir}/${sample}.report.txt"
 
 if [ -s "$report_csv" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
-	exit 1
+	exit 0
 fi
 
 
@@ -81,16 +87,15 @@ fi
 
 # Centrifuge
 
-module unload gcc
-module load gcc/5.2.0
+centrifuge_bin="/gpfs/data/igorlab/software/Centrifuge/centrifuge-1.0.4-beta/bin/centrifuge"
 
-centrifuge_bin="/ifs/home/id460/software/centrifuge-1.0.2-beta/centrifuge"
-
+echo
 echo " * Centrifuge: $(readlink -f $(which $centrifuge_bin)) "
 echo " * Centrifuge version: $($centrifuge_bin --version 2>&1 | head -1) "
 echo " * FASTQ: $fastq "
 echo " * results: $results_txt "
 echo " * report: $report_txt "
+echo
 
 # using 1M reads
 # not using metrics file because it is not very helpful
@@ -108,7 +113,7 @@ zcat $fastq \
 echo "CMD: $bash_cmd"
 eval "$bash_cmd"
 
-sleep 30
+sleep 5
 
 
 #########################
