@@ -4,6 +4,12 @@ Automated workflows for common sequencing-based protocols, such as RNA-seq, ATAC
 
 ## Usage overview
 
+Add git to the environment (git is not available on BigPurple by default).
+
+```
+module add git
+```
+
 Navigate to a clean new project directory. This is where all the results will end up.
 
 ```
@@ -86,7 +92,8 @@ Each route has a description with more specific details.
 
 ## About
 
-SNS is designed to work on NYULMC HPC cluster using the Sun Grid Engine job scheduler.
+SNS is designed to work on the NYULMC HPC BigPurple cluster using the SLURM job scheduler.
+It was originally made for the Phoenix cluster with the Sun Grid Engine job scheduler and that version has been archived on the [`phoenix` branch](https://github.com/igordot/sns/tree/phoenix).
 It may require significant modifications to work in other environments.
 
 SNS consists of multiple routes (or workflows).
@@ -94,12 +101,12 @@ Each route contains multiple segments (or steps).
 
 If there is a problem with any of the results, delete the broken files and re-run SNS.
 It will generate any missing output.
-Similarly, you can add additional samples and only the new ones will be processed when the route is re-run.
+Similarly, you can add additional entries to the sample sheet and only the new ones will be processed when the route is re-run.
 
 Most output and sample sheets are in a CSV format for macOS Quick Look (spacebar file preview) compatibility.
 
 There is a copy of the code in each project directory for reproducibility.
-If you modify the code, the changes will not affect other projects.
+If you modify the code for one project, the changes will not affect other projects.
 If you repeat the analysis with more samples in the future, same code will be used.
 
 ## FAQs
