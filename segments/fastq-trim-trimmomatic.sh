@@ -74,7 +74,7 @@ module add default-environment
 
 # check for output
 
-# delete trimmed FASTQs (likely incomplete since the unpaired FASTQ was not deleted)
+# delete likely incomplete trimmed FASTQs if unpaired FASTQs exist
 if [ -s "$fastq_R1_trim_unpaired" ] ; then
 	echo -e "\n $script_name WARNING: POTENTIALLY CORRUPT FASTQ $fastq_R1_trim_unpaired EXISTS \n" >&2
 	rm -fv "$fastq_R1_trim"
@@ -83,12 +83,26 @@ if [ -s "$fastq_R1_trim_unpaired" ] ; then
 	rm -fv "$fastq_R2_trim_unpaired"
 fi
 
-# exit if output exists already
-if [ -s "$fastq_R1_trim" ] ; then
-	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
-	echo -e "\n $script_name ADD $sample TO $samples_csv \n" >&2
-	echo "${sample},${fastq_R1_trim},${fastq_R2_trim}" >> "$samples_csv"
-	exit 0
+# check if output exists already
+if [ -s "$fastq_R1_trim" ] && [ -s "$trimmomatic_log" ] ; then
+
+	# check if Trimmomatic reported successfull completion
+	if grep -q "Completed successfully" "$trimmomatic_log" ; then
+		# exit if output exists already
+		echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
+		echo -e "\n $script_name ADD $sample TO $samples_csv \n" >&2
+		echo "${sample},${fastq_R1_trim},${fastq_R2_trim}" >> "$samples_csv"
+		exit 0
+	else
+		# remove partial output
+		echo -e "\n $script_name WARNING: POTENTIALLY INCOMPLETE FASTQ $fastq_R1_trim EXISTS \n" >&2
+		rm -fv "$trimmomatic_log"
+		rm -fv "$fastq_R1_trim"
+		rm -fv "$fastq_R2_trim"
+		rm -fv "$fastq_R1_trim_unpaired"
+		rm -fv "$fastq_R2_trim_unpaired"
+	fi
+
 fi
 
 

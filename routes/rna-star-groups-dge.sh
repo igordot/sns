@@ -78,6 +78,7 @@ fi
 
 # unload all loaded modulefiles
 module purge
+module add default-environment
 
 
 #########################

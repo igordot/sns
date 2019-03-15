@@ -154,19 +154,11 @@ sub run_samples {
 	# request fewer threads per sample for larger projects (extra thread for overhead)
 	my $num_samples = @unique_samples;
 	my $threads;
-	# my $sample_pause;
-	# if ($num_samples < 10) {
-	# 	$threads = "16";
-	# 	# $sample_pause = 5;
-	# }
-	# elsif ($num_samples < 50) {
 	if ($num_samples < 50) {
 		$threads = "9";
-		# $sample_pause = 2;
 	}
 	else {
 		$threads = "5";
-		# $sample_pause = 1;
 	}
 
 	# process each sample
@@ -198,10 +190,9 @@ sub run_samples {
 		chomp($email);
 		my $sbatch_name = "--job-name=sns.${route}.${sample}";
 		my $sbatch_mail = "--mail-user=${email} --mail-type=FAIL,REQUEUE";
-		# my $sbatch_cpu = "-p cpu_medium  --nodes=1 --ntasks=1 --cpus-per-task=${threads}";
-		my $sbatch_cpu = "--time=${route_time} --nodes=1 --ntasks=1 --cpus-per-task=${threads}";
-		my $sbatch_mem = "--mem-per-cpu=16G";
-		my $sbatch_cmd = "sbatch $sbatch_cpu $sbatch_mem $sbatch_name $sbatch_mail --export=NONE --wrap='${cmd}'";
+		my $mem = $threads * 16;
+		my $sbatch_res = "--time=${route_time} --nodes=1 --ntasks=1 --cpus-per-task=${threads} --mem=${mem}G";
+		my $sbatch_cmd = "sbatch $sbatch_res $sbatch_name $sbatch_mail --export=NONE --wrap='${cmd}'";
 
 		# paired command is single-threaded (at least for now)
 		if ($route =~ "-pairs-") {
