@@ -179,7 +179,7 @@ sub run_samples {
 		# check for "test" argument to test one sample without sbatch (for troubleshooting)
 		if (defined($ARGV[1]) && $ARGV[1] eq "test") {
 			print "\n\n test run started \n\n";
-			system("export NSLOTS=4 && $cmd");
+			system("export SLURM_CPUS_PER_TASK=5 && $cmd");
 			print "\n\n test run finished \n\n";
 			exit;
 		}
@@ -190,7 +190,7 @@ sub run_samples {
 		chomp($email);
 		my $sbatch_name = "--job-name=sns.${route}.${sample}";
 		my $sbatch_mail = "--mail-user=${email} --mail-type=FAIL,REQUEUE";
-		my $mem = $threads * 16;
+		my $mem = $threads * 8;
 		my $sbatch_res = "--time=${route_time} --nodes=1 --ntasks=1 --cpus-per-task=${threads} --mem=${mem}G";
 		my $sbatch_cmd = "sbatch $sbatch_res $sbatch_name $sbatch_mail --export=NONE --wrap='${cmd}'";
 

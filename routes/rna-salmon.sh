@@ -23,24 +23,22 @@ fi
 proj_dir=$(readlink -f "$1")
 sample=$2
 
-# additional settings
-threads=$NSLOTS
+# paths
 code_dir=$(dirname $(dirname "$script_path"))
-qsub_dir="${proj_dir}/logs-qsub"
+
+# reserve a thread for overhead
+threads=$SLURM_CPUS_PER_TASK
+threads=$(( threads - 1 ))
 
 # display settings
 echo " * proj_dir: $proj_dir "
 echo " * sample: $sample "
 echo " * code_dir: $code_dir "
-echo " * qsub_dir: $qsub_dir "
-echo " * threads: $threads "
+echo " * slurm threads: $SLURM_CPUS_PER_TASK "
+echo " * command threads: $threads "
 
-
-#########################
-
-
-# delete empty qsub .po files
-rm -f ${qsub_dir}/sns.*.po*
+# specify maximum runtime for sbatch job
+# SBATCHTIME=6:00:00
 
 
 #########################
@@ -78,9 +76,26 @@ fi
 # bash_cmd="bash ${code_dir}/segments/qc-fastqscreen.sh $proj_dir $sample $fastq_R1"
 # ($bash_cmd)
 
+# trim FASTQs with Trimmomatic
+segment_fastq_trim="fastq-trim-trimmomatic"
+fastq_R1_trimmed=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_trim}.csv" | cut -d ',' -f 2)
+fastq_R2_trimmed=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_trim}.csv" | cut -d ',' -f 3)
+if [ -z "$fastq_R1_trimmed" ] ; then
+	bash_cmd="bash ${code_dir}/segments/${segment_fastq_trim}.sh $proj_dir $sample $threads $fastq_R1 $fastq_R2"
+	($bash_cmd)
+	fastq_R1_trimmed=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_trim}.csv" | cut -d ',' -f 2)
+	fastq_R2_trimmed=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_fastq_trim}.csv" | cut -d ',' -f 3)
+fi
+
+# if trimmed FASTQ is not set, there was a problem
+if [ -z "$fastq_R1_trimmed" ] ; then
+	echo -e "\n $script_name ERROR: SEGMENT $segment_fastq_trim DID NOT FINISH \n" >&2
+	exit 1
+fi
+
 # Salmon
 segment_quant="quant-salmon"
-bash_cmd="bash ${code_dir}/segments/${segment_quant}.sh $proj_dir $sample $threads $fastq_R1 $fastq_R2"
+bash_cmd="bash ${code_dir}/segments/${segment_quant}.sh $proj_dir $sample $threads $fastq_R1_trimmed $fastq_R2_trimmed"
 ($bash_cmd)
 
 
@@ -89,24 +104,18 @@ bash_cmd="bash ${code_dir}/segments/${segment_quant}.sh $proj_dir $sample $threa
 
 # combine summary from each step
 
-sleep 30
+sleep 5
 
 summary_csv="${proj_dir}/summary-combined.${route_name}.csv"
 
 bash_cmd="
 bash ${code_dir}/scripts/join-many.sh , X \
 ${proj_dir}/summary.${segment_fastq_clean}.csv \
+${proj_dir}/summary.${segment_fastq_trim}.csv \
 ${proj_dir}/summary.${segment_quant}.csv \
 > $summary_csv
 "
 (eval $bash_cmd)
-
-
-#########################
-
-
-# delete empty qsub .po files
-rm -f ${qsub_dir}/sns.*.po*
 
 
 #########################

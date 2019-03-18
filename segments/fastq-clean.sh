@@ -189,17 +189,6 @@ if [ ! -s "$fastq_R1_clean" ] || [ ! -n "$fastq_R1_clean" ] ; then
 	exit 1
 fi
 
-# check if there are very few reads
-if [ "$reads_R1" -lt 1000 ] ; then
-	echo -e "\n $script_name ERROR: OUTPUT FASTQ $fastq_R1_clean IS TOO SHORT \n" >&2
-	# delete clean (not original) FASTQs since they are not usable
-	rm -fv "$fastq_R1_clean"
-	if [ -s "$fastq_R2_clean" ] ; then
-		rm -fv "$fastq_R2_clean"
-	fi
-	exit 1
-fi
-
 # check if R1 and R2 have equal number of reads
 if [ -s "$fastq_R2_clean" ] ; then
 	if [ "$reads_R1" -ne "$reads_R2" ] ; then
@@ -209,6 +198,17 @@ if [ -s "$fastq_R2_clean" ] ; then
 		rm -fv "$fastq_R2_clean"
 		exit 1
 	fi
+fi
+
+# check if there are very few reads
+if [ "$reads_R1" -lt 1000 ] ; then
+	echo -e "\n $script_name ERROR: OUTPUT FASTQ $fastq_R1_clean IS TOO SHORT \n" >&2
+	# delete clean (not original) FASTQs since they are not usable
+	rm -fv "$fastq_R1_clean"
+	if [ -s "$fastq_R2_clean" ] ; then
+		rm -fv "$fastq_R2_clean"
+	fi
+	exit 1
 fi
 
 

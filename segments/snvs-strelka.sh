@@ -388,7 +388,7 @@ fi
 module add picard-tools/2.18.20
 
 picard_jar="${PICARD_ROOT}/libs/picard.jar"
-picard_base_cmd="java -Xms16G -Xmx16G -jar $picard_jar MergeVcfs VERBOSITY=WARNING QUIET=true"
+picard_base_cmd="java -Xms8G -Xmx8G -jar $picard_jar MergeVcfs VERBOSITY=WARNING QUIET=true"
 
 echo
 echo " * Picard: $picard_jar "

@@ -132,7 +132,7 @@ $sambamba_bin view \
 /dev/stdin \
 | \
 $sambamba_bin sort \
---memory-limit=16GB \
+--memory-limit=8GB \
 --out=${bam} \
 /dev/stdin
 "

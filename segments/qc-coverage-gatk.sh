@@ -100,10 +100,9 @@ fi
 # GATK settings
 
 # command
-# all other GATK segments work with 16G (hg19/mm10 WGS/WES)
 # this segment failed for canFam3 WES (1.1M targets) with error "adjust the maximum heap size provided to Java"
 gatk_jar="/gpfs/data/igorlab/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-1/GenomeAnalysisTK.jar"
-gatk_cmd="java -Xms16G -Xmx16G -jar ${gatk_jar}"
+gatk_cmd="java -Xms8G -Xmx8G -jar ${gatk_jar}"
 
 if [ ! -s "$gatk_jar" ] ; then
 	echo -e "\n $script_name ERROR: GATK $gatk_jar DOES NOT EXIST \n" >&2

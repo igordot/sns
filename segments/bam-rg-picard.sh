@@ -87,7 +87,7 @@ echo " * BAM out: $bam_rg "
 echo
 
 bash_cmd="
-java -Xms16G -Xmx16G -jar $picard_jar AddOrReplaceReadGroups \
+java -Xms8G -Xmx8G -jar $picard_jar AddOrReplaceReadGroups \
 VERBOSITY=WARNING QUIET=true VALIDATION_STRINGENCY=LENIENT MAX_RECORDS_IN_RAM=2500000 \
 SORT_ORDER=coordinate \
 CREATE_INDEX=true \

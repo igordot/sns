@@ -152,7 +152,7 @@ STAR \
 --quantMode GeneCounts \
 --outSAMtype BAM Unsorted \
 --outStd BAM_Unsorted | \
-samtools sort -m 16G -T ${sample}.samtools -o $bam -
+samtools sort -m 8G -T ${sample}.samtools -o $bam -
 "
 echo "CMD: $bash_cmd"
 eval "$bash_cmd"

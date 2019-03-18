@@ -49,7 +49,7 @@ salmon_quant_json="${salmon_logs_dir}/lib_format_counts.json"
 
 # unload all loaded modulefiles
 module purge
-module load local
+module add default-environment
 
 
 #########################
@@ -100,12 +100,7 @@ fi
 
 # Salmon
 
-# prepare and activate Conda environment
-module purge
-module load local
-unset PYTHONPATH
-source /ifs/home/id460/anaconda3/etc/profile.d/conda.sh
-conda activate salmon-0.11.3
+salmon_bin="/gpfs/data/igorlab/software/Salmon/salmon-0.13.1_linux_x86_64/bin/salmon"
 
 #  -l [ --libType ] arg       Format string describing the library type
 #  -i [ --index ] arg         salmon index
@@ -127,9 +122,8 @@ else
 fi
 
 echo
-echo " * conda version: $(conda --version | head -1) "
-echo " * Salmon: $(readlink -f $(which salmon)) "
-echo " * Salmon version: $(salmon --version | head -1) "
+echo " * Salmon: $(readlink -f $(which $salmon_bin)) "
+echo " * Salmon version: $($salmon_bin --version | head -1) "
 echo " * Salmon index: $salmon_index "
 echo " * GTF: $gtf "
 echo " * FASTQ R1: $fastq_R1 "
@@ -141,22 +135,21 @@ echo " * TPMs: $salmon_tpms_txt "
 echo
 
 salmon_cmd="
-salmon --no-version-check quant \
+$salmon_bin --no-version-check quant \
 --threads $threads \
 --index $salmon_index \
 --geneMap $gtf \
 --libType A \
+--allowDovetail \
 --seqBias --gcBias \
+--validateMappings \
 $fastq_param \
 --output $salmon_logs_dir
 "
 echo -e "\n CMD: $salmon_cmd \n"
 $salmon_cmd
 
-# deactivate Conda environment
-conda deactivate
-
-sleep 30
+sleep 5
 
 
 #########################
@@ -204,7 +197,7 @@ gzip "${salmon_quant_dir}/${sample}.quant.sf"
 # generate summary
 
 # jq binary (command-line JSON processor)
-jq="/ifs/home/id460/software/jq/jq-1.5-linux64"
+jq="/gpfs/data/igorlab/software/jq/jq-1.6-linux64"
 
 # extract stats
 # lib_type=$(cat "$salmon_quant_log" | grep -m 1 "most likely library type" | sed 's/.*library type as //')
@@ -225,7 +218,7 @@ echo "#SAMPLE,LIBRARY TYPE, NUM ASSIGNED FRAGMENTS, MAPPING RATE, NUM GENES" > "
 # summarize log file
 echo "${sample},${lib_type},${num_assigned_frags},${map_rate},${num_genes}" >> "$summary_csv"
 
-sleep 30
+sleep 5
 
 # combine all sample summaries
 cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.${segment_name}.csv"
@@ -243,7 +236,7 @@ num_active_samples=$(find "$salmon_proj_logs_dir" -type d -name "aux_info" | wc 
 if [ "$num_active_samples" -lt 5 ] ; then
 
 	# load relevant modules
-	module load r/3.3.0
+	module add r/3.5.1
 
 	echo
 	echo " * R: $(readlink -f $(which R)) "

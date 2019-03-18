@@ -104,7 +104,7 @@ fi
 
 # command
 gatk_jar="/gpfs/data/igorlab/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-1/GenomeAnalysisTK.jar"
-gatk_cmd="java -Xms16G -Xmx16G -jar ${gatk_jar}"
+gatk_cmd="java -Xms8G -Xmx8G -jar ${gatk_jar}"
 
 # error log (DEBUG, INFO (default), WARN, ERROR, FATAL, OFF)
 gatk_log_level_arg="--logging_level ERROR"

@@ -143,7 +143,7 @@ echo " * FASTQ R2 trimmed unpaired: $fastq_R2_trim_unpaired "
 echo
 
 bash_cmd="
-java -Xms16G -Xmx16G -jar $trimmomatic_jar \
+java -Xms8G -Xmx8G -jar $trimmomatic_jar \
 $run_type_arg \
 -threads $threads \
 $files_arg \

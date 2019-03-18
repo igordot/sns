@@ -105,7 +105,7 @@ fi
 
 # command
 gatk_jar="/gpfs/data/igorlab/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-1/GenomeAnalysisTK.jar"
-gatk_cmd="java -Xms16G -Xmx16G -jar $gatk_jar"
+gatk_cmd="java -Xms8G -Xmx8G -jar $gatk_jar"
 
 gatk_omit_arg="--omitIntervalStatistics --omitLocusTable --omitDepthOutputAtEachBase"
 gatk_cutoff_arg="-ct 10 -ct 100 -mbq 20 -mmq 20"

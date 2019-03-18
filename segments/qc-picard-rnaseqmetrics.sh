@@ -117,7 +117,7 @@ echo " * out TXT: $metrics_txt "
 echo " * out PDF: $metrics_pdf "
 echo
 
-picard_base_cmd="java -Xms16G -Xmx16G -jar $picard_jar CollectRnaSeqMetrics \
+picard_base_cmd="java -Xms8G -Xmx8G -jar $picard_jar CollectRnaSeqMetrics \
 VERBOSITY=WARNING QUIET=true VALIDATION_STRINGENCY=LENIENT MAX_RECORDS_IN_RAM=2500000 \
 REF_FLAT=${refflat} \
 INPUT=${bam}"
