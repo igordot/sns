@@ -25,25 +25,19 @@ sample_t=$2
 sample_n=$3
 sample_clean="${sample_t}-${sample_n}"
 
-# additional settings
+# paths
 code_dir=$(dirname $(dirname "$script_path"))
-qsub_dir="${proj_dir}/logs-qsub"
+sbatch_dir="${proj_dir}/logs-sbatch"
 
 # display settings
 echo
 echo " * proj_dir: $proj_dir "
-echo " * sample T: $sample_t "
-echo " * sample N: $sample_n "
+echo " * sample: $sample "
 echo " * code_dir: $code_dir "
-echo " * qsub_dir: $qsub_dir "
 echo
 
-
-#########################
-
-
-# delete empty qsub .po files
-rm -f ${qsub_dir}/sns.*.po*
+# specify maximum runtime for sbatch job
+# SBATCHTIME=0:05:00
 
 
 #########################
@@ -77,30 +71,27 @@ fi
 
 # segments
 
-qsub_settings="-q all.q -M ${USER}@nyumc.org -m a -j y -cwd -b y -hard -l mem_free=150G -l mem_token=15G"
+# common sbatch settings
+sbatch_perf="--nodes=1 --ntasks=1 --cpus-per-task=5 --mem-per-cpu=8G"
+sbatch_mail="--mail-user=${USER}@nyulangone.org --mail-type=FAIL,REQUEUE"
 
 # Mutect2
 segment_mutect2="snvs-mutect2"
 bash_cmd="bash ${code_dir}/segments/${segment_mutect2}.sh $proj_dir $sample_t $bam_t $sample_n $bam_n 4"
-qsub_cmd="qsub -N sns.${segment_mutect2}.${sample_clean} ${qsub_settings} -pe threaded 4 ${bash_cmd}"
-echo "CMD: $qsub_cmd"
-($qsub_cmd)
+sbatch_name="--job-name=sns.${segment_mutect2}.${sample_clean}"
+sbatch_cmd="sbatch --time=48:00:00 ${sbatch_name} ${sbatch_perf} ${sbatch_mail} --export=NONE --wrap='${bash_cmd}'"
+echo "CMD: $sbatch_cmd"
+(eval $sbatch_cmd)
 
-sleep 10
+sleep 5
 
 # Strelka
 segment_strelka="snvs-strelka"
 bash_cmd="bash ${code_dir}/segments/${segment_strelka}.sh $proj_dir $sample_t $bam_t $sample_n $bam_n 4"
-qsub_cmd="qsub -N sns.${segment_strelka}.${sample_clean} ${qsub_settings} -pe threaded 4 ${bash_cmd}"
-echo "CMD: $qsub_cmd"
-($qsub_cmd)
-
-
-#########################
-
-
-# delete empty qsub .po files
-rm -f ${qsub_dir}/sns.*.po*
+sbatch_name="--job-name=sns.${segment_strelka}.${sample_clean}"
+sbatch_cmd="sbatch --time=24:00:00 ${sbatch_name} ${sbatch_perf} ${sbatch_mail} --export=NONE --wrap='${bash_cmd}'"
+echo "CMD: $sbatch_cmd"
+(eval $sbatch_cmd)
 
 
 #########################

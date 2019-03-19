@@ -187,7 +187,7 @@ $manta_run_py \
 --quiet \
 --mode local \
 --jobs $threads \
---memGb 64 \
+--memGb 32 \
 "
 echo -e "\n CMD: $manta_run_cmd \n"
 $manta_run_cmd
@@ -272,7 +272,7 @@ $strelka_run_py \
 --quiet \
 --mode local \
 --jobs $threads \
---memGb 64 \
+--memGb 32 \
 "
 echo -e "\n CMD: $strelka_run_cmd \n"
 $strelka_run_cmd

@@ -118,12 +118,12 @@ annovar_multianno="${annovar_out_prefix}.${genome_build}_multianno.txt"
 # annovar_protocol, annovar_operation - table_annovar parameters
 # annovar_cols_grep - column names to grep for the final fixed table
 if [[ "$genome_build" == "hg19" ]] ; then
-	annovar_protocol="refGene,avsnp150,gnomad_exome,gnomad_genome,kaviar_20150923,cosmic85,intervar_20180118,cadd13gt10,fathmm"
+	annovar_protocol="refGene,avsnp150,gnomad_exome,gnomad_genome,kaviar_20150923,cosmic88,intervar_20180118,cadd13gt10,fathmm"
 	annovar_operation="g,f,f,f,f,f,f,f,f"
 	annovar_argument="'--splicing_threshold 10',,,,,,,,"
 	annovar_cols_grep="^Ref|^Alt|refGene|avsnp|gnomAD_exome_ALL|gnomAD_genome_ALL|Kaviar_AF|cosmic|InterVar|CADD13_PHRED|FATHMM"
 elif [[ "$genome_build" == "hg38" ]] ; then
-	annovar_protocol="refGene,avsnp150,gnomad_exome,gnomad_genome,kaviar_20150923,cosmic85,intervar_20180118,revel,dbnsfp33a"
+	annovar_protocol="refGene,avsnp150,gnomad_exome,gnomad_genome,kaviar_20150923,cosmic88,intervar_20180118,revel,dbnsfp33a"
 	annovar_operation="g,f,f,f,f,f,f,f,f"
 	annovar_argument="'--splicing_threshold 10',,,,,,,,"
 	annovar_cols_grep="^Ref|^Alt|refGene|avsnp|gnomAD_exome_ALL|gnomAD_genome_ALL|Kaviar_AF|cosmic|InterVar|REVEL|CADD|fathmm"

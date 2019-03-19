@@ -26,8 +26,10 @@ proj_dir=$(readlink -f "$1")
 code_dir=$(dirname $(dirname "$script_path"))
 
 # display settings
+echo
 echo " * proj_dir: $proj_dir "
 echo " * code_dir: $code_dir "
+echo
 
 
 #########################

@@ -194,12 +194,6 @@ sub run_samples {
 		my $sbatch_res = "--time=${route_time} --nodes=1 --ntasks=1 --cpus-per-task=${threads} --mem=${mem}G";
 		my $sbatch_cmd = "sbatch $sbatch_res $sbatch_name $sbatch_mail --export=NONE --wrap='${cmd}'";
 
-		# paired command is single-threaded (at least for now)
-		if ($route =~ "-pairs-") {
-			# $qsub_cmd = "$qsub_cmd_base $cmd";
-			$sbatch_cmd = ""
-		}
-
 		print "\n CMD: $sbatch_cmd \n";
 		system($sbatch_cmd);
 

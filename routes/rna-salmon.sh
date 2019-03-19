@@ -31,11 +31,13 @@ threads=$SLURM_CPUS_PER_TASK
 threads=$(( threads - 1 ))
 
 # display settings
+echo
 echo " * proj_dir: $proj_dir "
 echo " * sample: $sample "
 echo " * code_dir: $code_dir "
 echo " * slurm threads: $SLURM_CPUS_PER_TASK "
 echo " * command threads: $threads "
+echo
 
 # specify maximum runtime for sbatch job
 # SBATCHTIME=6:00:00

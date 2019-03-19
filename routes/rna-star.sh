@@ -31,11 +31,13 @@ threads=$SLURM_CPUS_PER_TASK
 threads=$(( threads - 1 ))
 
 # display settings
+echo
 echo " * proj_dir: $proj_dir "
 echo " * sample: $sample "
 echo " * code_dir: $code_dir "
 echo " * slurm threads: $SLURM_CPUS_PER_TASK "
 echo " * command threads: $threads "
+echo
 
 # specify maximum runtime for sbatch job
 # SBATCHTIME=24:00:00
@@ -111,9 +113,10 @@ fi
 # generate BigWig (deeptools)
 segment_bw_deeptools="bigwig-deeptools"
 bash_cmd="bash ${code_dir}/segments/${segment_bw_deeptools}.sh $proj_dir $sample 4 $bam_star"
-sbatch_perf_params="--time=8:00:00 --nodes=1 --ntasks=1 --cpus-per-task=5"
-sbatch_mail_params="--mail-user=${USER}@nyulangone.org --mail-type=FAIL,REQUEUE --job-name=sns.${segment_bw_deeptools}.${sample}"
-sbatch_cmd="sbatch ${sbatch_perf_params} ${sbatch_mail_params} --export=NONE --wrap='${bash_cmd}'"
+sbatch_perf="--nodes=1 --ntasks=1 --cpus-per-task=5 --mem-per-cpu=8G"
+sbatch_mail="--mail-user=${USER}@nyulangone.org --mail-type=FAIL,REQUEUE"
+sbatch_name="--job-name=sns.${segment_bw_deeptools}.${sample}"
+sbatch_cmd="sbatch --time=8:00:00 ${sbatch_name} ${sbatch_perf} ${sbatch_mail} --export=NONE --wrap='${bash_cmd}'"
 echo "CMD: $sbatch_cmd"
 (eval $sbatch_cmd)
 
