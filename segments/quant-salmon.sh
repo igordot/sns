@@ -231,9 +231,16 @@ cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "
 # this may be possible with "salmon quantmerge" in the future (does not currently support gene-level output)
 # "tximport is, and has been, the recommended way to aggregate transcript-level abundances to the gene-level"
 
-# merge counts if many samples are not still processing ("aux_info" directory is deleted at the end of this segment)
+# file base of merged output
+merged_counts_base="${proj_dir}/quant.salmon"
+merged_counts_rds="${merged_counts_base}.tximport.rds"
+
+# check how many samples are still processing ("aux_info" directory is deleted at the end of this segment)
 num_active_samples=$(find "$salmon_proj_logs_dir" -type d -name "aux_info" | wc -l)
-if [ "$num_active_samples" -lt 5 ] ; then
+
+# merge counts
+# proceed if a lot of samples are not still processing and there are newer samples (if repeating the whole run)
+if [[ "$num_active_samples" -lt 3 && "$merged_counts_rds" -ot "${salmon_quant_dir}/${sample}.quant.sf.gz" ]] ; then
 
 	# load relevant modules
 	module add r/3.5.1
@@ -249,8 +256,6 @@ if [ "$num_active_samples" -lt 5 ] ; then
 	Rscript --vanilla ${code_dir}/scripts/test-package.R mnormt
 	Rscript --vanilla ${code_dir}/scripts/test-package.R limma
 
-	merged_counts_base="${proj_dir}/quant.salmon"
-
 	# launch the analysis R script
 	bash_cmd="Rscript --vanilla ${code_dir}/scripts/quant-merge-salmon.R $gtf $salmon_quant_dir $merged_counts_base"
 	echo "CMD: $bash_cmd"
@@ -258,9 +263,7 @@ if [ "$num_active_samples" -lt 5 ] ; then
 
 else
 
-	echo
-	echo "skip merging counts (quant-merge-salmon.R) since many samples are still processing"
-	echo
+	echo "skip merging counts (quant-merge-salmon.R) since $num_active_samples samples are still processing"
 
 fi
 
@@ -270,7 +273,7 @@ fi
 
 # clean up
 
-gzip "${salmon_logs_dir}/quant.genes.sf"
+gzip "$salmon_quant_genes_sf"
 rm -rfv "${salmon_logs_dir}/aux_info"
 rm -rfv "${salmon_logs_dir}/libParams"
 

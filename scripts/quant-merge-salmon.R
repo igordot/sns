@@ -43,7 +43,8 @@ tx2gene = select(txdb, txkey, "GENEID", "TXNAME")
 
 # find quant.sf files in a specified directory
 quant_files = list.files(path = quant_sf_dir, pattern = "quant.sf.gz", full.names = TRUE, recursive = TRUE)
-length(quant_files)
+
+message("num found quant files: ", length(quant_files))
 
 # determine sample names from quant.sf file names
 quant_files_names = quant_files
@@ -58,6 +59,9 @@ names(quant_files) = quant_files_names
 # "salmon" software type uses "TPM" column as abundances and "NumReads" as estimated counts
 # scale using the average transcript length over samples and the library size (lengthScaledTPM)
 txi = tximport(quant_files, type = "salmon", tx2gene = tx2gene, countsFromAbundance = "lengthScaledTPM")
+
+message("num imported samples: ", ncol(txi$counts))
+message("num imported genes:   ", nrow(txi$counts))
 
 # check that the counts table has a reasonable number of genes
 if (nrow(txi$counts) < 1000) stop("tximport counts table too small")
