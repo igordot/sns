@@ -161,6 +161,15 @@ fi
 #########################
 
 
+# create a blank summary file in case there are errors (such as no variants) before the segment completes
+
+echo "#SAMPLE" > "$summary_csv"
+echo "${sample_clean}" >> "$summary_csv"
+
+
+#########################
+
+
 # extract variant info (quality, depth, frequency) from a VCF in a table format for merging with annotations
 
 module add r/3.5.1
