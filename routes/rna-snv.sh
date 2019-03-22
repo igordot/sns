@@ -23,24 +23,24 @@ fi
 proj_dir=$(readlink -f "$1")
 sample=$2
 
-# additional settings
-threads=$NSLOTS
+# paths
 code_dir=$(dirname $(dirname "$script_path"))
-qsub_dir="${proj_dir}/logs-qsub"
+
+# reserve a thread for overhead
+threads=$SLURM_CPUS_PER_TASK
+threads=$(( threads - 1 ))
 
 # display settings
+echo
 echo " * proj_dir: $proj_dir "
 echo " * sample: $sample "
 echo " * code_dir: $code_dir "
-echo " * qsub_dir: $qsub_dir "
-echo " * threads: $threads "
+echo " * slurm threads: $SLURM_CPUS_PER_TASK "
+echo " * command threads: $threads "
+echo
 
-
-#########################
-
-
-# delete empty qsub .po files
-rm -f ${qsub_dir}/sns.*.po*
+# specify maximum runtime for sbatch job
+# SBATCHTIME=72:00:00
 
 
 #########################
@@ -75,7 +75,7 @@ if [ -n "$fastq_R2" ] ; then
 fi
 
 # fastq_screen
-bash_cmd="bash ${code_dir}/segments/qc-fastqscreen.sh $proj_dir $sample $fastq_R1"
+bash_cmd="bash ${code_dir}/segments/qc-fastqscreen.sh $proj_dir $sample $threads $fastq_R1"
 ($bash_cmd)
 
 # trim FASTQs with Trimmomatic
@@ -202,7 +202,7 @@ bash_cmd="bash ${code_dir}/segments/${segment_lofreq}.sh $proj_dir $sample $thre
 
 # combine summary from each step
 
-sleep 30
+sleep 5
 
 summary_csv="${proj_dir}/summary-combined.${route_name}.csv"
 
@@ -229,13 +229,6 @@ if [ ! -s "$samples_pairs_csv" ] ; then
 	echo "#SAMPLE-T,#SAMPLE-N" > $samples_pairs_csv
 	sed 's/\,.*/,NA/g' ${proj_dir}/samples.fastq-raw.csv | LC_ALL=C sort -u >> $samples_pairs_csv
 fi
-
-
-#########################
-
-
-# delete empty qsub .po files
-rm -f ${qsub_dir}/sns.*.po*
 
 
 #########################
