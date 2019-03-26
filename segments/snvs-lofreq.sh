@@ -125,7 +125,7 @@ if [ ! -s "$bed_padded" ] ; then
 	module add bedtools/2.27.1
 	echo -e "\n CMD: $bed_pad_cmd \n"
 	eval "$bed_pad_cmd"
-	sleep 30
+	sleep 5
 fi
 
 if [ ! -s "$bed_padded" ] ; then

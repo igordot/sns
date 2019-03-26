@@ -163,7 +163,8 @@ fi
 
 # create a blank summary file in case there are errors (such as no variants) before the segment completes
 
-echo "#SAMPLE" > "$summary_csv"
+summary_header="#SAMPLE,total muts,coding muts,nonsyn muts"
+echo "${summary_header}" > "$summary_csv"
 echo "${sample_clean}" >> "$summary_csv"
 
 
@@ -381,10 +382,8 @@ echo "coding muts: $coding_muts"
 nonsyn_muts=$(cat "$annovar_combined" | grep -v 'refGene' | grep -E 'nonsynonymous|stopgain|stoploss|frameshift' | wc -l)
 echo "nonsynonymous muts: $coding_muts"
 
-# header for summary file
-echo "#SAMPLE,total muts,coding muts,nonsyn muts" > "$summary_csv"
-
 # summarize log file
+echo "${summary_header}" > "$summary_csv"
 echo "${sample_clean},${total_muts},${coding_muts},${nonsyn_muts}" >> "$summary_csv"
 
 sleep 5

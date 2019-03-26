@@ -211,7 +211,7 @@ echo "#SAMPLE,ASSIGNED COUNTS ${strand}" > "$summary_csv"
 # summarize log file
 echo "${sample},${counts_assigned}" >> "$summary_csv"
 
-sleep 30
+sleep 5
 
 # combine all sample summaries
 cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.${segment_name}.csv"
