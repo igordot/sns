@@ -68,7 +68,7 @@ parse_gatkhc = function(vcfr_obj, sample_name) {
   muts_tbl = muts_tbl %>% adjust_indels()
 
   # manual filtering
-  muts_tbl %>% filter(alt_counts >= 5 & FREQ > 0.01)
+  muts_tbl %>% filter(DEPTH >= 10 & alt_counts >= 5 & FREQ > 0.01)
 
 }
 
@@ -100,16 +100,16 @@ parse_lofreq = function(vcfr_obj, sample_name) {
   muts_tbl = muts_tbl %>% adjust_indels()
 
   # manual filtering
-  muts_tbl %>% filter(alt_counts >= 5 & FREQ > 0.01)
+  muts_tbl %>% filter(DEPTH >= 10 & alt_counts >= 5 & FREQ > 0.01)
 
 }
 
-# Mutect 2.1 (GATK 4)
-parse_mutect21 = function(vcfr_obj, sample_T, sample_N) {
+# Mutect 2.1 (GATK 4.0) and Mutect 2.2 (GATK 4.1)
+parse_mutect2 = function(vcfr_obj, sample_T, sample_N) {
 
   # confirm mutect version (header changed from "Mutect Version" to "MutectVersion" in GATK 4.0.9.0)
-  if (!any(str_detect(vcfr_obj@meta, "##MutectVersion=2.1"))) {
-    stop("version mismatch: expecting Mutect 2.1")
+  if (!any(str_detect(vcfr_obj@meta, "##MutectVersion=2."))) {
+    stop("version mismatch: expecting Mutect 2.X")
   }
 
   # confirm sample names
@@ -168,7 +168,7 @@ parse_mutect21 = function(vcfr_obj, sample_T, sample_N) {
   muts_tbl = muts_tbl %>% adjust_indels()
 
   # manual filtering
-  muts_tbl %>% filter((alt_counts >= 5) & (T_FREQ > 0.05) & (T_FREQ > (N_FREQ * 5)))
+  muts_tbl %>% filter(T_DEPTH >= 10 & N_DEPTH >= 10 & alt_counts >= 5 & T_FREQ > 0.03 & T_FREQ > (N_FREQ * 5))
 
 }
 
@@ -254,7 +254,7 @@ parse_strelka2 = function(vcfr_obj, sample_T, sample_N) {
   muts_tbl = muts_tbl %>% adjust_indels()
 
   # manual filtering
-  muts_tbl %>% filter((alt_counts >= 5) & (T_FREQ > 0.05) & (T_FREQ > (N_FREQ * 5)))
+  muts_tbl %>% filter(T_DEPTH >= 10 & N_DEPTH >= 10 & alt_counts >= 5 & T_FREQ > 0.03 & T_FREQ > (N_FREQ * 5))
 
 }
 
@@ -300,7 +300,6 @@ if (any(str_detect(muts_vcfr@meta, "##GATKCommandLine.HaplotypeCaller"))) {
   # GATK HaplotypeCaller
   message("parsing GATK HaplotypeCaller VCF")
   caller_type = "germline"
-  vcf_type = "gatkhc"
   vcf_tbl = parse_gatkhc(vcfr_obj = muts_vcfr, sample_name = sample_name)
 
 } else if (any(str_detect(muts_vcfr@meta, "##source=lofreq"))) {
@@ -308,23 +307,20 @@ if (any(str_detect(muts_vcfr@meta, "##GATKCommandLine.HaplotypeCaller"))) {
   # LoFreq
   message("parsing LoFreq VCF")
   caller_type = "germline"
-  vcf_type = "lofreq"
   vcf_tbl = parse_lofreq(vcfr_obj = muts_vcfr, sample_name = sample_name)
 
 } else if (any(str_detect(muts_vcfr@meta, "##source=Mutect2"))) {
 
-  # Mutect 2.1 (GATK 4)
-  message("parsing Mutect 2.1 VCF")
+  # Mutect 2.1 (GATK 4.0) or Mutect 2.2 (GATK 4.1)
+  message("parsing Mutect 2.X VCF")
   caller_type = "somatic"
-  vcf_type = "mutect21"
-  vcf_tbl = parse_mutect21(vcfr_obj = muts_vcfr, sample_T = sample_T, sample_N = sample_N)
+  vcf_tbl = parse_mutect2(vcfr_obj = muts_vcfr, sample_T = sample_T, sample_N = sample_N)
 
 } else if (any(str_detect(muts_vcfr@meta, "##source=strelka"))) {
 
   # Strelka 2
   message("parsing Strelka 2 VCF")
   caller_type = "somatic"
-  vcf_type = "strelka2"
   vcf_tbl = parse_strelka2(vcfr_obj = muts_vcfr, sample_T = sample_T, sample_N = sample_N)
 
 } else {

@@ -32,7 +32,8 @@ sbatch_dir="${proj_dir}/logs-sbatch"
 # display settings
 echo
 echo " * proj_dir: $proj_dir "
-echo " * sample: $sample "
+echo " * tumor sample: $sample_t "
+echo " * normal sample: $sample_n "
 echo " * code_dir: $code_dir "
 echo
 
@@ -74,6 +75,8 @@ fi
 # common sbatch settings
 sbatch_perf="--nodes=1 --ntasks=1 --cpus-per-task=5 --mem-per-cpu=8G"
 sbatch_mail="--mail-user=${USER}@nyulangone.org --mail-type=FAIL,REQUEUE"
+
+sleep 5
 
 # Mutect2
 segment_mutect2="snvs-mutect2"

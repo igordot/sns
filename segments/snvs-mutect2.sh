@@ -160,7 +160,7 @@ fi
 module add python/cpu/3.6.5
 
 # command
-gatk_bin="/gpfs/data/igorlab/software/GenomeAnalysisTK/gatk-4.1.0.0/gatk"
+gatk_bin="/gpfs/data/igorlab/software/GenomeAnalysisTK/gatk-4.1.1.0/gatk"
 
 echo
 echo " * GATK: $(readlink -f $gatk_bin) "
@@ -176,7 +176,6 @@ echo
 # --native-pair-hmm-threads: how many threads should a native pairHMM implementation use
 # --max-reads-per-alignment-start: maximum number of reads to retain per alignment start position (50)
 # --dont-use-soft-clipped-bases: do not analyze soft clipped bases in the reads
-# --standard-min-confidence-threshold-for-calling: minimum phred-scaled confidence at which variants should be called
 # --germline-resource: population vcf of germline sequencing containing allele fractions
 
 mutect_cmd="
@@ -186,9 +185,7 @@ $gatk_bin --java-options \"-Xms8G -Xmx8G\" Mutect2 \
 --reference $ref_fasta \
 $germline_resource_arg \
 --dont-use-soft-clipped-bases \
---standard-min-confidence-threshold-for-calling 30 \
---max-alternate-alleles 3 \
---max-reads-per-alignment-start 1000 \
+--max-reads-per-alignment-start 100 \
 --intervals $bed \
 --interval-padding 10 \
 --input $bam_t \
@@ -293,16 +290,13 @@ echo " * VCF unfiltered: $vcf_unfiltered "
 echo " * VCF filtered: $vcf_filtered "
 echo
 
-# thresholds for both normal-artifact-lod (default 0.0) and tumor-lod (default 5.3) can be set
-# for matched analyses with tumor contamination in the normal, consider increasing the normal-artifact-lod threshold
-# --normal-artifact-lod: LOD threshold for calling normal artifacts (0.0)
 # --unique-alt-read-count: filter a variant if fewer than this many unique reads supporting the alternate allele (0)
 
 mutect_filter_cmd="
 $gatk_bin --java-options \"-Xms8G -Xms8G\" FilterMutectCalls \
 --verbosity WARNING \
+--reference $ref_fasta \
 --unique-alt-read-count 5 \
---normal-artifact-lod 5.0 \
 --variant $vcf_unfiltered \
 $contamination_arg \
 --output $vcf_filtered \

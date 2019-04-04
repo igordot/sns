@@ -81,19 +81,32 @@ if [ ! -s "$vcf_file" ] ; then
 	exit 1
 fi
 
-# check if the VCF file has variants
-num_variants=$(cat "$vcf_file" | grep -v '^#' | wc -l)
-if [ "$num_variants" -eq 0 ] ; then
-	echo -e "\n $script_name ERROR: VCF $vcf_file HAS NO VARIANTS \n" >&2
-	exit 1
-fi
-
 code_dir=$(dirname $(dirname "$script_path"))
 
 genome_dir=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" GENOME-DIR);
 
 if [ ! -d "$genome_dir" ] ; then
 	echo -e "\n $script_name ERROR: GENOME DIR $genome_dir DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+
+#########################
+
+
+# check if the VCF file has variants
+
+# get number of variants (non-header lines)
+num_variants=$(cat "$vcf_file" | grep -v '^#' | wc -l)
+
+# create a blank summary file in case there are errors (such as no variants) before the segment completes
+summary_header="#SAMPLE,total muts,coding muts,nonsyn muts"
+echo "${summary_header}" > "$summary_csv"
+echo "${sample_clean},${num_variants},X,X" >> "$summary_csv"
+
+# exit if the VCF file does not contain variants
+if [ "$num_variants" -eq 0 ] ; then
+	echo -e "\n $script_name ERROR: VCF $vcf_file HAS NO VARIANTS \n" >&2
 	exit 1
 fi
 
@@ -156,16 +169,6 @@ else
 	echo -e "\n $script_name ERROR: UNKNOWN GENOME $genome_build \n" >&2
 	exit 1
 fi
-
-
-#########################
-
-
-# create a blank summary file in case there are errors (such as no variants) before the segment completes
-
-summary_header="#SAMPLE,total muts,coding muts,nonsyn muts"
-echo "${summary_header}" > "$summary_csv"
-echo "${sample_clean}" >> "$summary_csv"
 
 
 #########################
