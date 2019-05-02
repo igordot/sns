@@ -23,24 +23,24 @@ fi
 proj_dir=$(readlink -f "$1")
 sample=$2
 
-# additional settings
-threads=$NSLOTS
+# paths
 code_dir=$(dirname $(dirname "$script_path"))
-qsub_dir="${proj_dir}/logs-qsub"
+
+# reserve a thread for overhead
+threads=$SLURM_CPUS_PER_TASK
+threads=$(( threads - 1 ))
 
 # display settings
+echo
 echo " * proj_dir: $proj_dir "
 echo " * sample: $sample "
 echo " * code_dir: $code_dir "
-echo " * qsub_dir: $qsub_dir "
-echo " * threads: $threads "
+echo " * slurm threads: $SLURM_CPUS_PER_TASK "
+echo " * command threads: $threads "
+echo
 
-
-#########################
-
-
-# delete empty qsub .po files
-rm -f ${qsub_dir}/sns.*.po*
+# specify maximum runtime for sbatch job
+# SBATCHTIME=24:00:00
 
 
 #########################
@@ -107,9 +107,12 @@ fi
 # generate BigWig (deeptools)
 segment_bw_deeptools="bigwig-deeptools"
 bash_cmd="bash ${code_dir}/segments/${segment_bw_deeptools}.sh $proj_dir $sample 4 $bam_dd"
-qsub_common_cmd="qsub -q all.q -M ${USER}@nyumc.org -m a -j y -b y -cwd"
-qsub_cmd="${qsub_common_cmd} -N sns.${segment_bw_deeptools}.${sample} -pe threaded 4 ${bash_cmd}"
-$qsub_cmd
+sbatch_perf="--nodes=1 --ntasks=1 --cpus-per-task=5 --mem-per-cpu=8G"
+sbatch_mail="--mail-user=${USER}@nyulangone.org --mail-type=FAIL,REQUEUE"
+sbatch_name="--job-name=sns.${segment_bw_deeptools}.${sample}"
+sbatch_cmd="sbatch --time=8:00:00 ${sbatch_name} ${sbatch_perf} ${sbatch_mail} --export=NONE --wrap='${bash_cmd}'"
+echo "CMD: $sbatch_cmd"
+(eval $sbatch_cmd)
 
 # fragment size distribution
 segment_qc_frag_size="qc-fragment-sizes"
@@ -122,9 +125,9 @@ bash_cmd="bash ${code_dir}/segments/${segment_peaks}.sh $proj_dir $sample $bam_d
 ($bash_cmd)
 
 # call nucleosomes
-segment_nuc="nucleosomes-nucleoatac"
-bash_cmd="bash ${code_dir}/segments/${segment_nuc}.sh $proj_dir $sample $threads $bam_dd"
-($bash_cmd)
+# segment_nuc="nucleosomes-nucleoatac"
+# bash_cmd="bash ${code_dir}/segments/${segment_nuc}.sh $proj_dir $sample $threads $bam_dd"
+# ($bash_cmd)
 
 
 #########################
@@ -132,7 +135,7 @@ bash_cmd="bash ${code_dir}/segments/${segment_nuc}.sh $proj_dir $sample $threads
 
 # combine summary from each step
 
-sleep 30
+sleep 5
 
 summary_csv="${proj_dir}/summary-combined.${route_name}.csv"
 
@@ -145,13 +148,6 @@ ${proj_dir}/summary.${segment_peaks}-q-0.05.csv \
 > $summary_csv
 "
 (eval $bash_cmd)
-
-
-#########################
-
-
-# delete empty qsub .po files
-rm -f ${qsub_dir}/sns.*.po*
 
 
 #########################

@@ -19,7 +19,7 @@ if [ ! $# == 5 ] ; then
 fi
 
 # arguments
-proj_dir=$1
+proj_dir=$(readlink -f "$1")
 sample=$2
 threads=$3
 fastq_R1=$4
@@ -80,7 +80,7 @@ flagstat_txt="${logs_dir}/${sample}.flagstat.txt"
 
 # unload all loaded modulefiles
 module purge
-module load local
+module add default-environment
 
 
 #########################
@@ -119,10 +119,11 @@ fi
 # step 3: sort BAM
 # to do: add Picard AddOrReplaceReadGroups for extra compatibility
 
-module load bowtie2/2.3.4.1
-module load samtools/1.3
+module add bowtie2/2.3.4.1
+module add samtools/1.9
+module add sambamba/0.6.8
 
-sambamba_bin="/ifs/home/id460/software/sambamba/sambamba_v0.6.7"
+sambamba_bin="sambamba-0.6.8"
 
 echo
 echo " * bowtie2: $(readlink -f $(which bowtie2)) "
@@ -211,7 +212,7 @@ $sambamba_bin view \
 | \
 $sambamba_bin sort \
 --nthreads $threads \
---memory-limit 16GB \
+--memory-limit 8GB \
 --out $bam \
 /dev/stdin
 "
@@ -288,7 +289,7 @@ echo "#SAMPLE,TOTAL READS,MAPPED READS %,CHR M READS %,MAPPED READS MQ30 %" > "$
 # summarize log file
 echo "${sample},${reads_input},${reads_mapped_pct},${reads_chrM_pct},${reads_filtered_pct}" >> "$summary_csv"
 
-sleep 30
+sleep 5
 
 # combine all sample summaries
 cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.${segment_name}.csv"
@@ -300,7 +301,7 @@ cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "
 # add sample and BAM to sample sheet
 echo "${sample},${bam}" >> "$samples_csv"
 
-sleep 30
+sleep 5
 
 
 #########################

@@ -50,7 +50,7 @@ macs_bw="${bigwig_dir}/${sample}.macs.bw"
 
 # unload all loaded modulefiles
 module purge
-module load local
+module add default-environment
 
 
 #########################
@@ -116,8 +116,8 @@ fi
 
 # MACS
 
-# MACS is part of python/2.7.3 module
-module load python/2.7.3
+# MACS is part of python/cpu/2.7.15 module
+module add python/cpu/2.7.15
 
 echo
 echo " * MACS: $(readlink -f $(which macs2)) "
@@ -150,13 +150,13 @@ $bash_cmd
 
 # check that output generated
 
-if [ ! -s "$peaks_xls" ] ; then
-	echo -e "\n $script_name ERROR: XLS $peaks_xls NOT GENERATED \n" >&2
+if [ ! -s "$peaks_narrow" ] ; then
+	echo -e "\n $script_name ERROR: PEAKS $peaks_narrow NOT GENERATED \n" >&2
 	exit 1
 fi
 
-if [ ! -s "$peaks_narrow" ] ; then
-	echo -e "\n $script_name ERROR: PEAKS $peaks_narrow NOT GENERATED \n" >&2
+if [ ! -s "$peaks_xls" ] ; then
+	echo -e "\n $script_name ERROR: XLS $peaks_xls NOT GENERATED \n" >&2
 	exit 1
 fi
 
@@ -181,14 +181,16 @@ if [ ! -s "$macs_bdg_treat" ] ; then
 	exit 1
 fi
 
-module load kentutils/329
+module add ucscutils/374
 
 if [ ! -s "$macs_bw" ] ; then
 
+	echo
 	echo " * bedGraphToBigWig: $(readlink -f $(which bedGraphToBigWig)) "
 	echo " * MACS bedGraph original: $macs_bdg_treat "
 	echo " * MACS bedGraph sorted: $macs_bdg_treat_sort "
 	echo " * MACS bigWig: $macs_bw "
+	echo
 
 	bdg_sort_cmd="cat $macs_bdg_treat | LC_ALL=C sort -k1,1 -k2,2n > $macs_bdg_treat_sort"
 	echo -e "\n CMD: $bdg_sort_cmd \n"
@@ -220,7 +222,7 @@ echo "#SAMPLE,PEAKS q ${qvalue}" > "$summary_csv"
 # summarize log file
 echo "${sample},${peaks_num}" >> "$summary_csv"
 
-sleep 30
+sleep 5
 
 # combine all sample summaries
 cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.${segment_name}.csv"
