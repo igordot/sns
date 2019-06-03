@@ -242,12 +242,6 @@ echo "counts fwd: $counts_fwd"
 counts_rev=$(cat $counts_txt | grep -v 'N_' | awk -F $'\t' '{sum+=$4} END {print sum}')
 echo "counts rev: $counts_rev"
 
-# perform some sanity checks
-if [ "$counts_unstr" -lt 10000 ] || [ "$counts_fwd" -lt 10 ] || [ "$counts_rev" -lt 10 ] ; then
-	echo -e "\n $script_name ERROR: LOW COUNTS \n" >&2
-	exit 1
-fi
-
 lib_strand="unstr"
 
 if [ "$(echo "${counts_fwd}/${counts_rev}" | bc)" -gt 5 ] ; then
@@ -258,8 +252,15 @@ if [ "$(echo "${counts_rev}/${counts_fwd}" | bc)" -gt 5 ] ; then
 	lib_strand="rev"
 fi
 
-# set experiment strand (ignored if already specified)
-exp_strand=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-STRAND "$lib_strand");
+# set experiment strand if the file meets some quality standards (strand not set if previously set)
+if [ "$counts_unstr" -gt 10000 ] ; then
+	exp_strand=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-STRAND "$lib_strand");
+fi
+
+# generate an error for low quality files
+if [ "$counts_unstr" -lt 1000 ] || [ "$counts_fwd" -lt 10 ] || [ "$counts_rev" -lt 10 ] ; then
+	echo -e "\n $script_name ERROR: LOW COUNTS \n" >&2
+fi
 
 echo "sample strand: $lib_strand"
 echo "experiment strand: $exp_strand"
