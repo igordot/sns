@@ -68,6 +68,7 @@ The available routes:
 * [rna-rsem](https://github.com/igordot/sns/blob/master/routes/rna-rsem.md): RNA-seq using RSEM. Generates FPKM/TPM/counts matrix and various QC metrics.
 * [rna-salmon](https://github.com/igordot/sns/blob/master/routes/rna-salmon.md): RNA-seq using Salmon. Generates TPM/counts matrix and various QC metrics.
 * [rna-snv](https://github.com/igordot/sns/blob/master/routes/rna-snv.md): RNA-seq variant detection. Generates BAMs, VCFs, and various QC metrics.
+* [chip](https://github.com/igordot/sns/blob/master/routes/chip.md): ChIP-seq. Generates BAMs, bigWigs, peaks, and various QC metrics.
 * [atac](https://github.com/igordot/sns/blob/master/routes/atac.md): ATAC-seq. Generates BAMs, bigWigs, peaks, nucleosome positions, and various QC metrics.
 * [wes](https://github.com/igordot/sns/blob/master/routes/wes.md): Whole genome/exome/targeted variant detection. Generates BAMs, VCFs, and various QC metrics.
 * [wgbs](https://github.com/igordot/sns/blob/master/routes/rrbs.md): WGBS methylation analysis.
@@ -81,6 +82,7 @@ Available comparison routes:
 
 * [rna-star-groups-dge](https://github.com/igordot/sns/blob/master/routes/rna-star-groups-dge.md): Differential gene expression using DESeq2 for the `rna-star` results.
 * [wes-pairs-snv](https://github.com/igordot/sns/blob/master/routes/wes-pairs-snv.md): Somatic variant detection for the `wes` results.
+* [chip-pairs-peaks](https://github.com/igordot/sns/blob/master/routes/chip-pairs-peaks.md): Peak calling for the `chip` results.
 
 ## Output
 
