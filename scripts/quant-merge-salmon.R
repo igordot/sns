@@ -58,7 +58,19 @@ names(quant_files) = quant_files_names
 # import transcript-level estimates and summarizes to the gene-level
 # "salmon" software type uses "TPM" column as abundances and "NumReads" as estimated counts
 # scale using the average transcript length over samples and the library size (lengthScaledTPM)
-txi = tximport(quant_files, type = "salmon", tx2gene = tx2gene, countsFromAbundance = "lengthScaledTPM")
+txi = NULL
+try(txi <- tximport(quant_files, type = "salmon", tx2gene = tx2gene, countsFromAbundance = "lengthScaledTPM"))
+
+# if tximport failed and GTF transcripts did not have version decimals, try ignoring version in Salmon files
+if (is.null(txi)) {
+  message("tximport failed")
+  if (length(str_which(tx2gene$TXNAME, "\\.")) == 0) {
+    message("repeating tximport ignoring transcript version")
+    txi = tximport(quant_files, type = "salmon", tx2gene = tx2gene, countsFromAbundance = "lengthScaledTPM",
+                   ignoreTxVersion = TRUE)
+  }
+
+}
 
 message("num imported samples: ", ncol(txi$counts))
 message("num imported genes:   ", nrow(txi$counts))
@@ -72,11 +84,11 @@ if (nrow(txi$counts) < 1000) stop("tximport counts table too small")
 
 # extract bias corrected gene counts
 txi_counts = txi$counts
-txi_counts = round(txi_counts, 2)
+txi_counts = round(txi_counts, 3)
 
 # extract TPMs
 txi_tpms = txi$abundance
-txi_tpms = round(txi_tpms, 2)
+txi_tpms = round(txi_tpms, 3)
 
 # generate random string so the output files do not conflict if running multiple samples in parallel
 rand_str = paste0(sample(LETTERS, 10, replace = TRUE), collapse = "")
@@ -84,15 +96,17 @@ rand_str = paste0(sample(LETTERS, 10, replace = TRUE), collapse = "")
 # save tximport list (for downstream Bioconductor DGE packages such as edgeR or DESeq2)
 saveRDS(txi, file = glue("temp.{rand_str}.rds"))
 system(glue("mv -vf temp.{rand_str}.rds {out_base}.tximport.rds"))
+Sys.sleep(1)
 
 # save counts table
 write.table(txi_counts, file = glue("temp.{rand_str}.counts.txt"), quote = FALSE, sep = "\t", col.names = NA)
 system(glue("mv -vf temp.{rand_str}.counts.txt {out_base}.tximport.counts.txt"))
+Sys.sleep(1)
 
 # save counts table
 write.table(txi_tpms, file = glue("temp.{rand_str}.tpms.txt"), quote = FALSE, sep = "\t", col.names = NA)
 system(glue("mv -vf temp.{rand_str}.tpms.txt {out_base}.tximport.tpms.txt"))
-
+Sys.sleep(1)
 
 
 # end
