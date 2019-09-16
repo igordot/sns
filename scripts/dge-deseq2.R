@@ -42,6 +42,7 @@ r_dir = "r-data"
 if (!dir.exists(r_dir)) dir.create(r_dir)
 
 # for general data manipulation
+load_install_packages("magrittr")
 load_install_packages("tibble")
 load_install_packages("dplyr")
 load_install_packages("tidyr")
@@ -49,6 +50,7 @@ load_install_packages("readr")
 load_install_packages("glue")
 # for differenial expression
 load_install_packages("DESeq2")
+load_install_packages("ashr")
 load_install_packages("genefilter")
 # for processing GTF (for gene lengths for FPKMs)
 load_install_packages("rtracklayer")
@@ -121,7 +123,7 @@ message(" ========== normalize ========== ")
 # import raw counts and create DESeq object
 # since v1.16 (11/2016), betaPrior is set to FALSE and shrunken LFCs are obtained afterwards using lfcShrink
 dds = DESeqDataSetFromMatrix(countData = counts_table, colData = groups_table, design = design_formula)
-dds = DESeq(dds, betaPrior = TRUE, parallel = FALSE)
+dds = DESeq(dds, parallel = FALSE)
 
 # add gene lengths (used to generate FPKM values)
 if (identical(sort(names(gene_lengths)), sort(rownames(dds)))) {
@@ -139,28 +141,33 @@ vsd = varianceStabilizingTransformation(dds, blind = TRUE)
 # save DESeqDataSet and VST DESeqTransform objects
 saveRDS(dds, file = glue("{r_dir}/deseq2.dds.rds"))
 saveRDS(vsd, file = glue("{r_dir}/deseq2.vsd.rds"))
+Sys.sleep(1)
 
 # export counts
-raw_counts = counts(dds, normalized = FALSE) %>% as.data.frame() %>% rownames_to_column("gene")
-write_excel_csv(raw_counts, path = "counts.raw.csv")
-norm_counts = counts(dds, normalized = TRUE) %>% round(2) %>% as.data.frame() %>% rownames_to_column("gene")
-write_excel_csv(norm_counts, path = "counts.normalized.csv")
-write_xlsx(list(normalized_counts = norm_counts), path = "counts.normalized.xlsx")
+raw_counts_table = counts(dds, normalized = FALSE) %>% as_tibble(rownames = "gene")
+write_excel_csv(raw_counts_table, path = "counts.raw.csv")
+norm_counts_table = counts(dds, normalized = TRUE) %>% round(2) %>% as_tibble(rownames = "gene")
+write_excel_csv(norm_counts_table, path = "counts.normalized.csv")
+write_xlsx(list(normalized_counts = norm_counts_table), path = "counts.normalized.xlsx")
+Sys.sleep(1)
 
 # export FPMs/CPMs (fragments/counts per million mapped fragments)
 # robust version uses size factors to normalize rather than taking the column sums of the raw counts
-cpm_table = fpm(dds, robust = TRUE) %>% round(2) %>% as.data.frame() %>% rownames_to_column("gene")
+cpm_table = fpm(dds, robust = TRUE) %>% round(2) %>% as_tibble(rownames = "gene")
 write_excel_csv(cpm_table, path = "counts.cpm.csv")
 write_xlsx(list(CPMs = cpm_table), path = "counts.cpm.xlsx")
+Sys.sleep(1)
 
 # export FPKMs (fragment counts normalized per kilobase of feature length per million mapped fragments)
-fpkm_table = fpkm(dds, robust = TRUE) %>% round(2) %>% as.data.frame() %>% rownames_to_column("gene")
+fpkm_table = fpkm(dds, robust = TRUE) %>% round(2) %>% as_tibble(rownames = "gene")
 write_excel_csv(fpkm_table, path = "counts.fpkm.csv")
 write_xlsx(list(FPKMs = fpkm_table), path = "counts.fpkm.xlsx")
+Sys.sleep(1)
 
 # export variance stabilized counts
-vsd_table = assay(vsd) %>% round(2) %>% as.data.frame() %>% rownames_to_column("gene")
+vsd_table = assay(vsd) %>% round(2) %>% as_tibble(rownames = "gene")
 write_excel_csv(vsd_table, path = "counts.vst.csv")
+Sys.sleep(1)
 
 message(" ========== QC ========== ")
 
@@ -168,11 +175,14 @@ message(" ========== QC ========== ")
 png("plot.sparsity.png", width = 6, height = 6, units = "in", res = 300)
 print(plotSparsity(dds, normalized = TRUE))
 dev.off()
+Sys.sleep(1)
 
 # PCA plot
 pca_plot = deseq2_pca(vsd, intgroup = group_name, ntop = 1000)
-save_plot("plot.pca.pdf", pca_plot, base_width = 8, base_height = 5, units = "in", dpi = 300)
-save_plot("plot.pca.png", pca_plot, base_width = 8, base_height = 5, units = "in", dpi = 300)
+save_plot("plot.pca.png", pca_plot, base_height = 6, base_width = 8, units = "in")
+Sys.sleep(1)
+save_plot("plot.pca.pdf", pca_plot, base_height = 6, base_width = 8, units = "in")
+Sys.sleep(1)
 
 message(" ========== differential expression ========== ")
 

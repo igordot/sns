@@ -63,6 +63,8 @@ if [ "$num_samples" -lt 3 ] ; then
 	exit 1
 fi
 
+num_groups=$(cat "$groups_table" | grep -v "#SAMPLE" | cut -d "," -f 2 | sort | uniq | wc -l)
+
 gene_info_table="${proj_dir}/genes.featurecounts.txt"
 
 if [ ! -s "$gene_info_table" ] ; then
@@ -88,7 +90,7 @@ module add default-environment
 
 # settings and files
 
-dge_dir="${proj_dir}/DGE-DESeq2-${strand}-${num_samples}samples"
+dge_dir="${proj_dir}/DGE-DESeq2-${strand}-${num_samples}samples-${num_groups}groups"
 
 mkdir -p "$dge_dir"
 
@@ -139,7 +141,7 @@ sleep 3
 echo -e "\n ========== test R environment ========== \n"
 
 # load relevant modules
-module add r/3.5.1
+module add r/3.6.1
 
 echo
 echo " * R: $(readlink -f $(which R)) "

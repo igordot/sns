@@ -7,23 +7,27 @@
 
 
 
-deseq2_pca = function(object, intgroup, ntop = 500) {
+deseq2_pca = function(object, intgroup, ntop = 1000) {
 
-  library(DESeq2)
-  library(genefilter)
-  library(RColorBrewer)
-  library(ggplot2)
-  library(ggrepel)
-  library(cowplot)
+  suppressPackageStartupMessages({
+    library(magrittr)
+    library(DESeq2)
+    library(genefilter)
+    library(glue)
+    library(RColorBrewer)
+    library(ggplot2)
+    library(ggrepel)
+    library(cowplot)
+  })
 
-  # PCA
+  # run PCA
   rv = rowVars(assay(object))
   select = order(rv, decreasing = TRUE)[seq_len(min(ntop, length(rv)))]
   pca = prcomp(t(assay(object)[select, ]))
 
-  # proportion of variance
-  variance = (pca$sdev ^ 2) / (sum(pca$sdev ^ 2))
-  variance = round(variance, 3) * 100
+  # determine the proportion of variance for the PCs
+  pca_variance = (pca$sdev ^ 2) / (sum(pca$sdev ^ 2))
+  pca_variance = round(pca_variance, 3) * 100
 
   if (!all(intgroup %in% names(colData(object)))) {
     stop("the argument 'intgroup' should specify columns of colData()")
@@ -61,19 +65,36 @@ deseq2_pca = function(object, intgroup, ntop = 500) {
   }
 
   # PCA data frame for plotting
-  pca_data = data.frame(PC1 = pca$x[,1], PC2 = pca$x[,2], group = fac)
+  pca_data = data.frame(PC1 = pca$x[,1], PC2 = pca$x[,2], group = fac, stringsAsFactors = FALSE)
 
-  # plot (returned, not saved)
-  plot_title = paste0("PCA - ", nlevels(fac), " groups - ", num_samples, " samples")
-  ggplot(data = pca_data, aes_string(x = "PC1", y = "PC2", color = "group")) +
-    geom_point(size = 3) +
-    scale_colour_manual(values = colors) +
-    geom_text_repel(aes(label = rownames(pca_data)),
-                    size = font_size, point.padding = unit(0.5, "lines"), color = "black") +
-    xlab(paste0("PC1 (", variance[1], "% variance)")) +
-    ylab(paste0("PC2 (", variance[2], "% variance)")) +
-    ggtitle(plot_title) +
-    theme(aspect.ratio = 1, axis.text = element_blank(), axis.ticks = element_blank())
+  # randomize sample order
+  pca_data = pca_data[sample(rownames(pca_data)), ]
+
+  # plot (returned)
+  ggplot(pca_data, aes(x = PC1, y = PC2)) +
+    geom_point(aes(color = group), size = 4) +
+    geom_text_repel(
+      aes(label = rownames(pca_data)),
+      size = font_size,
+      point.padding = unit(0.5, "lines"),
+      color = "black"
+    ) +
+    labs(
+      title = "PCA",
+      subtitle = glue("{num_samples} samples | {nlevels(fac)} groups"),
+      x = glue("PC1 ({pca_variance[1]}% Variance)"),
+      y = glue("PC2 ({pca_variance[2]}% Variance)")
+    ) +
+    scale_color_manual(values = colors) +
+    theme_cowplot() +
+    theme(
+      aspect.ratio = 1,
+      plot.title = element_text(hjust = 0.5),
+      plot.subtitle = element_text(hjust = 0.5),
+      axis.text = element_blank(),
+      axis.ticks = element_blank(),
+      legend.title = element_blank()
+    )
 
 }
 
