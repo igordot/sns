@@ -78,14 +78,17 @@ sizes_tbl = sizes_tbl %>%
 
 # plot (all points with loess smoothing)
 plot_file = paste0(sample_name, ".png")
-freq_plot = ggplot(sizes_tbl, aes(x = size, y = freq)) +
+freq_plot =
+  ggplot(sizes_tbl, aes(x = size, y = freq)) +
   geom_point(size = 1.2, shape = 16, color = "steelblue", alpha = 0.7) +
   geom_smooth(method = "loess", span = 0.05, se = FALSE, color = "black", size = 1.5) +
-  scale_x_continuous(name = "fragment size", limits = c(0, 1020), expand = c(0, 0), breaks = 0:10 * 100) +
-  scale_y_continuous(name = "frequency", limits = c(0, max(sizes_tbl$freq) * 1.02), expand = c(0, 0)) +
-  background_grid(major = "x", minor = "none") +
-  ggtitle(sample_name)
-ggsave(filename = plot_file, plot = freq_plot, width = 8, height = 5, units = "in")
+  scale_x_continuous(limits = c(0, 1020), expand = c(0, 0), breaks = 0:10 * 100) +
+  scale_y_continuous(limits = c(0, max(sizes_tbl$freq) * 1.02), expand = c(0, 0)) +
+  labs(title = sample_name, x = "Fragment Size", y = "Frequency") +
+  theme_cowplot() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  background_grid(major = "x", minor = "none")
+save_plot(filename = plot_file, plot = freq_plot, base_height = 5, base_width = 8)
 
 # delete Rplots.pdf
 if (file.exists("Rplots.pdf")) file.remove("Rplots.pdf")
