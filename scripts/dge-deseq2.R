@@ -146,26 +146,36 @@ Sys.sleep(1)
 # export counts
 raw_counts_table = counts(dds, normalized = FALSE) %>% as_tibble(rownames = "gene")
 write_excel_csv(raw_counts_table, path = "counts.raw.csv")
-norm_counts_table = counts(dds, normalized = TRUE) %>% round(2) %>% as_tibble(rownames = "gene")
+norm_counts_table = counts(dds, normalized = TRUE) %>% round(3) %>% as_tibble(rownames = "gene")
 write_excel_csv(norm_counts_table, path = "counts.normalized.csv")
 write_xlsx(list(normalized_counts = norm_counts_table), path = "counts.normalized.xlsx")
 Sys.sleep(1)
 
 # export FPMs/CPMs (fragments/counts per million mapped fragments)
 # robust version uses size factors to normalize rather than taking the column sums of the raw counts
-cpm_table = fpm(dds, robust = TRUE) %>% round(2) %>% as_tibble(rownames = "gene")
+# not using the robust median ratio method to generate the classic values (comparable across experiments)
+cpm_matrix = fpm(dds, robust = FALSE)
+cpm_table = cpm_matrix %>% round(3) %>% as_tibble(rownames = "gene")
 write_excel_csv(cpm_table, path = "counts.cpm.csv")
 write_xlsx(list(CPMs = cpm_table), path = "counts.cpm.xlsx")
 Sys.sleep(1)
 
 # export FPKMs (fragment counts normalized per kilobase of feature length per million mapped fragments)
-fpkm_table = fpkm(dds, robust = TRUE) %>% round(2) %>% as_tibble(rownames = "gene")
+fpkm_matrix = fpkm(dds, robust = FALSE)
+fpkm_table = fpkm_matrix %>% round(3) %>% as_tibble(rownames = "gene")
 write_excel_csv(fpkm_table, path = "counts.fpkm.csv")
 write_xlsx(list(FPKMs = fpkm_table), path = "counts.fpkm.xlsx")
 Sys.sleep(1)
 
+# export TPMs (transcripts per million)
+tpm_matrix = apply(fpkm_matrix, 2, function(x) { exp(log(x) - log(sum(x)) + log(1e6)) })
+tpm_table = tpm_matrix %>% round(3) %>% as_tibble(rownames = "gene")
+write_excel_csv(tpm_table, path = "counts.tpm.csv")
+write_xlsx(list(TPMs = tpm_table), path = "counts.tpm.xlsx")
+Sys.sleep(1)
+
 # export variance stabilized counts
-vsd_table = assay(vsd) %>% round(2) %>% as_tibble(rownames = "gene")
+vsd_table = assay(vsd) %>% round(3) %>% as_tibble(rownames = "gene")
 write_excel_csv(vsd_table, path = "counts.vst.csv")
 Sys.sleep(1)
 
