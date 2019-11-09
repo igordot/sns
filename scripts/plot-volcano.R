@@ -3,6 +3,7 @@
 ##
 
 
+
 plot_volcano = function(stats_df,
                         gene_col,
                         fc_col,
@@ -18,6 +19,7 @@ plot_volcano = function(stats_df,
   suppressPackageStartupMessages({
     library(magrittr)
     library(dplyr)
+    library(tidyr)
     library(tibble)
     library(glue)
     library(ggplot2)
@@ -31,6 +33,7 @@ plot_volcano = function(stats_df,
   volcano_tbl =
     stats_df %>%
     dplyr::select(gene = gene_col, fc = fc_col, p = p_col) %>%
+    tidyr::drop_na() %>%
     dplyr::mutate(sig = dplyr::if_else(abs(fc) > fc_cutoff & p < p_cutoff, "yes", "no"))
 
   # plot

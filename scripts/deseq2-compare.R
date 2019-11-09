@@ -4,10 +4,12 @@
 
 
 
-deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL) {
+deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL, genome = NULL) {
 
   suppressPackageStartupMessages({
     library(magrittr)
+    library(dplyr)
+    library(tidyr)
     library(glue)
     library(DESeq2)
     library(ashr)
@@ -15,13 +17,15 @@ deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL) {
     library(writexl)
   })
 
-  # create separate directories for certain output files
+  # create sub-directories for secondary output files
   r_dir = "r-data"
   if (!dir.exists(r_dir)) dir.create(r_dir)
   heatmaps_dir = "heatmaps"
   if (!dir.exists(heatmaps_dir)) dir.create(heatmaps_dir)
   volcano_dir = "volcano-plots"
   if (!dir.exists(volcano_dir)) dir.create(volcano_dir)
+  gse_dir = "gene-set-enrichment"
+  if (!dir.exists(gse_dir)) dir.create(gse_dir)
 
   # calculate results (using contrast or name, depending on what is given)
   # since v1.16 (11/2016), lfcShrink function performs fold change shrinkage and addMLE is for backward compatibility
@@ -63,15 +67,15 @@ deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL) {
   # add unshrunk fold change to results
   res_unshrunk_tbl = as_tibble(res_unshrunk, rownames = "gene")
   res_unshrunk_tbl = dplyr::select(res_unshrunk_tbl, gene, log2FCunshrunk = log2FoldChange)
-  res_tbl = left_join(res_tbl, res_unshrunk_tbl, by = "gene")
+  res_tbl = left_join(res_tbl, res_unshrunk_tbl, by = "gene") %>% dplyr::arrange(padj, pvalue, -baseMean)
 
   # format results for excel export
-  res_tbl =
+  res_clean_tbl =
     res_tbl %>%
     dplyr::mutate(
       baseMean       = round(baseMean, 1),
-      log2FC         = round(log2FoldChange, 2),
-      log2FCunshrunk = round(log2FCunshrunk, 2),
+      log2FC         = round(log2FoldChange, 3),
+      log2FCunshrunk = round(log2FCunshrunk, 3),
       pvalue         = if_else(pvalue < 0.00001, pvalue, round(pvalue, 5)),
       padj           = if_else(padj < 0.00001, padj, round(padj, 5))
     ) %>%
@@ -83,21 +87,21 @@ deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL) {
   message("num genes padj<0.01: ", nrow(subset(res_tbl, padj < 0.01)))
 
   # save differential expression results in Excel format
-  res_xlsx = paste0("dge.", gsub(pattern = " ", replacement = "-", x = res_name), ".xlsx")
-  write_xlsx(setNames(list(res_tbl), strtrim(res_name, 31)), path = res_xlsx)
-  message("results genes: ", nrow(res_tbl))
+  res_xlsx = glue("dge.{file_suffix}.xlsx")
+  write_xlsx(setNames(list(res_clean_tbl), strtrim(res_name, 31)), path = res_xlsx)
+  message("results genes: ", nrow(res_clean_tbl))
   message("save results xlsx: ", res_xlsx)
   Sys.sleep(1)
 
   # save significant (padj<0.05) differential expression results in Excel format
   res_padj005_xlsx = gsub(pattern = ".xlsx", replacement = ".q005.xlsx", x = res_xlsx)
-  res_padj005_df = subset(res_tbl, padj < 0.05)
+  res_padj005_df = subset(res_clean_tbl, padj < 0.05)
   write_xlsx(setNames(list(res_padj005_df), strtrim(res_name, 31)), path = res_padj005_xlsx)
   message("save filtered results xlsx: ", res_padj005_xlsx)
   Sys.sleep(1)
 
   # generate volcano plot
-  plot_volcano(stats_df = res_tbl, gene_col = "gene", fc_col = "log2FC", p_col = "padj", p_cutoff = 0.05,
+  plot_volcano(stats_df = res_tbl, gene_col = "gene", fc_col = "log2FoldChange", p_col = "padj", p_cutoff = 0.05,
                fc_label = "Fold Change (log2)", p_label = "Adjusted P Value (-log10)",
                title = res_name,
                file_prefix = glue("{volcano_dir}/plot.volcano.{file_suffix}"))
@@ -140,7 +144,7 @@ deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL) {
                                 title = "p < 0.01",
                                 file_suffix = "p001")
 
-  # process every gene subset
+  # generate heatmap for every gene subset
   for (i in 1:length(hmg)) {
 
     # generate title and file suffix
@@ -163,6 +167,11 @@ deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL) {
     }
 
   }
+
+  # run gene set enrichment on detectable genes using shrunk fold changes for ranking
+  res_filtered_tbl = res_tbl %>% dplyr::filter(baseMean > 0) %>% tidyr::drop_na(padj)
+  gse_fgsea(stats_df = res_filtered_tbl, gene_col = "gene", rank_col = "log2FoldChange", species = genome,
+            title = res_name, file_prefix = glue("{gse_dir}/gse.{file_suffix}"))
 
 }
 

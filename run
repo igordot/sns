@@ -64,11 +64,11 @@ sub main {
 
 	if ($route =~ "-groups-") {
 		# grouped samples route (all samples processed together)
-		run_groups($project_dir, $route_script);
+		run_groups($project_dir, $route, $route_script);
 	}
 	else {
 		# generic single-sample route or paired samples route (each sample or pair processed separately)
-		run_samples($project_dir, $code_dir, $route, $route_script, $samples_csv);
+		run_samples($project_dir, $route, $route_script, $samples_csv);
 	}
 
 }
@@ -115,10 +115,9 @@ sub get_sample_sheet {
 # process samples and submit a job for each
 sub run_samples {
 	my $project_dir = $_[0];
-	my $code_dir = $_[1];
-	my $route = $_[2];
-	my $route_script = $_[3];
-	my $samples_csv = $_[4];
+	my $route = $_[1];
+	my $route_script = $_[2];
+	my $samples_csv = $_[3];
 
 	# get the maximum runtime for route (for sbatch)
 	my $route_time = `cat $route_script | grep -m 1 "SBATCHTIME="`;
@@ -198,7 +197,6 @@ sub run_samples {
 		system($sbatch_cmd);
 
 		# pause between samples (sometimes job scheduler gets overwhelmed)
-		# sleep($sample_pause);
 		sleep(1);
 
 		# extra pause for the first few samples so it's easier to fix obvious errors
@@ -214,11 +212,24 @@ sub run_samples {
 # process sample groups (all samples processed together)
 sub run_groups {
 	my $project_dir = $_[0];
-	my $route_script = $_[1];
+	my $route = $_[1];
+	my $route_script = $_[2];
 
 	# route command
 	my $cmd = "bash $route_script $project_dir";
-	system($cmd);
+	# system($cmd);
+
+	# sbatch command
+	my $email = '${USER}@nyulangone.org';
+	$email = `echo $email`;
+	chomp($email);
+	my $sbatch_name = "--job-name=sns.${route}";
+	my $sbatch_mail = "--mail-user=${email} --mail-type=FAIL,REQUEUE";
+	my $sbatch_res = "--time=10:00:00 --nodes=1 --ntasks=1 --cpus-per-task=5 --mem=50G";
+	my $sbatch_cmd = "sbatch $sbatch_res $sbatch_name $sbatch_mail --export=NONE --wrap='${cmd}'";
+
+	print "\n CMD: $sbatch_cmd \n";
+	system($sbatch_cmd);
 
 }
 

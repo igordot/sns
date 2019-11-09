@@ -42,6 +42,13 @@ if [ ! -d "$proj_dir" ] ; then
 	exit 1
 fi
 
+genome_dir=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" GENOME-DIR);
+
+if [ ! -d "$genome_dir" ] ; then
+	echo -e "\n $script_name ERROR: GENOME DIR $genome_dir DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
 gtf=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-GTF);
 
 if [ ! -s "$gtf" ] || [ ! "$gtf" ] ; then
@@ -162,10 +169,18 @@ sleep 5
 
 echo -e "\n ========== start analysis ========== \n"
 
+# extract the genome build from the genome dir
+genome_build=$(basename "$genome_dir")
+
+echo
+echo " * genome: $genome_build "
+echo " * GTF: $gtf "
+echo
+
 cd "$dge_dir" || exit 1
 
 # launch the analysis R script
-bash_cmd="Rscript --vanilla ${code_dir}/scripts/dge-deseq2.R $gtf $input_counts_table $input_groups_table"
+bash_cmd="Rscript --vanilla ${code_dir}/scripts/dge-deseq2.R $genome_build $gtf $input_counts_table $input_groups_table"
 echo "CMD: $bash_cmd"
 ($bash_cmd)
 
