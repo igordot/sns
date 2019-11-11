@@ -9,6 +9,7 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
   suppressPackageStartupMessages({
     library(magrittr)
     library(dplyr)
+    library(tidyr)
     library(tibble)
     library(stringr)
     library(glue)
@@ -44,6 +45,7 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
   ranks_tbl =
     stats_df %>%
     dplyr::select(gene = gene_col, rank = rank_col) %>%
+    tidyr::drop_na() %>%
     dplyr::filter(abs(rank) > 0) %>%
     dplyr::distinct() %>%
     dplyr::arrange(-rank)
@@ -83,6 +85,8 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
   # run gene set enrichment for each category
   for (geneset_name in names(geneset_cats)) {
 
+    message("geneset enrichment: ", geneset_name)
+
     # define output file names
     geneset_cat = geneset_cats[geneset_name]
     geneset_cat_str = str_replace(geneset_cat, ":", "-")
@@ -100,14 +104,15 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
     set.seed(99)
     tryCatch(
       {
-        fgsea_res = fgseaMultilevel(pathways = geneset_list, stats = ranks, minSize = 10, maxSize = 500, BPPARAM = bpparam)
+        # fgsea_res = fgsea(pathways = geneset_list, stats = ranks, minSize = 10, maxSize = 500, nperm = 1e5, BPPARAM = bpparam)
+        fgsea_res = fgseaMultilevel(pathways = geneset_list, stats = ranks, minSize = 10, BPPARAM = bpparam)
       },
       error = function(e) {
         message("fgseaMultilevel error:", conditionMessage(e))
       }
     )
 
-    # export fgsea results table
+    # export fgsea results table (fgseaMultilevel replaces nMoreExtreme with log2err)
     fgsea_res$leading_edge_genes = sapply(fgsea_res$leadingEdge, paste, collapse = "|")
     fgsea_tbl =
       fgsea_res %>%
@@ -126,7 +131,8 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
     # filter fgsea results table for plotting
     fgsea_top_tbl =
       fgsea_tbl %>%
-      dplyr::filter(padj < 0.5) %>%
+      tidyr::drop_na() %>%
+      dplyr::filter(padj < 0.2) %>%
       dplyr::arrange(padj, pval, -abs(NES)) %>%
       dplyr::mutate(nes_dir = if_else(NES > 0, "Pos", "Neg")) %>%
       head(50) %>%
