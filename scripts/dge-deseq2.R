@@ -99,7 +99,8 @@ message("")
 # group info (use the first column for grouped comparisons)
 group_name = colnames(groups_table)[1]
 message("group name: ", group_name)
-group_levels = levels(groups_table[, group_name])
+# not using levels() to preserve order
+group_levels = groups_table[, group_name] %>% as.character() %>% unique()
 message("group levels: ", toString(group_levels))
 message("")
 
@@ -205,7 +206,7 @@ message(" ========== differential expression ========== ")
 if (length(group_levels) > 1) {
   group_levels_combinations = combn(group_levels, m = 2, simplify = TRUE)
   for (combination_num in 1:ncol(group_levels_combinations)) {
-    # numerator is second in order (usually second alphabetically, at least for timepoints)
+    # numerator is second in order (order should match the input table group order)
     level_numerator = group_levels_combinations[2, combination_num]
     level_denominator = group_levels_combinations[1, combination_num]
     message(glue("comparison : {group_name} : {level_numerator} vs {level_denominator}"))

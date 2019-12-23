@@ -105,6 +105,11 @@ sub get_sample_sheet {
 		die "\n\n ERROR: SAMPLE SHEET $samples_csv DOES NOT EXIST \n\n";
 	}
 
+	# check that sample sheet is not empty
+	if ( -z $samples_csv ) {
+		die "\n\n ERROR: SAMPLE SHEET $samples_csv IS EMPTY \n\n";
+	}
+
 	# remove problematic characters from sample sheet
 	system("bash ${code_dir}/scripts/fix-csv.sh $samples_csv");
 
@@ -152,11 +157,8 @@ sub run_samples {
 
 	# request fewer threads per sample for larger projects (extra thread for overhead)
 	my $num_samples = @unique_samples;
-	my $threads;
-	if ($num_samples < 50) {
-		$threads = "9";
-	}
-	else {
+	my $threads = "9";
+	if ($num_samples > 50) {
 		$threads = "5";
 	}
 

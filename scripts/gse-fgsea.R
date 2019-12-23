@@ -76,6 +76,7 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
       "KEGG" = "CP:KEGG",
       "Pathway Interaction Database" = "CP:PID",
       "Reactome" = "CP:REACTOME",
+      "Transcription Factor Targets" = "TFT",
       "GO Biological Process" = "BP",
       "GO Cellular Component" = "CC",
       "GO Molecular Function" = "MF",

@@ -101,10 +101,14 @@ deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL, genome = 
   Sys.sleep(1)
 
   # generate volcano plot
-  plot_volcano(stats_df = res_tbl, gene_col = "gene", fc_col = "log2FoldChange", p_col = "padj", p_cutoff = 0.05,
-               fc_label = "Fold Change (log2)", p_label = "Adjusted P Value (-log10)",
-               title = res_name,
-               file_prefix = glue("{volcano_dir}/plot.volcano.{file_suffix}"))
+  n_genes_labeled = 10
+  if (nrow(res_padj005_df) > 50) { n_genes_labeled = 20 }
+  plot_volcano(
+    stats_df = res_tbl, gene_col = "gene", fc_col = "log2FoldChange", p_col = "padj",
+    p_cutoff = 0.05, n_top_genes = n_genes_labeled,
+    title = res_name, fc_label = "Fold Change (log2)", p_label = "Adjusted P Value (-log10)",
+    file_prefix = glue("{volcano_dir}/plot.volcano.{file_suffix}")
+  )
 
   # heatmap variance stabilized values matrix
   vsd = assay(varianceStabilizingTransformation(deseq_dataset, blind = TRUE))
@@ -112,7 +116,7 @@ deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL, genome = 
   # all samples and the subset used for the comparison
   samples_all = colnames(deseq_dataset)
   samples_comp = samples_all
-  if(!is.null(contrast)) samples_comp = rownames(subset(deseq_dataset@colData, group %in% contrast[2:3]))
+  if(!is.null(contrast)) { samples_comp = rownames(subset(deseq_dataset@colData, group %in% contrast[2:3])) }
 
   # heatmap gene subsets (list with genes, plot title, and file suffix)
   hmg = list()

@@ -98,11 +98,13 @@ module add default-environment
 # settings and files
 
 dge_dir="${proj_dir}/DGE-DESeq2-${strand}-${num_samples}samples-${num_groups}groups"
+mkdir -v "$dge_dir"
 
-mkdir -p "$dge_dir"
+dge_inputs_dir="${dge_dir}/inputs"
+mkdir -v "$dge_inputs_dir"
 
-input_groups_table="${dge_dir}/input.groups.csv"
-input_counts_table="${dge_dir}/input.counts.txt"
+input_groups_table="${dge_inputs_dir}/input.groups.csv"
+input_counts_table="${dge_inputs_dir}/input.counts.txt"
 
 
 #########################
