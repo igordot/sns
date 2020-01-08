@@ -159,7 +159,8 @@ sub run_samples {
 	my $num_samples = @unique_samples;
 	my $threads = "9";
 	if ($num_samples > 50) {
-		$threads = "5";
+		# deactivated due to causing memory issues in rare cases
+		# $threads = "5";
 	}
 
 	# process each sample
