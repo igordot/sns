@@ -39,8 +39,8 @@ samples_csv="${proj_dir}/samples.${segment_name}.csv"
 
 bwa_bam_dir="${proj_dir}/BAM-BWA"
 mkdir -p "$bwa_bam_dir"
-bam="${bwa_bam_dir}/${sample}.bam"
-bai="${bam}.bai"
+bam_temp="${bwa_bam_dir}/${sample}.tmp.bam"
+bam_final="${bwa_bam_dir}/${sample}.bam"
 
 bwa_logs_dir="${proj_dir}/logs-${segment_name}"
 mkdir -p "$bwa_logs_dir"
@@ -54,13 +54,21 @@ module add default-environment
 #########################
 
 
-# exit if output exists already
+# check for output
 
-if [ -s "$bam" ] ; then
+# skip if final BAM and BAI exist
+if [ -s "$bam_final" ] && [ -s "${bam_final}.bai" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	echo -e "\n $script_name ADD $sample TO $samples_csv \n" >&2
-	echo "${sample},${bam}" >> "$samples_csv"
+	echo "${sample},${bam_final}" >> "$samples_csv"
 	exit 0
+fi
+
+# delete temp BAM (likely incomplete since the final BAM was not generated)
+if [ -s "$bam_temp" ] ; then
+	echo -e "\n $script_name WARNING: POTENTIALLY CORRUPT BAM $bam_temp EXISTS \n" >&2
+	rm -fv "$bam_temp"
+	rm -fv "${bam_temp}.bai"
 fi
 
 
@@ -107,7 +115,8 @@ echo " * sambamba version: $($sambamba_bin 2>&1 | grep -m 1 'sambamba') "
 echo " * BWA index: $ref_bwa "
 echo " * FASTQ R1: $fastq_R1 "
 echo " * FASTQ R2: $fastq_R2 "
-echo " * BAM: $bam "
+echo " * BAM temp: $bam_temp "
+echo " * BAM final: $bam_final "
 echo
 
 # step 1: align with BWA-MEM
@@ -133,7 +142,7 @@ $sambamba_bin view \
 | \
 $sambamba_bin sort \
 --memory-limit=8GB \
---out=${bam} \
+--out=${bam_temp} \
 /dev/stdin
 "
 echo "CMD: $bash_cmd"
@@ -147,17 +156,15 @@ sleep 5
 
 # check that bwa/sambamba output generated
 
-# check if BAM file is present
-if [ ! -s "$bam" ] ; then
-	echo -e "\n $script_name ERROR: BAM $bam NOT GENERATED \n" >&2
+if [ ! -s "$bam_temp" ] ; then
+	echo -e "\n $script_name ERROR: BAM $bam_temp NOT GENERATED \n" >&2
 	exit 1
 fi
 
-# check if BAM index is present (generated only if BAM is valid)
-if [ ! -s "$bai" ] ; then
-	echo -e "\n $script_name ERROR: BAI $bai NOT GENERATED \n" >&2
+if [ ! -s "${bam_temp}.bai"] ; then
+	echo -e "\n $script_name ERROR: BAI ${bam_dd_temp}.bai NOT GENERATED \n" >&2
 	# delete BAM since something went wrong and it might be corrupted
-	rm -fv "$bam"
+	rm -fv "$bam_temp"
 	exit 1
 fi
 
@@ -167,7 +174,7 @@ fi
 
 # run flagstat
 
-bash_cmd="$sambamba_bin flagstat $bam > $bwa_flagstat"
+bash_cmd="$sambamba_bin flagstat $bam_temp > $bwa_flagstat"
 echo "CMD: $bash_cmd"
 eval "$bash_cmd"
 
@@ -182,8 +189,8 @@ sleep 5
 if [ ! -s "$bwa_flagstat" ] ; then
 	echo -e "\n $script_name ERROR: FLAGSTAT $bwa_flagstat NOT GENERATED \n" >&2
 	# delete BAM and BAI since something went wrong and they might be corrupted
-	rm -fv "$bam"
-	rm -fv "$bai"
+	rm -fv "$bam_temp"
+	rm -fv "${bam_temp}.bai"
 	exit 1
 fi
 
@@ -229,8 +236,14 @@ cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "
 #########################
 
 
+# finalize
+
+# move BAM and BAI from temp to final
+mv -v "$bam_temp" "${bam_final}"
+mv -v "${bam_temp}.bai" "${bam_final}.bai"
+
 # add sample and BAM to sample sheet
-echo "${sample},${bam}" >> "$samples_csv"
+echo "${sample},${bam_final}" >> "$samples_csv"
 
 sleep 5
 
