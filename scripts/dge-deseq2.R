@@ -124,6 +124,18 @@ message("GTF mean gene length:   ", round(mean(gene_lengths), 2))
 message("GTF median gene length: ", median(gene_lengths))
 message("")
 
+# save gene annotations
+genes_tbl = as_tibble(genes_granges)
+if ("gene" %in% genes_tbl$type) {
+  genes_tbl = dplyr::filter(genes_tbl, type == "gene")
+  genes_tbl = dplyr::rename(genes_tbl, chr = seqnames)
+  genes_tbl = dplyr::select(genes_tbl, one_of(c("gene_name", "gene_id", "chr", "start", "end", "strand", "gene_type")))
+  genes_tbl = dplyr::select(genes_tbl, gene_name, gene_id, everything())
+  genes_tbl = dplyr::distinct(genes_tbl)
+  genes_tbl = dplyr::arrange(genes_tbl, gene_name, gene_id)
+  write_excel_csv(genes_tbl, path = "genes.csv")
+} 
+
 message(" ========== normalize ========== ")
 
 # import raw counts and create DESeq object

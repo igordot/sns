@@ -28,13 +28,14 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
   } else if (species %in% c("mm9", "mm10")) {
     species = "Mus musculus"
   } else {
-    # species = NULL
+    warning("unknown species")
+    return(NULL)
   }
 
   # extract species-specific gene sets
   genesets_tbl = msigdbr(species = species) %>% dplyr::mutate(gs_name = str_trunc(gs_name, 100))
 
-  # check for sufficient number of gene set genes (if an unsupported species was used)
+  # check for sufficient number of gene set genes
   genes_msigdb = genesets_tbl %>% dplyr::pull(gene_symbol) %>% unique()
   if (length(genes_msigdb) < 1000) {
     warning("gene sets table too short")

@@ -194,14 +194,6 @@ vcf_table_cmd="Rscript --vanilla ${code_dir}/scripts/vcf-table.R $sample $vcf_fi
 echo -e "\n CMD: $vcf_table_cmd \n"
 ($vcf_table_cmd)
 
-# for VCF types not yet compatible with vcf-table.R
-if [ ! -s "$vcf_table" ] ; then
-	echo -e "\n $script_name ERROR: vcf-table.R DID NOT PRODUCE OUTPUT, TRYING vcf-table.pl \n" >&2
-	vcf_table_pl_cmd="perl ${code_dir}/scripts/vcf-table.pl $vcf_file $sample | LC_ALL=C sort -k1,1 > $vcf_table"
-	echo -e "\n CMD: $vcf_table_pl_cmd \n"
-	eval "$vcf_table_pl_cmd"
-fi
-
 sleep 5
 
 

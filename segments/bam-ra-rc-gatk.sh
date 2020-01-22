@@ -87,6 +87,7 @@ fi
 
 # if realigned BAM exists, assume that there is another process that is currently running and skip
 if [ -s "$bam_ra" ] ; then
+	echo -e "\n $script_name WARNING: $bam_ra EXISTS (SAMPLE IS POTENTIALLY BEING PROCESSED) \n" >&2
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
 	exit 1
 fi

@@ -6,6 +6,7 @@ use File::Basename;
 use File::Spec;
 use Cwd;
 use Cwd 'abs_path';
+use Time::HiRes;
 
 my $HELP = <<HELP;
 
@@ -200,10 +201,10 @@ sub run_samples {
 		system($sbatch_cmd);
 
 		# pause between samples (sometimes job scheduler gets overwhelmed)
-		sleep(1);
+		sleep(0.2);
 
 		# extra pause for the first few samples so it's easier to fix obvious errors
-		if ($current_sample < 4) {
+		if ($current_sample < 5) {
 			sleep(15);
 		}
 
