@@ -39,6 +39,7 @@ deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL, genome = 
     pattern = paste(".*", contrast[1], " ", sep = "")
     res_name = gsub(pattern = pattern, replacement = "", x = mcols(res)[2,2])
     samples_comp = rownames(subset(deseq_dataset@colData, group %in% contrast[2:3]))
+    if (length(samples_comp) < 2) stop("no samples in group")
   } else {
     # not tested in combination with lfcShrink
     res = results(deseq_dataset, name = name, cooksCutoff = FALSE, addMLE = TRUE)
