@@ -89,8 +89,13 @@ fi
 
 salmon_index=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-SALMON);
 
-if [ ! -s "${salmon_index}/hash.bin" ] ; then
+if [ ! -d "$salmon_index" ] ; then
 	echo -e "\n $script_name ERROR: SALMON INDEX $salmon_index DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
+if [ ! -s "${salmon_index}/pos.bin" ] || [ ! -s "${salmon_index}/refseq.bin" ] ; then
+	echo -e "\n $script_name ERROR: SALMON INDEX $salmon_index IS NOT VALID \n" >&2
 	exit 1
 fi
 
@@ -100,13 +105,15 @@ fi
 
 # Salmon
 
-salmon_bin="/gpfs/data/igorlab/software/Salmon/salmon-0.14.1_linux_x86_64/bin/salmon"
+salmon_bin="/gpfs/data/igorlab/software/Salmon/salmon-1.2.1_linux_x86_64/bin/salmon"
 
 #  -l [ --libType ] arg       Format string describing the library type
 #  -i [ --index ] arg         salmon index
 #  -r [ --unmatedReads ] arg  List of files containing unmated reads of (e.g. single-end reads)
 #  -1 [ --mates1 ] arg        File containing the #1 mates
 #  -2 [ --mates2 ] arg        File containing the #2 mates
+# --softclipOverhangs         Allow soft-clipping of reads that overhang the beginning or ends of
+#                             the transcript
 #  --seqBias                  Perform sequence-specific bias correction.
 #  --gcBias                   [beta for single-end reads] Perform fragment GC bias correction
 #  -g [ --geneMap ] arg       File containing a mapping of transcripts to genes.  If this file is
@@ -141,6 +148,7 @@ $salmon_bin --no-version-check quant \
 --geneMap $gtf \
 --libType A \
 --allowDovetail \
+--softclipOverhangs \
 --seqBias --gcBias \
 --validateMappings \
 $fastq_param \
@@ -243,7 +251,7 @@ num_active_samples=$(find "$salmon_proj_logs_dir" -type d -name "aux_info" | wc 
 if [[ "$num_active_samples" -lt 3 && "$merged_counts_rds" -ot "${salmon_quant_dir}/${sample}.quant.sf.gz" ]] ; then
 
 	# load relevant modules
-	module add r/3.5.1
+	module add r/3.6.1
 
 	echo
 	echo " * R: $(readlink -f $(which R)) "
