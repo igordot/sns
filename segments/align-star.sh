@@ -111,8 +111,8 @@ fi
 
 # STAR
 
-# STAR module loads samtools
-module add star/2.6.1d
+# star/2.7.3a loads samtools/1.9
+module add star/2.7.3a
 
 echo
 echo " * STAR: $(readlink -f $(which STAR)) "
