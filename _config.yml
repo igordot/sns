@@ -1,3 +1,17 @@
 title: "this is title"
 description: "this is description"
 remote_theme: pmarsceill/just-the-docs
+
+# enable or disable the site search
+search_enabled: true
+
+# enable support for hyphenated search words:
+search_tokenizer_separator: /[\s/]+/
+
+# aux links for the upper right navigation
+aux_links:
+  "Seq-N-Slide on GitHub":
+    - "//github.com/igordot/sns"
+
+# Heading anchor links appear on hover over h1-h6 tags in page content
+heading_anchors: false
