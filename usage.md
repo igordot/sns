@@ -5,9 +5,9 @@ nav_order: 2
 
 # Usage
 
-## Brief usage overview
+## Brief summary
 
-From an empty project directory, download the code from GitHub.
+Download the code in an empty project directory.
 
 ```
 git clone --depth 1 https://github.com/igordot/sns
@@ -16,7 +16,7 @@ git clone --depth 1 https://github.com/igordot/sns
 Generate a sample sheet based on a directory of FASTQ files.
 
 ```
-sns/gather-fastqs <fastq dir>
+sns/gather-fastqs <fastq_dir>
 ```
 
 Specify the reference genome.
@@ -31,13 +31,19 @@ Run the analysis using a specific route.
 sns/run <route>
 ```
 
+Check if the jobs are submitted and running.
+
+```
+squeue -u $USER
+```
+
 Check for problems.
 
 ```
 grep "ERROR:" logs-sbatch/*
 ```
 
-## Detailed usage overview for new users
+## Detailed description for new users
 
 Add git to the environment (git is not available on BigPurple by default).
 
@@ -48,7 +54,7 @@ module add git
 Navigate to a clean new project directory. This is where all the results will end up.
 
 ```
-cd <project dir>
+cd <project_dir>
 ```
 
 Download the code from GitHub, which will create the `sns` sub-directory with all the pipeline code.
@@ -60,7 +66,7 @@ git clone --depth 1 https://github.com/igordot/sns
 Search a directory of FASTQ files to be used as input and generate a sample sheet.
 
 ```
-sns/gather-fastqs <fastq dir>
+sns/gather-fastqs <fastq_dir>
 ```
 
 All found files will be added to the `samples.fastq-raw.csv` file.

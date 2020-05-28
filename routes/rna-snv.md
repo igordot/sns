@@ -1,7 +1,6 @@
 ---
 title: rna-snv
 parent: Routes
-nav_order: 4
 ---
 
 # Route: rna-snv

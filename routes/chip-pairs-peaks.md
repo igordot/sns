@@ -1,7 +1,6 @@
 ---
 title: chip-pairs-peaks
 parent: Routes
-nav_order: 54
 ---
 
 # Route: chip-pairs-peaks

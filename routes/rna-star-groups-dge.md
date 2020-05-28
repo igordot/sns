@@ -1,7 +1,6 @@
 ---
 title: rna-star-groups-dge
 parent: Routes
-nav_order: 51
 ---
 
 # Route: rna-star-groups-dge

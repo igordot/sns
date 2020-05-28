@@ -1,7 +1,6 @@
 ---
 title: chip
 parent: Routes
-nav_order: 5
 ---
 
 # Route: chip

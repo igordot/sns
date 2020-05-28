@@ -1,7 +1,6 @@
 ---
 title: rrbs
 parent: Routes
-nav_order: 8
 ---
 
 # Route: rrbs/wgbs

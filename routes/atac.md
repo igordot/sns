@@ -1,7 +1,6 @@
 ---
 title: atac
 parent: Routes
-nav_order: 6
 ---
 
 # Route: atac

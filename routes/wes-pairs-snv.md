@@ -1,7 +1,6 @@
 ---
 title: wes-pairs-snv
 parent: Routes
-nav_order: 52
 ---
 
 # Route: wes-pairs-snv

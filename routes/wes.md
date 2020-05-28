@@ -1,7 +1,6 @@
 ---
 title: wes
 parent: Routes
-nav_order: 7
 ---
 
 # Route: wes

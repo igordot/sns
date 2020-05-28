@@ -1,7 +1,6 @@
 ---
 title: species
 parent: Routes
-nav_order: 9
 ---
 
 # Route: species

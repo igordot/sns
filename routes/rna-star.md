@@ -1,7 +1,6 @@
 ---
 title: rna-star
 parent: Routes
-nav_order: 1
 ---
 
 # Route: rna-star
