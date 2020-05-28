@@ -70,6 +70,7 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
   }
 
   # specify categories of interest (split C2 and C5 by sub-categories)
+  # MSigDB 7.1 split TFT category
   geneset_cats =
     c(
       "Hallmark" = "H",
@@ -78,11 +79,18 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
       "Pathway Interaction Database" = "CP:PID",
       "Reactome" = "CP:REACTOME",
       "Transcription Factor Targets" = "TFT",
+      "Transcription Factor Targets" = "TFT:TFT_Legacy",
+      "GTRD Transcription Factor Targets" = "TFT:GTRD",
       "GO Biological Process" = "BP",
       "GO Cellular Component" = "CC",
       "GO Molecular Function" = "MF",
       "Oncogenic" = "C6"
     )
+
+  # get the available gene set categories (varies depending on the MSigDB version)
+  geneset_cats_msigdb = c(dplyr::pull(genesets_tbl, gs_cat), dplyr::pull(genesets_tbl, gs_subcat))
+  geneset_cats_msigdb = unique(geneset_cats_msigdb)
+  geneset_cats = geneset_cats[geneset_cats %in% geneset_cats_msigdb]
 
   # run gene set enrichment for each category
   for (geneset_name in names(geneset_cats)) {
@@ -91,7 +99,9 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
 
     # define output file names
     geneset_cat = geneset_cats[geneset_name]
-    geneset_cat_str = str_replace(geneset_cat, ":", "-")
+    geneset_cat_str = geneset_cat
+    geneset_cat_str = str_replace(geneset_cat_str, ":", "-")
+    geneset_cat_str = str_replace(geneset_cat_str, "_", "-")
     geneset_prefix = glue("{file_prefix}.fgsea.{geneset_cat_str}")
 
     # extract relevant gene sets
