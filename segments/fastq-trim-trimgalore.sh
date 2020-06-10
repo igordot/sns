@@ -5,7 +5,8 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
@@ -13,6 +14,7 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 if [ $# -lt 4 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
 	echo -e "\n USAGE: $script_name project_dir sample_name run_type FASTQ_R1 [FASTQ_R2] \n" >&2
+	if [ $# -gt 0 ] ; then echo -e "\n ARGS: $* \n" >&2 ; fi
 	exit 1
 fi
 
@@ -72,7 +74,7 @@ fi
 
 # unload all loaded modulefiles
 module purge
-module load local
+module add default-environment
 
 
 #########################
@@ -92,18 +94,20 @@ fi
 
 # trim galore
 
-# cutadapt is installed as a python package
-module load python/2.7.3
-module load trim-galore/0.4.4
+# cutadapt is part of python/cpu/3.6.5
+module add python/cpu/3.6.5
+module add trimgalore/0.5.0
 
+echo
 echo " * trim_galore: $(readlink -f $(which trim_galore)) "
 echo " * trim_galore version: $(trim_galore --version | grep 'version' | tr -s '[:blank:]') "
 echo " * cutadapt: $(readlink -f $(which cutadapt)) "
-echo " * cutadapt version: $(cutadapt --version) "
+echo " * cutadapt version: $(cutadapt --version 2>&1) "
 echo " * FASTQ R1: $fastq_R1 "
 echo " * FASTQ R2: $fastq_R2 "
-echo " * FASTQ R1 TRIMMED: $fastq_R1_trim "
-echo " * FASTQ R2 TRIMMED: $fastq_R2_trim "
+echo " * FASTQ R1 trimmed: $fastq_R1_trim "
+echo " * FASTQ R2 trimmed: $fastq_R2_trim "
+echo
 
 # --rrbs Specifies that the input file was an MspI digested RRBS sample (recognition site: CCGG)
 
@@ -134,7 +138,7 @@ $trim_galore_flags
 echo "CMD: $bash_cmd"
 eval "$bash_cmd"
 
-sleep 30
+sleep 5
 
 # clean up file names
 
@@ -144,7 +148,7 @@ if [ -n "$fastq_R2" ] ; then
 	mv -fv "$fastq_R2_trim_original" "$fastq_R2_trim"
 fi
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -179,7 +183,7 @@ echo "#SAMPLE,TRIM INPUT READS,TRIM SURVIVING READS,TRIM SURVIVING READS %" > "$
 # summarize log file
 echo "${sample},${reads_input},${reads_surviving},${reads_surviving_pct}" >> "$summary_csv"
 
-sleep 30
+sleep 5
 
 # combine all sample summaries
 cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.${segment_name}.csv"
@@ -191,7 +195,7 @@ cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "
 # add sample and FASTQ to sample sheet
 echo "${sample},${fastq_R1_trim},${fastq_R2_trim}" >> "$samples_csv"
 
-sleep 30
+sleep 5
 
 
 #########################

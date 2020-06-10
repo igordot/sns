@@ -8,17 +8,18 @@
 script_path="${BASH_SOURCE[0]}"
 script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
-echo -e "\n ========== $script_name ========== \n" >&2
+echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
 # check for correct number of arguments
 if [ ! $# == 5 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
 	echo -e "\n USAGE: $script_name project_dir sample_name num_threads BAM analysis_type \n" >&2
+	if [ $# -gt 0 ] ; then echo -e "\n ARGS: $* \n" >&2 ; fi
 	exit 1
 fi
 
 # arguments
-proj_dir=$1
+proj_dir=$(readlink -f "$1")
 sample=$2
 threads=$3
 bismark_bam=$4
@@ -54,7 +55,7 @@ bismark_cpg_report_gz="${bismark_meth_dir}/${sample}.CpG_report.txt.gz"
 
 # unload all loaded modulefiles
 module purge
-module load local
+module add default-environment
 
 
 #########################
@@ -84,6 +85,7 @@ if [ ! -s "$bismark_bam" ] ; then
 fi
 
 code_dir=$(dirname $(dirname "$script_path"))
+
 ref_bismark=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-BISMARK);
 
 if [ ! -d "$ref_bismark" ] || [ ! "$ref_bismark" ] ; then
@@ -123,24 +125,26 @@ fi
 
 # bismark_methylation_extractor
 
-# load module (loads bowtie2/2.2.6 and samtools/1.3)
-module load bismark/0.18.1
+# bismark/0.22.1 loads bowtie2 and samtools (no version specified)
+module add bismark/0.22.1
 
-# navigate to output dir
+# navigate to the output dir
 mkdir -p "$bismark_meth_dir"
 cd "$bismark_meth_dir"
 
 # number of parallel instances of Bismark to run
 multicore=$(( threads / 3 ))
 
-echo " * Bismark: $(readlink -f $(which bismark_methylation_extractor)) "
-echo " * Bismark version: $(bismark_methylation_extractor --version | grep -m 1 'Version' | tr -s '[:blank:]') "
+echo
+echo " * Bismark: $(readlink -f $(which bismark)) "
+echo " * Bismark version: $(bismark --version | grep -m 1 'Version' | tr -s '[:blank:]') "
 echo " * output dir: $bismark_meth_dir "
 echo " * BAM: $bismark_bam "
 echo " * report original: $bismark_report "
 echo " * BedGraph: $bismark_bedgraph_gz "
 echo " * report: $bismark_report_short "
 echo " * cytosine report: $bismark_cpg_report_gz "
+echo
 
 # --comprehensive \
 
@@ -229,7 +233,7 @@ $CMD
 
 # convert bedgraph to bigwig
 
-module load kentutils/329
+module add ucscutils/374
 
 bigwig_dir="${proj_dir}/BIGWIG-Bismark"
 bigwig="${bigwig_dir}/${sample}.bw"
@@ -263,7 +267,7 @@ echo -e "\n CMD: $bash_cmd \n"
 eval "$bash_cmd"
 
 # delete bedgraph
-rm -fv $bismark_bedgraph
+rm -v $bismark_bedgraph
 
 
 #########################
@@ -292,13 +296,13 @@ paste -d ',' \
 <(gunzip -c "$bismark_cpg_report_gz" | awk -F $'\t' '$4 + $5 >= 100' | wc -l) \
 >> $summary_csv
 
-sleep 30
+sleep 5
 
 # combine all sample summaries
 cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq \
 > "${proj_dir}/summary.${segment_name}.csv"
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -330,8 +334,8 @@ ${proj_dir}/summary.${segment_name}.csv \
 combined_png_2X="${proj_dir}/summary.${segment_name}.mbias.2x.png"
 combined_png_4X="${proj_dir}/summary.${segment_name}.mbias.4x.png"
 
-rm -f $combined_png_3X
-rm -f $combined_png_4X
+rm "$combined_png_3X"
+rm "$combined_png_4X"
 
 # -geometry +20+20 = 20px x and y padding
 # -tile 4x = 4 images wide

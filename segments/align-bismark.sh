@@ -14,11 +14,12 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 if [ $# -lt 4 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
 	echo -e "\n USAGE: $script_name project_dir sample_name num_threads FASTQ_R1 [FASTQ_R2] \n" >&2
+	if [ $# -gt 0 ] ; then echo -e "\n ARGS: $* \n" >&2 ; fi
 	exit 1
 fi
 
 # arguments
-proj_dir=$1
+proj_dir=$(readlink -f "$1")
 sample=$2
 threads=$3
 fastq_R1=$4
@@ -41,6 +42,7 @@ if [ ! -s "$fastq_R1" ] ; then
 fi
 
 code_dir=$(dirname $(dirname "$script_path"))
+
 ref_bismark=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-BISMARK);
 
 if [ ! -d "$ref_bismark" ] || [ ! "$ref_bismark" ] ; then
@@ -91,6 +93,10 @@ bismark_bam_original="${bismark_logs_dir}/${bismark_id}${suffix_bam}"
 bismark_report_original="${bismark_logs_dir}/${bismark_id}${suffix_report}"
 bismark_nucstats_original="${bismark_logs_dir}/${bismark_id}${suffix_nucstats}"
 
+# unload all loaded modulefiles
+module purge
+module add default-environment
+
 
 #########################
 
@@ -111,10 +117,8 @@ fi
 
 # bismark can't use sorted bam at the next step, but other tools may need sorted bam
 
-# bismark 0.15.0 and 0.16.0 and 0.18.1 load bowtie2/2.2.6 and samtools/1.3
-module purge
-module load local
-module load bismark/0.18.1
+# bismark/0.22.1 loads bowtie2 and samtools (no version specified)
+module add bismark/0.22.1
 
 # "In order to work properly the current working directory must contain the sequence files to be analysed" (as of v0.14)
 fastq_dir=$(dirname "$fastq_R1")
@@ -135,8 +139,13 @@ multicore_flag=$(( threads / 3 ))
 
 # v0.15.0: "specifying --basename in conjuction with --multicore is currently not supported"
 
+echo
 echo " * Bismark: $(readlink -f $(which bismark)) "
 echo " * Bismark version: $(bismark --version | grep -m 1 'Version' | tr -s '[:blank:]') "
+echo " * bowtie2: $(readlink -f $(which bowtie2)) "
+echo " * bowtie2 version: $(bowtie2 --version 2>&1 | head -1) "
+echo " * samtools: $(readlink -f $(which samtools)) "
+echo " * samtools version: $(samtools --version | head -1) "
 echo " * Bismark ref: $ref_bismark "
 echo " * FASTQ dir: $fastq_dir "
 echo " * FASTQ R1: $fastq_R1 "
@@ -145,6 +154,7 @@ echo " * BAM original: $bismark_bam_original "
 echo " * report original: $bismark_report_original "
 echo " * BAM final: $bismark_bam_final "
 echo " * report final: $bismark_report_final "
+echo
 
 bash_cmd="
 bismark \
@@ -152,7 +162,6 @@ bismark \
 --gzip \
 --nucleotide_coverage \
 --multicore $multicore_flag \
---path_to_bowtie $BOWTIE2_ROOT \
 $bismark_flags \
 --temp_dir $bismark_logs_dir \
 --output_dir $bismark_logs_dir \
@@ -162,7 +171,7 @@ $fastq_files
 echo "CMD: $bash_cmd"
 eval "$bash_cmd"
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -198,7 +207,7 @@ bash_cmd="mv -v $bismark_nucstats_original $bismark_nucstats_final"
 echo "CMD: $bash_cmd"
 eval "$bash_cmd"
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -247,7 +256,7 @@ paste -d ',' \
 <(cat "$bismark_report_final" | grep -m 1 "Mapping efficiency"                | cut -f 2 | sed 's/ //g') \
 >> $summary_csv
 
-sleep 30
+sleep 5
 
 # combine all sample summaries
 cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.${segment_name}.csv"
@@ -259,7 +268,7 @@ cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "
 # add sample and BAM to sample sheet
 echo "${sample},${bismark_bam_final}" >> "$samples_csv"
 
-sleep 30
+sleep 5
 
 
 #########################
