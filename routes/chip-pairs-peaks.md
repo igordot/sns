@@ -5,7 +5,7 @@ parent: Routes
 
 # Route: chip-pairs-peaks
 
-Peaks for the `chip` results.
+Peak calling for the `chip` results.
 
 ## Usage
 
@@ -23,9 +23,3 @@ sns/run chip-pairs-peaks
 Results:
 
 *
-
-Run metrics:
-
-*
-
-General pipeline info: https://github.com/igordot/sns

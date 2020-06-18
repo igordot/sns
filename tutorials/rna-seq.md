@@ -80,7 +80,7 @@ squeue -u $USER
 Check for errors:
 
 ```
-grep -i "error:" logs-sbatch/*
+grep "ERROR:" logs-sbatch/*
 ```
 
 The command will search all the log files for any errors. This can be done while the pipeline is still running and should be done after the pipeline completes. There should be no output if everything ran without problems. If any errors are detected, open the log file where they are found to see the full context.

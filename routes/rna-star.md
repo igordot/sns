@@ -17,32 +17,17 @@ Segments:
 * Determine if the library is stranded and the strand orientation.
 * Generate genes-samples counts matrix (featureCounts).
 
-For differential expression analysis, follow by running `rna-star-groups-dge`.
+For differential expression analysis, follow with [rna-star-groups-dge](rna-star-groups-dge).
 
 ## Usage
 
-Navigate to a clean new project directory.
+Set up a new analysis (common across all routes).
 
 ```
 cd <project dir>
-```
-
-Download the code from GitHub.
-
-```
 git clone --depth 1 https://github.com/igordot/sns
-```
-
-Generate a sample sheet of FASTQ files (`samples.fastq-raw.csv`).
-
-```
-sns/gather-fastqs <fastq dir>
-```
-
-Specify a reference genome, such as `hg19` or `mm10` (stored in `settings.txt`).
-
-```
 sns/generate-settings <genome>
+sns/gather-fastqs <fastq dir>
 ```
 
 Run `rna-star` route.

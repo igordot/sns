@@ -13,6 +13,8 @@ Segments:
 * Remove duplicate reads (Sambamba).
 * Generate genome browser tracks.
 
+For peak calling, follow with [chip-pairs-peaks](chip-pairs-peaks).
+
 ## Usage
 
 Navigate to a clean new project directory, download the code, specify a reference genome, and generate a sample sheet.

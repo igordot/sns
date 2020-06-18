@@ -19,28 +19,13 @@ Segments:
 
 ## Usage
 
-Navigate to a clean new project directory.
+Set up a new analysis (common across all routes).
 
 ```
 cd <project dir>
-```
-
-Download the code from GitHub.
-
-```
 git clone --depth 1 https://github.com/igordot/sns
-```
-
-Generate a sample sheet of FASTQ files (`samples.fastq-raw.csv`).
-
-```
-sns/gather-fastqs <fastq dir>
-```
-
-Specify a reference genome, such as `hg19` or `mm10` (stored in `settings.txt`).
-
-```
 sns/generate-settings <genome>
+sns/gather-fastqs <fastq dir>
 ```
 
 Run `rrbs` or `wgbs` route.

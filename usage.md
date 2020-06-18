@@ -78,7 +78,7 @@ Each line contains a single FASTQ (or FASTQ pair for paired-end experiments).
 If a single sample has multiple FASTQs, each one will be on a different line.
 Multiple FASTQs for the same sample will be merged based on the sample name.
 
-Specify the reference genome (`hg19` or `hg38` for human, `mm10` for mouse, `dm3` or `dm6` for fly).
+Specify the reference genome (`hg38` or `hg19` for human, `mm10` for mouse, `dm6` or `dm3` for fly).
 
 ```
 sns/generate-settings <genome>
@@ -104,8 +104,8 @@ Check for potential problems.
 grep "ERROR:" logs-sbatch/*
 ```
 
-This can be done while the pipeline is still running and should be done after the pipeline completes.
-There should be no output if everything ran without problems.
+This can be done while the pipeline is still running and should be done after all the jobs complete.
+There should be no output from this command if everything ran without problems.
 If any errors are detected, examine the log file where they are found to see the full context.
 
 If there is a problem with any of the results, delete the broken files and re-run SNS.
