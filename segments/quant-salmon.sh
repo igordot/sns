@@ -221,7 +221,7 @@ num_genes=$(cat "$salmon_counts_txt" | grep -v "#GENE" | awk -F $'\t' '$2 > 0' |
 echo "detected genes: $num_genes"
 
 # header for summary file
-echo "#SAMPLE,LIBRARY TYPE, NUM ASSIGNED FRAGMENTS, MAPPING RATE, NUM GENES" > "$summary_csv"
+echo "#SAMPLE,LIBRARY TYPE,NUM ASSIGNED FRAGMENTS,MAPPING RATE,NUM GENES" > "$summary_csv"
 
 # summarize log file
 echo "${sample},${lib_type},${num_assigned_frags},${map_rate},${num_genes}" >> "$summary_csv"
