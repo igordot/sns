@@ -146,7 +146,7 @@ fi
 
 # GATK settings
 
-module add r/3.5.1
+module add r/3.6.1
 
 # command
 gatk_jar="/gpfs/data/igorlab/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-1/GenomeAnalysisTK.jar"

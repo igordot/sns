@@ -92,7 +92,7 @@ fi
 
 module add picard-tools/2.18.20
 # Picard requires R for some plotting
-module add r/3.5.1
+module add r/3.6.1
 # ImageMagick for "montage" for combining plots
 module add imagemagick/7.0.8
 
