@@ -91,6 +91,15 @@ if [ -z "$fastq_R1_trimmed" ] ; then
 	exit 1
 fi
 
+# run FastQC again after trimming (separately for paired-end reads)
+segment_qc_fastqc="qc-fastqc"
+bash_cmd="bash ${code_dir}/segments/${segment_qc_fastqc}.sh $proj_dir $sample $threads $fastq_R1_trimmed"
+($bash_cmd)
+if [ -n "$fastq_R2_trimmed" ] ; then
+	bash_cmd="bash ${code_dir}/segments/${segment_qc_fastqc}.sh $proj_dir $sample $threads $fastq_R2_trimmed"
+	($bash_cmd)
+fi
+
 # run BWA-MEM alignment
 segment_align="align-bwa-mem"
 bam_bwa=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_align}.csv" | cut -d ',' -f 2)
