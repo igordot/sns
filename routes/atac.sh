@@ -119,9 +119,14 @@ segment_qc_frag_size="qc-fragment-sizes"
 bash_cmd="bash ${code_dir}/segments/${segment_qc_frag_size}.sh $proj_dir $sample $bam_dd"
 ($bash_cmd)
 
-# call peaks
-segment_peaks="peaks-macs-atac"
-bash_cmd="bash ${code_dir}/segments/${segment_peaks}.sh $proj_dir $sample $bam_dd 0.05"
+# call peaks with MACS
+segment_peaks_macs="peaks-macs-atac"
+bash_cmd="bash ${code_dir}/segments/${segment_peaks_macs}.sh $proj_dir $sample $bam_dd 0.05"
+($bash_cmd)
+
+# call peaks with HMMRATAC
+segment_peaks_hmmratac="peaks-hmmratac"
+bash_cmd="bash ${code_dir}/segments/${segment_peaks_hmmratac}.sh $proj_dir $sample $bam_dd 30"
 ($bash_cmd)
 
 # call nucleosomes
@@ -144,7 +149,8 @@ bash ${code_dir}/scripts/join-many.sh , X \
 ${proj_dir}/summary.${segment_fastq_clean}.csv \
 ${proj_dir}/summary.${segment_align}.csv \
 ${proj_dir}/summary.${segment_dedup}.csv \
-${proj_dir}/summary.${segment_peaks}-q-0.05.csv \
+${proj_dir}/summary.${segment_peaks_macs}-q-0.05.csv \
+${proj_dir}/summary.${segment_peaks_hmmratac}-score-30.csv \
 > $summary_csv
 "
 (eval $bash_cmd)

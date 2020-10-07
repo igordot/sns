@@ -35,7 +35,7 @@ summary_dir="${proj_dir}/summary"
 mkdir -p "$summary_dir"
 summary_csv="${summary_dir}/${sample}.${segment_name}.csv"
 
-macs_dir="${proj_dir}/peaks-macs-atac-q-${qvalue}"
+macs_dir="${proj_dir}/peaks-MACS-ATAC-q-${qvalue}"
 mkdir -p "$macs_dir"
 peaks_xls="${macs_dir}/${sample}_peaks.xls"
 peaks_narrow="${macs_dir}/${sample}_peaks.narrowPeak"
@@ -217,7 +217,7 @@ peaks_num=$(cat "$peaks_narrow" | wc -l)
 echo "total peaks: $peaks_num"
 
 # header for summary file
-echo "#SAMPLE,PEAKS q ${qvalue}" > "$summary_csv"
+echo "#SAMPLE,MACS PEAKS q ${qvalue}" > "$summary_csv"
 
 # summarize log file
 echo "${sample},${peaks_num}" >> "$summary_csv"

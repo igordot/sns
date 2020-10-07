@@ -121,6 +121,10 @@ if [ "$ref_type" == "RRNAINTERVALLIST" ] ; then
 	find_file rRNA.interval_list
 fi
 
+if [ "$ref_type" == "BLACKLIST" ] ; then
+	find_file blacklist.bed
+fi
+
 
 # directory references
 
