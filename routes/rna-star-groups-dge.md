@@ -22,7 +22,7 @@ sns/run rna-star-groups-dge
 
 The `rna-star-groups-dge` route will create a `DGE-DESeq2-*` directory with the results. The name will contain the strand (determined automatically) and the number of samples in the sample sheet. The sample sheet can be modified to exclude problematic samples or change groupings for alternate analysis.
 
-Results:
+Primary results:
 
 * `counts.raw.csv`: Table of raw counts.
 * `counts.*.csv`: Table of normalized counts, FPKMs, and TPMs that can be used to check the expression levels of specific genes across samples.

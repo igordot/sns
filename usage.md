@@ -78,7 +78,7 @@ Each line contains a single FASTQ (or FASTQ pair for paired-end experiments).
 If a single sample has multiple FASTQs, each one will be on a different line.
 Multiple FASTQs for the same sample will be merged based on the sample name.
 
-Specify the reference genome (`hg38` or `hg19` for human, `mm10` for mouse, `dm6` or `dm3` for fly).
+Specify the reference genome (such as `hg38` or `hg19` for human, `mm10` for mouse, `dm6` or `dm3` for fly).
 
 ```
 sns/generate-settings <genome>
@@ -104,18 +104,11 @@ Check for potential problems.
 grep "ERROR:" logs-sbatch/*
 ```
 
-This can be done while the pipeline is still running and should be done after all the jobs complete.
+Checking for errors can be started as soon as the pipeline starts running.
+It needs to be done after all the jobs complete.
 There should be no output from this command if everything ran without problems.
-If any errors are detected, examine the log file where they are found to see the full context.
+If any errors are detected, examine the full log file where they are found to see the full context.
 
-If there is a problem with any of the results, delete the broken files and re-run SNS.
-It will generate any missing output.
+If there is a problem with any of the results, delete the problematic files and re-run SNS.
+The pipeline will skip existing files and will generate any missing output.
 Similarly, you can add additional entries to the sample sheet and only the new ones will be processed when the route is re-run.
-
-## Output
-
-* Directories for different output types (such as BAMs or bigWigs) containing files for each sample.
-* `summary-combined.*.csv`: Combined segment summaries table that provides a comprehensive overview of the project.
-* `logs-*` directories: Most stdout/stderr output will be placed here. The information can be used for tracking progress and troubleshooting.
-
-Each route has a description with more specific details.

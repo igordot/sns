@@ -44,7 +44,7 @@ grep "ERROR:" logs-qsub/*
 
 ## Output
 
-Results:
+Primary results:
 
 * `BAM-STAR`: BAM files. Can be used for visual inspection of individual reads or additional analysis.
 * `BIGWIG`: BigWig files normalized to the total number of reads. Can be used for visual inspection of relative expression levels.
@@ -58,11 +58,5 @@ Run metrics:
 
 Additional output (can usually be deleted or used for troubleshooting):
 
-* `logs-*`: Logs and intermediate files for various segments.
-* `samples.*.csv`: Sample sheet for segments that generate large files. The route will not attempt to generate the files listed. If the files were deleted to save space, additional samples can be added to the same analysis without reprocessing the older samples.
-* `summary`: Summary files for individual samples and segments.
-* `summary.*.csv`: Combined summary files for each segment.
-* `QC-*`: Results of QC steps for individual samples.
-* `FASTQ-CLEAN`: Merged FASTQs (one per sample).
 * `genes.featurecounts.txt`: Table of genes based on the reference GTF.
 * `quant-*`: Raw counts for all genes for individual samples.

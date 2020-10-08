@@ -42,7 +42,7 @@ grep "ERROR:" logs-qsub/*
 
 ## Output
 
-Results:
+Primary results:
 
 * `BAM-Bismark`: Alignment files.
 * `BIGWIG-Bismark`: Methylation ratio bigWig files. Can be used for visual inspection as genome browser tracks.
@@ -52,12 +52,3 @@ Run metrics:
  
 * `summary-combined.rrbs.csv`: Summary table that includes the number of reads, alignment rate, fraction of PCR duplicates, number of covered Cs, and Cs methylated in different contexts.
 * `Bismark-report`: Graphical report for Bismark steps (alignment, deduplication, and methylation extraction).
-
-Additional output (can usually be deleted or used for troubleshooting):
-
-* `logs-*`: Logs and intermediate files for various segments.
-* `samples.*.csv`: Sample sheet for segments that generate large files. The route will not attempt to generate the files listed. If the files were deleted to save space, additional samples can be added to the same analysis without reprocessing the older samples.
-* `summary`: Summary files for individual samples and segments.
-* `summary.*.csv`: Combined summary files for each segment.
-* `FASTQ-CLEAN`: Merged FASTQs (one per sample).
-* `FASTQ-TRIMMED`: Quality and adapter trimmed FASTQs.
