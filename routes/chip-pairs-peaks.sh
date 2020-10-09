@@ -46,17 +46,17 @@ echo
 # check that inputs exist
 
 if [ ! -d "$proj_dir" ] ; then
-	echo -e "\n $script_name ERROR: DIR $proj_dir DOES NOT EXIST \n" >&2
+	echo -e "\n $script_name ERROR: dir $proj_dir does not exist \n" >&2
 	exit 1
 fi
 
-# peak type
+# set peak type
 peak_type=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-PEAKS-TYPE unknown)
 
-# q-value cutoff to call significant regions (set to 0.05 by default)
-peak_q=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-PEAKS-MACS-Q 0.05)
+# set q-value cutoff to call significant regions (set to 0.05 by default)
+q_value=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-PEAKS-MACS-Q 0.05)
 
-# if peak type is not set, there was a problem
+# if peak type is not known, there was a problem
 if [ "$peak_type" == "unknown" ] ; then
 	echo -e "\n $script_name ERROR: EXP-PEAKS-TYPE must be set in settings.txt (to 'narrow' or 'broad') \n" >&2
 	exit 1
@@ -67,14 +67,15 @@ segment_dedup="bam-dedup-sambamba"
 bam_treatment=$(grep -s -m 1 "^${sample_treatment}," "${proj_dir}/samples.${segment_dedup}.csv" | cut -d ',' -f 2)
 bam_control=$(grep -s -m 1 "^${sample_control}," "${proj_dir}/samples.${segment_dedup}.csv" | cut -d ',' -f 2)
 
+# check if the treatment BAM exists
 if [ ! -s "$bam_treatment" ] ; then
 	echo -e "\n $script_name ERROR: treatment BAM $bam_treatment does not exist \n" >&2
 	exit 1
 fi
 
-if [ ! -s "$bam_control" ] && [ "$sample_control" != "NA" ] ; then
-	echo -e "\n $script_name ERROR: control BAM $bam_control does not exist \n" >&2
-	exit 1
+# if the treatment and control samples are the same, ignore the control sample
+if [ "$bam_treatment" == "$bam_control" ] ; then
+	bam_control=""
 fi
 
 
@@ -84,7 +85,7 @@ fi
 # segments
 
 segment_macs="peaks-macs"
-bash_cmd="bash ${code_dir}/segments/${segment_macs}.sh $proj_dir $peak_type $peak_q $sample_treatment $bam_treatment $bam_control"
+bash_cmd="bash ${code_dir}/segments/${segment_macs}.sh $proj_dir $peak_type $q_value $sample_treatment $bam_treatment $bam_control"
 echo "CMD: $bash_cmd"
 ($bash_cmd)
 

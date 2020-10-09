@@ -114,6 +114,9 @@ sbatch_cmd="sbatch --time=8:00:00 ${sbatch_name} ${sbatch_perf} ${sbatch_mail} -
 echo "CMD: $sbatch_cmd"
 (eval $sbatch_cmd)
 
+# set peak type for peak calling (should be manually adjusted to the proper value)
+peak_type=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-PEAKS-TYPE unknown)
+
 
 #########################
 

@@ -13,14 +13,15 @@ echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 # check for correct number of arguments
 if [ $# -lt 5 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
-	echo -e "\n USAGE: $script_name project_dir peak_type peak_q sample_name treatment_bam [control_bam] \n" >&2
+	echo -e "\n USAGE: $script_name project_dir peak_type q_value sample_name treatment_bam [control_bam] \n" >&2
+	if [ $# -gt 0 ] ; then echo -e "\n ARGS: $* \n" >&2 ; fi
 	exit 1
 fi
 
 # arguments
 proj_dir=$(readlink -f "$1")
 peak_type=$2
-peak_q=$3
+q_value=$3
 sample=$4
 bam_treat=$5
 bam_control=$6
@@ -29,58 +30,45 @@ bam_control=$6
 #########################
 
 
-# check that inputs exist
-
-if [ ! -d "$proj_dir" ] ; then
-	echo -e "\n $script_name ERROR: PROJ DIR $proj_dir DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-if [ ! -s "$bam_treat" ] ; then
-	echo -e "\n $script_name ERROR: BAM $bam_treat DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-code_dir=$(dirname $(dirname "$script_path"))
-
-genome_dir=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" GENOME-DIR);
-
-if [ ! -d "$genome_dir" ] ; then
-	echo -e "\n $script_name ERROR: GENOME DIR $genome_dir DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-chrom_sizes=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-CHROMSIZES);
-
-if [ ! -s "$chrom_sizes" ] ; then
-	echo -e "\n $script_name ERROR: CHROM SIZES FILE $chrom_sizes DOES NOT EXIST \n" >&2
-	exit 1
-fi
-
-
-#########################
-
-
 # settings and files
 
-segment_name="${segment_name}-${peak_type}-q-${peak_q}"
-if [ -z "$bam_control" ] ; then
-	segment_name="${segment_name}-nocontrol"
+# adjust segment label based on run type and presence of control sample
+if [ "$peak_type" == "atac" ] ; then
+	settings_label="${peak_type}"
+elif [ "$peak_type" == "narrow" ] || [ "$peak_type" == "broad" ] ; then
+	settings_label="${peak_type}"
+	if [ -z "$bam_control" ] ; then
+		settings_label="${settings_label}-nocontrol"
+	fi
+else
+	echo -e "\n $script_name ERROR: unknown peak type $peak_type \n" >&2
+	exit 1
 fi
+
+# add q-value to segment label
+settings_label="${settings_label}-q-${q_value}"
+
+# add settings to the segment label
+segment_name="${segment_name}-${settings_label}"
 
 summary_dir="${proj_dir}/summary"
 mkdir -p "$summary_dir"
 summary_csv="${summary_dir}/${sample}.${segment_name}.csv"
 
-macs_dir="${proj_dir}/${segment_name}"
-mkdir -p "$macs_dir"
-peaks_xls="${macs_dir}/${sample}_peaks.xls"
-peaks_file="${macs_dir}/${sample}_peaks.narrowPeak"
-peaks_bed="${macs_dir}/${sample}.bed"
-model_r="${macs_dir}/${sample}_model.r"
-macs_bdg_treat="${macs_dir}/${sample}_treat_pileup.bdg"
-macs_bdg_treat_sort="${macs_dir}/${sample}_treat_pileup.sort.bdg"
-macs_bdg_control="${macs_dir}/${sample}_control_lambda.bdg"
+macs_peaks_dir="${proj_dir}/peaks-MACS-${settings_label}"
+mkdir -p "$macs_peaks_dir"
+peaks_bed="${macs_peaks_dir}/${sample}.peaks.bed"
+summits_bed="${macs_peaks_dir}/${sample}.summits.bed"
+
+macs_logs_dir="${proj_dir}/logs-${segment_name}"
+mkdir -p "$macs_logs_dir"
+peaks_xls="${macs_logs_dir}/${sample}_peaks.xls"
+peaks_file="${macs_logs_dir}/${sample}_peaks.narrowPeak"
+summits_file="${macs_logs_dir}/${sample}_summits.bed"
+model_r="${macs_logs_dir}/${sample}_model.r"
+macs_bdg_treat="${macs_logs_dir}/${sample}_treat_pileup.bdg"
+macs_bdg_treat_sort="${macs_logs_dir}/${sample}_treat_pileup.sort.bdg"
+macs_bdg_control="${macs_logs_dir}/${sample}_control_lambda.bdg"
 
 bigwig_dir="${proj_dir}/BIGWIG"
 mkdir -p "$bigwig_dir"
@@ -96,8 +84,47 @@ module add default-environment
 
 # exit if output exits already
 
-if [ -s "$peaks_xls" ] ; then
+if [ -s "$peaks_bed" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
+	exit 1
+fi
+
+
+#########################
+
+
+# check that inputs exist
+
+if [ ! -d "$proj_dir" ] ; then
+	echo -e "\n $script_name ERROR: proj dir $proj_dir does not exist \n" >&2
+	exit 1
+fi
+
+if [ ! -s "$bam_treat" ] ; then
+	echo -e "\n $script_name ERROR: BAM $bam_treat does not exist \n" >&2
+	exit 1
+fi
+
+code_dir=$(dirname $(dirname "$script_path"))
+
+genome_dir=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" GENOME-DIR);
+
+if [ ! -d "$genome_dir" ] ; then
+	echo -e "\n $script_name ERROR: genome dir $genome_dir does not exist \n" >&2
+	exit 1
+fi
+
+chrom_sizes=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-CHROMSIZES);
+
+if [ ! -s "$chrom_sizes" ] ; then
+	echo -e "\n $script_name ERROR: chrom sizes $chrom_sizes does not exist \n" >&2
+	exit 1
+fi
+
+blacklist=$(bash ${code_dir}/scripts/get-set-setting.sh "${proj_dir}/settings.txt" REF-BLACKLIST);
+
+if [ ! -s "$blacklist" ] ; then
+	echo -e "\n $script_name ERROR: blacklist $blacklist does not exist \n" >&2
 	exit 1
 fi
 
@@ -107,7 +134,7 @@ fi
 
 # MACS parameters
 
-# keep first two characters of build name
+# MACS-style genome abbreviation (keep first two characters of build name)
 genome_build=$(basename "$genome_dir")
 macs_genome="${genome_build:0:2}"
 
@@ -125,15 +152,14 @@ fi
 
 # adjust parameters based on run type
 if [ "$peak_type" == "atac" ] ; then
-	analysis_params="--nomodel --shift -100 --extsize 200 --qvalue $peak_q"
+	analysis_params="--nomodel --shift -100 --extsize 200 --qvalue $q_value"
 elif [ "$peak_type" == "narrow" ] ; then
-	analysis_params="--qvalue $peak_q"
+	analysis_params="--qvalue $q_value"
 elif [ "$peak_type" == "broad" ] ; then
-	analysis_params="--broad --broad-cutoff $peak_q"
-	peaks_file="${macs_dir}/${sample}_peaks.broadPeak"
+	analysis_params="--broad --broad-cutoff $q_value"
+	peaks_file="${macs_logs_dir}/${sample}_peaks.broadPeak"
 else
-	echo -e "\n $script_name ERROR: unknown peak type $peak_type \n" >&2
-	exit 1
+	echo
 fi
 
 
@@ -151,12 +177,13 @@ echo " * MACS version: $(macs2 --version 2>&1) "
 echo " * BAM treatment: $bam_treat "
 echo " * BAM control: $bam_control "
 echo " * MACS genome: $macs_genome "
-echo " * MACS dir: $macs_dir "
+echo " * MACS logs dir: $macs_logs_dir "
+echo " * MACS peaks dir: $macs_peaks_dir "
 echo " * peak type: $peak_type "
-echo " * peak cutoff: $peak_q "
+echo " * peak cutoff: $q_value "
 echo
 
-cd "$macs_dir" || exit 1
+cd "$macs_logs_dir" || exit 1
 
 bash_cmd="
 macs2 callpeak \
@@ -167,7 +194,7 @@ $analysis_params \
 --gsize $macs_genome \
 --name $sample \
 $bam_param \
---outdir $macs_dir
+--outdir $macs_logs_dir
 "
 echo -e "\n CMD: $bash_cmd \n"
 $bash_cmd
@@ -179,17 +206,12 @@ $bash_cmd
 # check that output generated
 
 if [ ! -s "$peaks_file" ] ; then
-	echo -e "\n $script_name ERROR: PEAKS FILE $peaks_file NOT GENERATED \n" >&2
+	echo -e "\n $script_name ERROR: peaks $peaks_file not generated \n" >&2
 	exit 1
 fi
 
 if [ ! -s "$peaks_xls" ] ; then
-	echo -e "\n $script_name ERROR: XLS $peaks_xls NOT GENERATED \n" >&2
-	exit 1
-fi
-
-if [ ! -s "$model_r" ] ; then
-	echo -e "\n $script_name ERROR: MODEL R SCRIPT $model_r NOT GENERATED \n" >&2
+	echo -e "\n $script_name ERROR: XLS $peaks_xls not generated \n" >&2
 	exit 1
 fi
 
@@ -198,19 +220,24 @@ fi
 
 
 # generate an image about the model based on the data
+# --nomodel will bypass building the shifting model
 
 module add r/3.6.1
 
-echo
-echo " * R: $(readlink -f $(which R)) "
-echo " * R version: $(R --version | head -1) "
-echo " * Rscript: $(readlink -f $(which Rscript)) "
-echo " * Rscript version: $(Rscript --version 2>&1) "
-echo
+if [ -s "$model_r" ] ; then
 
-bash_cmd="Rscript $model_r"
-echo -e "\n CMD: $bash_cmd \n"
-$bash_cmd
+	echo
+	echo " * R: $(readlink -f $(which R)) "
+	echo " * R version: $(R --version | head -1) "
+	echo " * Rscript: $(readlink -f $(which Rscript)) "
+	echo " * Rscript version: $(Rscript --version 2>&1) "
+	echo
+
+	bash_cmd="Rscript $model_r"
+	echo -e "\n CMD: $bash_cmd \n"
+	$bash_cmd
+
+fi
 
 sleep 5
 
@@ -218,22 +245,56 @@ sleep 5
 #########################
 
 
-# generate bed file
+# generate a blacklist-filtered BED file
 
-bash_cmd="cut -f 1,2,3,4,7 $peaks_file | LC_ALL=C sort -k1,1 -k2,2n > $peaks_bed"
+module add bedtools/2.27.1
+
+echo
+echo " * bedtools: $(readlink -f $(which bedtools)) "
+echo " * bedtools version: $(bedtools --version) "
+echo " * blacklist: $blacklist "
+echo
+
+# keep only peaks that do not overlap blacklist regions
+bash_cmd="
+cut -f 1,2,3,4,7 $peaks_file \
+| bedtools intersect -v -a stdin -b $blacklist \
+| LC_ALL=C sort -k1,1 -k2,2n \
+> $peaks_bed
+"
 echo -e "\n CMD: $bash_cmd \n"
 eval "$bash_cmd"
 
-sleep 5
+# keep only summits of filtered peaks (generated for narrow peaks)
+if [ -s "$summits_file" ] ; then
+	bash_cmd="
+	bedtools intersect -wa -a $summits_file -b $peaks_bed \
+	| LC_ALL=C sort -k1,1 -k2,2n \
+	> $summits_bed
+	"
+	echo -e "\n CMD: $bash_cmd \n"
+	eval "$bash_cmd"
+fi
 
 
 #########################
 
 
-# generate bigwig file if not already generated
+# check that output generated
+
+if [ ! -s "$peaks_bed" ] ; then
+	echo -e "\n $script_name ERROR: peaks $peaks_bed not generated \n" >&2
+	exit 1
+fi
+
+
+#########################
+
+
+# generate bigWig file if not already generated
 
 if [ ! -s "$macs_bdg_treat" ] ; then
-	echo -e "\n $script_name ERROR: BEDGRAPH $macs_bdg_treat NOT GENERATED \n" >&2
+	echo -e "\n $script_name ERROR: bedGraph $macs_bdg_treat not generated \n" >&2
 	exit 1
 fi
 
@@ -269,14 +330,17 @@ rm -fv "$macs_bdg_control"
 
 # generate summary
 
-peaks_num=$(cat "$peaks_bed" | wc -l)
-echo "total peaks: $peaks_num"
+num_peaks_unfiltered=$(cat "$peaks_file" | wc -l)
+echo "total unfiltered peaks: $num_peaks_unfiltered"
+
+num_peaks_filtered=$(cat "$peaks_bed" | wc -l)
+echo "total filtered peaks: $num_peaks_filtered"
 
 # header for summary file
-echo "#SAMPLE,PEAKS q ${peak_q}" > "$summary_csv"
+echo "#SAMPLE,MACS PEAKS ${peak_type} q ${q_value}" > "$summary_csv"
 
 # summarize log file
-echo "${sample},${peaks_num}" >> "$summary_csv"
+echo "${sample},${num_peaks_filtered}" >> "$summary_csv"
 
 sleep 5
 
