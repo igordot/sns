@@ -109,7 +109,7 @@ hmmratac_jar="/gpfs/data/igorlab/software/HMMRATAC/HMMRATAC_V1.2.10_exe.jar"
 
 # check if the picard jar file is present
 if [ ! -s "$hmmratac_jar" ] ; then
-	echo -e "\n $script_name ERROR: FILE $hmmratac_jar DOES NOT EXIST \n" >&2
+	echo -e "\n $script_name ERROR: binary file $hmmratac_jar does not exist \n" >&2
 	exit 1
 fi
 
@@ -165,7 +165,14 @@ fi
 # clean up
 
 # convert peaks gappedPeak to BED format and sort
-bash_cmd="cut -f 1,2,3,4,13 $peaks_gappedpeak | LC_ALL=C sort -k1,1 -k2,2n > $peaks_bed"
+# "all skipped high coverage regions are added back to the gappedPeak output file"
+# "91% of the high coverage regions that are masked in the GM12878 cells are blacklist regions"
+bash_cmd="
+cat $peaks_gappedpeak \
+| awk '\$13 > 0' \
+| cut -f 1,2,3,4,13 \
+| LC_ALL=C sort -k1,1 -k2,2n \
+> $peaks_bed"
 echo -e "\n CMD: $bash_cmd \n"
 eval "$bash_cmd"
 
@@ -211,17 +218,20 @@ fi
 
 # generate summary
 
-num_peaks=$(cat "$peaks_bed" | wc -l)
-echo "total peaks: $num_peaks"
+num_peaks_unfiltered=$(cat "$peaks_gappedpeak" | wc -l)
+echo "total peaks unfiltered: $num_peaks_unfiltered"
+
+num_peaks_filtered=$(cat "$peaks_bed" | wc -l)
+echo "total peaks filtered: $num_peaks_filtered"
 
 num_summits=$(cat "$summits_bed_final" | wc -l)
 echo "total summits: $num_summits"
 
 # header for summary file
-echo "#SAMPLE,HMMRATAC PEAKS score ${score},HMMRATAC SUMMITS score ${score}" > "$summary_csv"
+echo "#SAMPLE,PEAKS HMMRATAC score ${score}" > "$summary_csv"
 
 # summarize log file
-echo "${sample},${num_peaks},${num_summits}" >> "$summary_csv"
+echo "${sample},${num_peaks_filtered}" >> "$summary_csv"
 
 sleep 5
 

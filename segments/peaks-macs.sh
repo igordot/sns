@@ -337,7 +337,7 @@ num_peaks_filtered=$(cat "$peaks_bed" | wc -l)
 echo "total filtered peaks: $num_peaks_filtered"
 
 # header for summary file
-echo "#SAMPLE,MACS PEAKS ${peak_type} q ${q_value}" > "$summary_csv"
+echo "#SAMPLE,PEAKS MACS ${peak_type} q ${q_value}" > "$summary_csv"
 
 # summarize log file
 echo "${sample},${num_peaks_filtered}" >> "$summary_csv"
