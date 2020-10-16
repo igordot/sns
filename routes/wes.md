@@ -30,7 +30,8 @@ sns/generate-settings <genome>
 sns/gather-fastqs <fastq dir>
 ```
 
-Add a BED file defining the regions targeted for capture to the project directory.
+Add a BED file defining the genomic regions targeted for capture to the project directory.
+The targeted regions (or primary targets) are the regions your capture kit attempts to cover, usually exons of genes of interest.
 
 Run `wes` route.
 

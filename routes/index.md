@@ -11,7 +11,7 @@ Routes are the different analysis workflows.
 
 ## Basic routes
 
-Generic routes are sample-centric (same analysis is performed for each sample).
+Generic routes are sample-centric where the same analysis is performed independently for each sample.
 The available routes:
 
 * [rna-star](rna-star): RNA-seq using STAR. Generates BAMs, normalized bigWigs, counts matrix, and various QC metrics.
@@ -27,13 +27,13 @@ The available routes:
 
 ## Routes for comparing groups of samples
 
-There are additional routes for comparing groups of samples after individual samples are processed with a generic route.
-They depend on the output of the generic routes and must be run from the same directory.
-Before running, manually add proper group names or pairs to the `samples.groups.csv` or `samples.pairs.csv` files (depending on the comparison type).
+Some protocols require analysis of multiple samples simultaneously, such as tumor-normal or treatment-control combinations.
+There are additional routes for comparing groups of samples after individual samples are processed with a generic sample-centric route.
+These routes depend on the output of the generic routes and must be run from the same directory.
 Available comparison routes:
 
-* [rna-star-groups-dge](rna-star-groups-dge): Differential gene expression using DESeq2 for the `rna-star` results.
-* [wes-pairs-snv](wes-pairs-snv): Somatic variant detection for the `wes` results.
+* [rna-star-groups-dge](rna-star-groups-dge): Differential gene expression for the `rna-star` results.
+* [wes-pairs-snv](wes-pairs-snv): Somatic variant detection for the `wes` or `rna-snv` results.
 * [chip-pairs-peaks](chip-pairs-peaks): Peak calling for the `chip` results.
 
-Each route has a description with more specific details.
+Each route has a description with more details regarding its output.
