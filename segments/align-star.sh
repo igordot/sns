@@ -70,7 +70,7 @@ fi
 
 # delete BAM (likely incomplete since the corresponding BAI was not generated)
 if [ -s "$bam" ] ; then
-	echo -e "\n $script_name WARNING: POTENTIALLY CORRUPT BAM $bam EXISTS \n" >&2
+	echo -e "\n $script_name WARNING: potentially corrupt BAM $bam exists \n" >&2
 	rm -fv "$bam"
 fi
 
@@ -87,12 +87,12 @@ fi
 # check that inputs exist
 
 if [ ! -d "$proj_dir" ] ; then
-	echo -e "\n $script_name ERROR: DIR $proj_dir DOES NOT EXIST \n" >&2
+	echo -e "\n $script_name ERROR: proj dir $proj_dir does not exist \n" >&2
 	exit 1
 fi
 
 if [ ! -s "$fastq_R1" ] ; then
-	echo -e "\n $script_name ERROR: FASTQ $fastq_R1 DOES NOT EXIST \n" >&2
+	echo -e "\n $script_name ERROR: FASTQ $fastq_R1 does not exist \n" >&2
 	exit 1
 fi
 
@@ -101,7 +101,7 @@ code_dir=$(dirname $(dirname "$script_path"))
 ref_star=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" REF-STAR)
 
 if [ ! -s "${ref_star}/SA" ] ; then
-	echo -e "\n $script_name ERROR: REF $ref_star DOES NOT EXIST \n" >&2
+	echo -e "\n $script_name ERROR: STAR reference $ref_star does not exist \n" >&2
 	exit 1
 fi
 
@@ -128,31 +128,34 @@ echo
 cd "$star_logs_dir"
 
 # --outFilterType BySJout - ENCODE standard option
+# --outSAMstrandField intronMotif - add XS strand tags to spliced reads
+# --outSAMattrRGline - first word contains the read group identifier and must start with "ID:"
 # --outSAMmapqUnique - int: 0 to 255: the MAPQ value for unique mappers
 
 # relevant errors:
-# SeqAnswers: "HTseq cannot deal with jM:B:c,-1 and jI:B:i,-1 SAM attributes which are output if you use (non-default) --outSAMmode Full"
-# Picard says STAR-sorted BAM "is not coordinate sorted", so using samtools for sorting
+# "HTseq cannot deal with jM:B:c,-1 and jI:B:i,-1 SAM attributes which are output if you use (non-default) --outSAMmode Full"
+# according to Picard, STAR-sorted BAM "is not coordinate sorted", so using samtools for sorting
 
 bash_cmd="
 STAR \
---runThreadN $threads \
---genomeDir $ref_star \
+--runThreadN ${threads} \
+--genomeDir ${ref_star} \
 --genomeLoad NoSharedMemory \
 --outFilterMismatchNoverLmax 0.2 \
 --outFilterMultimapNmax 1 \
 --outFilterType BySJout \
 --outSAMstrandField intronMotif \
 --outSAMattributes NH HI AS nM NM MD XS \
+--outSAMattrRGline ID:${sample} SM:${sample} LB:${sample} PL:ILLUMINA \
 --outSAMmapqUnique 60 \
 --twopassMode Basic \
 --readFilesCommand zcat \
---readFilesIn $fastq_R1 $fastq_R2 \
---outFileNamePrefix $star_prefix \
+--readFilesIn ${fastq_R1} ${fastq_R2} \
+--outFileNamePrefix ${star_prefix} \
 --quantMode GeneCounts \
 --outSAMtype BAM Unsorted \
 --outStd BAM_Unsorted | \
-samtools sort -m 8G -T ${sample}.samtools -o $bam -
+samtools sort -m 32G -T ${sample}.samtools -o ${bam} -
 "
 echo "CMD: $bash_cmd"
 eval "$bash_cmd"
@@ -181,13 +184,13 @@ rm -rfv ${star_prefix}_STAR*
 
 # check if BAM file is present
 if [ ! -s "$bam" ] ; then
-	echo -e "\n $script_name ERROR: BAM $bam NOT GENERATED \n" >&2
+	echo -e "\n $script_name ERROR: BAM $bam not generated \n" >&2
 	exit 1
 fi
 
 # check if BAM index is present (generated only if BAM is valid)
 if [ ! -s "$bai" ] ; then
-	echo -e "\n $script_name ERROR: BAI $bai NOT GENERATED \n" >&2
+	echo -e "\n $script_name ERROR: BAM index $bai not generated \n" >&2
 	# delete BAM since something went wrong and it might be corrupted
 	rm -fv "$bam"
 	exit 1
@@ -195,7 +198,7 @@ fi
 
 # check if gene counts file is present
 if [ ! -s "${star_prefix}ReadsPerGene.out.tab" ] ; then
-	echo -e "\n $script_name ERROR: COUNTS FILE ${star_prefix}ReadsPerGene.out.tab NOT GENERATED \n" >&2
+	echo -e "\n $script_name ERROR: counts ${star_prefix}ReadsPerGene.out.tab not generated \n" >&2
 	# delete BAM and BAI since something went wrong and they might be corrupted
 	rm -fv "$bam"
 	rm -fv "$bai"
@@ -259,7 +262,7 @@ fi
 
 # generate an error for low quality files
 if [ "$counts_unstr" -lt 1000 ] || [ "$counts_fwd" -lt 10 ] || [ "$counts_rev" -lt 10 ] ; then
-	echo -e "\n $script_name ERROR: LOW COUNTS \n" >&2
+	echo -e "\n $script_name ERROR: low counts \n" >&2
 fi
 
 echo "sample strand: $lib_strand"

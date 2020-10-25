@@ -125,26 +125,11 @@ if [ -z "$bam_dd" ] ; then
 	exit 1
 fi
 
-# add read groups
-segment_rg="bam-rg-picard"
-bam_rg=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_rg}.csv" | cut -d ',' -f 2)
-if [ -z "$bam_rg" ] ; then
-	bash_cmd="bash ${code_dir}/segments/${segment_rg}.sh $proj_dir $sample $bam_dd"
-	($bash_cmd)
-	bam_rg=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_rg}.csv" | cut -d ',' -f 2)
-fi
-
-# if BAM with RGs is not set, there was a problem
-if [ -z "$bam_rg" ] ; then
-	echo -e "\n $script_name ERROR: $segment_rg DID NOT FINISH \n" >&2
-	exit 1
-fi
-
 # split CIGAR strings
 segment_splitncigar="bam-splitncigar-gatk"
 bam_split=$(grep -s -m 1 "^${sample}," "${proj_dir}/samples.${segment_splitncigar}.csv" | cut -d ',' -f 2)
 if [ -z "$bam_split" ] ; then
-	bash_cmd="bash ${code_dir}/segments/${segment_splitncigar}.sh $proj_dir $sample $bam_rg"
+	bash_cmd="bash ${code_dir}/segments/${segment_splitncigar}.sh $proj_dir $sample $bam_dd"
 	($bash_cmd)
 	bam_split=$(grep -m 1 "^${sample}," "${proj_dir}/samples.${segment_splitncigar}.csv" | cut -d ',' -f 2)
 fi

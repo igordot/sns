@@ -30,12 +30,12 @@ bam=$4
 # check that inputs exist
 
 if [ ! -d "$proj_dir" ] ; then
-	echo -e "\n $script_name ERROR: DIR $proj_dir DOES NOT EXIST \n" >&2
+	echo -e "\n $script_name ERROR: proj dir $proj_dir does not exist \n" >&2
 	exit 1
 fi
 
 if [ ! -s "$bam" ] ; then
-	echo -e "\n $script_name ERROR: BAM $bam DOES NOT EXIST \n" >&2
+	echo -e "\n $script_name ERROR: BAM $bam does not exist \n" >&2
 	exit 1
 fi
 
@@ -53,11 +53,11 @@ samples_csv="${proj_dir}/samples.${segment_name}.csv"
 
 bam_dd_dir="${proj_dir}/BAM-DD"
 mkdir -p "$bam_dd_dir"
-bam_dd_temp="${bam_dd_dir}/${sample}.dd.tmp.bam"
 bam_dd_final="${bam_dd_dir}/${sample}.dd.bam"
 
 dedup_logs_dir="${proj_dir}/logs-${segment_name}"
 mkdir -p "$dedup_logs_dir"
+bam_dd_temp="${dedup_logs_dir}/${sample}.dd.tmp.bam"
 bam_dd_log="${dedup_logs_dir}/${sample}.log.txt"
 bam_dd_flagstat="${dedup_logs_dir}/${sample}.flagstat.txt"
 
@@ -81,7 +81,7 @@ fi
 
 # delete temp BAM (likely incomplete since the final BAM was not generated)
 if [ -s "$bam_dd_temp" ] ; then
-	echo -e "\n $script_name WARNING: POTENTIALLY CORRUPT BAM $bam_dd_temp EXISTS \n" >&2
+	echo -e "\n $script_name WARNING: potentially corrupt BAM $bam_dd_temp exists \n" >&2
 	rm -fv "$bam_dd_temp"
 	rm -fv "${bam_dd_temp}.bai"
 fi
@@ -126,12 +126,12 @@ sleep 5
 # check that sambamba markdup output generated
 
 if [ ! -s "$bam_dd_temp" ] ; then
-	echo -e "\n $script_name ERROR: BAM $bam_dd_temp NOT GENERATED \n" >&2
+	echo -e "\n $script_name ERROR: BAM $bam_dd_temp not generated \n" >&2
 	exit 1
 fi
 
 if [ ! -s "${bam_dd_temp}.bai" ] ; then
-	echo -e "\n $script_name ERROR: BAI ${bam_dd_temp}.bai NOT GENERATED \n" >&2
+	echo -e "\n $script_name ERROR: BAM index ${bam_dd_temp}.bai not generated \n" >&2
 	# delete BAM since something went wrong and it might be corrupted
 	rm -fv "$bam_dd_temp"
 	exit 1
@@ -156,7 +156,7 @@ sleep 5
 # check that flagstat output generated
 
 if [ ! -s "$bam_dd_flagstat" ] ; then
-	echo -e "\n $script_name ERROR: FLAGSTAT $bam_dd_flagstat NOT GENERATED \n" >&2
+	echo -e "\n $script_name ERROR: flagstat $bam_dd_flagstat not generated \n" >&2
 	# delete BAM and BAI since something went wrong and they might be corrupted
 	rm -fv "$bam_dd_temp"
 	rm -fv "${bam_dd_temp}.bai"
