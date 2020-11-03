@@ -160,7 +160,7 @@ fi
 module add python/cpu/3.6.5
 
 # command
-gatk_bin="/gpfs/data/igorlab/software/GenomeAnalysisTK/gatk-4.1.4.1/gatk"
+gatk_bin="/gpfs/data/igorlab/software/GenomeAnalysisTK/gatk-4.1.9.0/gatk"
 
 echo
 echo " * GATK: $(readlink -f $gatk_bin) "
