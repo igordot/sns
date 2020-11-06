@@ -79,20 +79,22 @@ sbatch_mail="--mail-user=${USER}@nyulangone.org --mail-type=FAIL,REQUEUE"
 sleep 5
 
 # Mutect2
+# 48 hours limit was sufficient for WES, but may not be for WGS
 segment_mutect2="snvs-mutect2"
 bash_cmd="bash ${code_dir}/segments/${segment_mutect2}.sh $proj_dir $sample_t $bam_t $sample_n $bam_n 4"
 sbatch_name="--job-name=sns.${segment_mutect2}.${sample_clean}"
-sbatch_cmd="sbatch --time=48:00:00 ${sbatch_name} ${sbatch_perf} ${sbatch_mail} --export=NONE --wrap='${bash_cmd}'"
+sbatch_cmd="sbatch --time=72:00:00 ${sbatch_name} ${sbatch_perf} ${sbatch_mail} --export=NONE --wrap='${bash_cmd}'"
 echo "CMD: $sbatch_cmd"
 (eval $sbatch_cmd)
 
 sleep 5
 
 # Strelka
+# 24 hours limit was sufficient for WES, but may not be for WGS
 segment_strelka="snvs-strelka"
 bash_cmd="bash ${code_dir}/segments/${segment_strelka}.sh $proj_dir $sample_t $bam_t $sample_n $bam_n 4"
 sbatch_name="--job-name=sns.${segment_strelka}.${sample_clean}"
-sbatch_cmd="sbatch --time=24:00:00 ${sbatch_name} ${sbatch_perf} ${sbatch_mail} --export=NONE --wrap='${bash_cmd}'"
+sbatch_cmd="sbatch --time=72:00:00 ${sbatch_name} ${sbatch_perf} ${sbatch_mail} --export=NONE --wrap='${bash_cmd}'"
 echo "CMD: $sbatch_cmd"
 (eval $sbatch_cmd)
 
