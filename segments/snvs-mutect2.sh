@@ -79,6 +79,10 @@ fi
 
 sample="${sample_t}:${sample_n}"
 
+summary_dir="${proj_dir}/summary"
+mkdir -p "$summary_dir"
+contamination_csv="${summary_dir}/${sample_t}-${sample_n}.VCF-Mutect2-contamination.csv"
+
 vcf_dir="${proj_dir}/VCF-Mutect2"
 mkdir -p "$vcf_dir"
 
@@ -276,6 +280,17 @@ if [ -n "$pileup_variants" ] ; then
 
 	# set the parameter for next step
 	contamination_arg="--contamination-table $contamination_table"
+
+	# contamination summary
+	contamination_score=$(cat "$contamination_table" | grep -v 'contamination' | head -1 | cut -f 2)
+	echo "contamination original: $contamination_score"
+	contamination_score=$(printf "%.5f" "$contamination_score")
+	echo "contamination rounded: $contamination_score"
+	contamination_header="#SAMPLE,contamination"
+	echo "${contamination_header}" > "$contamination_csv"
+	echo "${sample},${contamination_score}" >> "$contamination_csv"
+	sleep 5
+	cat ${summary_dir}/*.VCF-Mutect2-contamination.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.VCF-Mutect2-contamination.csv"
 
 fi
 

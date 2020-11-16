@@ -116,6 +116,15 @@ fi
 if [ -s "$manta_indels_vcf" ] ; then
 	echo -e "\n $script_name WARNING: POTENTIALLY CORRUPT VCF $manta_indels_vcf EXISTS \n" >&2
 	rm -fv "$manta_indels_vcf"
+	# delete Manta output
+	rm -rf "${manta_logs_dir}"
+fi
+
+# check if runWorkflow.py is present (likely from previous incomplete run)
+if [ -s "$manta_run_py" ] ; then
+	echo -e "\n $script_name WARNING: runWorkflow.py $manta_run_py EXISTS \n" >&2
+	# delete Manta output
+	rm -rf "${manta_logs_dir}"
 fi
 
 # delete original SNVs VCF (likely incomplete since the final VCF was not generated)
@@ -172,7 +181,7 @@ if [ ! -s "$manta_run_py" ] ; then
 	echo -e "\n $script_name ERROR: runWorkflow.py $manta_run_py NOT GENERATED \n" >&2
 	# delete Manta output (keep top level for logs)
 	rm -rfv "${manta_logs_dir}/results"
-	rm -rfv "${manta_logs_dir}/workspace"
+	rm -rf "${manta_logs_dir}/workspace"
 	exit 1
 fi
 
@@ -205,7 +214,7 @@ if [ ! -s "$manta_indels_vcf" ] ; then
 	echo -e "\n $script_name ERROR: VCF $manta_indels_vcf NOT GENERATED \n" >&2
 	# delete Manta output (keep top level for logs)
 	rm -rfv "${manta_logs_dir}/results"
-	rm -rfv "${manta_logs_dir}/workspace"
+	rm -rf "${manta_logs_dir}/workspace"
 	exit 1
 fi
 
@@ -254,10 +263,11 @@ $strelka_config_cmd
 # check if runWorkflow.py is present
 if [ ! -s "$strelka_run_py" ] ; then
 	echo -e "\n $script_name ERROR: runWorkflow.py $strelka_run_py NOT GENERATED \n" >&2
-	# delete Manta and Strelka output (keep top level for logs)
+	# delete Manta output
 	rm -rfv "${manta_logs_dir}"
+	# delete Strelka output (keep top level for logs)
 	rm -rfv "${strelka_logs_dir}/results"
-	rm -rfv "${strelka_logs_dir}/workspace"
+	rm -rf "${strelka_logs_dir}/workspace"
 	exit 1
 fi
 
@@ -297,7 +307,7 @@ if [ ! -s "$vcf_snvs_original" ] ; then
 	# delete Manta and Strelka output (keep top level for logs)
 	rm -rfv "${manta_logs_dir}"
 	rm -rfv "${strelka_logs_dir}/results"
-	rm -rfv "${strelka_logs_dir}/workspace"
+	rm -rf "${strelka_logs_dir}/workspace"
 	exit 1
 fi
 
@@ -307,7 +317,7 @@ if [ ! -s "$vcf_indels_original" ] ; then
 	# delete Manta and Strelka output (keep top level for logs)
 	rm -rfv "${manta_logs_dir}"
 	rm -rfv "${strelka_logs_dir}/results"
-	rm -rfv "${strelka_logs_dir}/workspace"
+	rm -rf "${strelka_logs_dir}/workspace"
 	exit 1
 fi
 

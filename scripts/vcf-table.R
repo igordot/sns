@@ -329,8 +329,9 @@ if (any(str_detect(muts_vcfr@meta, "##GATKCommandLine.HaplotypeCaller"))) {
 
 }
 
-# check if table is empty
-if (nrow(vcf_tbl) == 0) stop("output table is empty after parsing")
+# check if table is empty (unless there were very few variants in the original VCF)
+if (nrow(muts_vcfr@fix) > 10 && nrow(vcf_tbl) == 0) stop("output table is empty after parsing")
+if (nrow(vcf_tbl) == 0) message("output table is empty after parsing")
 
 # update locale for sorting (to match the rest of the pipeline)
 Sys.setlocale(category = "LC_ALL", locale = "C")
@@ -356,7 +357,7 @@ if (caller_type == "somatic") {
 clean_vcf_tbl = vcf_tbl[, out_cols]
 
 # export
-write_tsv(clean_vcf_tbl, path = out_txt)
+write_tsv(clean_vcf_tbl, out_txt)
 
 
 
