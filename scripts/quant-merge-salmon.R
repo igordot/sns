@@ -95,15 +95,15 @@ rand_str = paste0(sample(LETTERS, 10, replace = TRUE), collapse = "")
 
 # save tximport list (for downstream Bioconductor DGE packages such as edgeR or DESeq2)
 saveRDS(txi, file = glue("temp.{rand_str}.rds"))
-system(glue("mv -vf temp.{rand_str}.rds {out_base}.tximport.rds"))
+system(glue("mv -vf temp.{rand_str}.rds {out_base}.tximport.gene.lengthScaledTPM.rds"))
 Sys.sleep(1)
 
-# save counts table
+# save gene-level counts table
 write.table(txi_counts, file = glue("temp.{rand_str}.counts.txt"), quote = FALSE, sep = "\t", col.names = NA)
 system(glue("mv -vf temp.{rand_str}.counts.txt {out_base}.tximport.counts.txt"))
 Sys.sleep(1)
 
-# save counts table
+# save gene-level counts table
 write.table(txi_tpms, file = glue("temp.{rand_str}.tpms.txt"), quote = FALSE, sep = "\t", col.names = NA)
 system(glue("mv -vf temp.{rand_str}.tpms.txt {out_base}.tximport.tpms.txt"))
 Sys.sleep(1)

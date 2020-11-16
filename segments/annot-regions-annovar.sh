@@ -113,6 +113,11 @@ if [[ "$genome_build" == "hg19" ]] ; then
 	annovar_protocol="cytoBand,refGene"
 	annovar_operation="r,g"
 	annovar_keep_cols="1,7-10"
+elif [[ "$genome_build" == "hg38" ]] ; then
+	annovar_buildver="hg38"
+	annovar_protocol="cytoBand,refGene"
+	annovar_operation="r,g"
+	annovar_keep_cols="1,7-10"
 elif [[ "$genome_build" == "mm10" ]] ; then
 	annovar_buildver="mm10"
 	annovar_protocol="cytoBand,refGene"
@@ -149,7 +154,7 @@ cat $regions_table \
 | sort -k1,1 -k2,2n \
 | uniq \
 | awk -F $'\t' 'BEGIN {OFS=FS} {print \$0,\"0\",\"0\"}' \
-> "$annovar_input"
+> $annovar_input
 "
 echo -e "\n CMD: $convert_cmd \n"
 eval "$convert_cmd"
