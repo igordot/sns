@@ -97,7 +97,7 @@ fi
 # ANNOVAR genome-specific settings
 
 # ANNOVAR directory
-annovar_path="/gpfs/data/igorlab/software/annovar/annovar-170716"
+annovar_path="/gpfs/data/igorlab/software/annovar/annovar-200607"
 annovar_db_path="/gpfs/data/igorlab/ref/annovar"
 
 genome_build=$(basename "$genome_dir")

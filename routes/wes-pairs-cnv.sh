@@ -24,23 +24,20 @@ proj_dir=$(readlink -f "$1")
 sample_t=$2
 sample_n=$3
 
-# additional settings
+# paths
 code_dir=$(dirname $(dirname "$script_path"))
-qsub_dir="${proj_dir}/logs-qsub"
+sbatch_dir="${proj_dir}/logs-sbatch"
 
 # display settings
+echo
 echo " * proj_dir: $proj_dir "
-echo " * sample T: $sample_t "
-echo " * sample N: $sample_n "
+echo " * tumor sample: $sample_t "
+echo " * normal sample: $sample_n "
 echo " * code_dir: $code_dir "
-echo " * qsub_dir: $qsub_dir "
+echo
 
-
-#########################
-
-
-# delete empty qsub .po files
-rm -f ${qsub_dir}/sns.*.po*
+# specify maximum runtime for sbatch job
+# SBATCHTIME=24:00:00
 
 
 #########################
@@ -79,13 +76,6 @@ segment_freec="cnvs-wes-freec"
 bash_cmd="bash ${code_dir}/segments/${segment_freec}.sh $proj_dir $sample_t $bam_t $sample_n $bam_n"
 echo "CMD: $bash_cmd"
 ($bash_cmd)
-
-
-#########################
-
-
-# delete empty qsub .po files
-rm -f ${qsub_dir}/sns.*.po*
 
 
 #########################

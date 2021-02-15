@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-# call copy number variants with Control-FREEC (WES settings, hg19 only)
+# call copy number variants with Control-FREEC (WES settings)
 
 
 # script filename
@@ -121,25 +121,48 @@ bafs_fixed="${fixed_base}.BAFs.txt"
 
 graph_fixed="${fixed_base}.png"
 
+# annotation command (next segment)
+annot_cmd="bash ${code_dir}/segments/annot-regions-annovar.sh $proj_dir $sample $cnvs_fixed"
+
 # unload all loaded modulefiles
 module purge
+module add default-environment
 
 
 #########################
 
 
-# skip if output exits already
+# check for output
 
-if [ -s "$cpn_sample" ] || [ -s "$cnvs_original" ] || [ -s "$cnvs_fixed" ] ; then
+# skip to annotation if final output exists already
+if [ -s "$graph_fixed" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
-	exit 1
+	echo -e "\n CMD: $annot_cmd \n"
+	($annot_cmd)
+	exit 0
+fi
+
+# delete original CNVs file (likely incomplete since the final graph was not generated)
+if [ -s "$cnvs_original" ] ; then
+	echo -e "\n $script_name WARNING: POTENTIALLY CORRUPT $cnvs_original EXISTS \n" >&2
+	rm -fv "$cnvs_original"
+	# delete all output
+	rm -rf "${sample_freec_logs_dir}"
+fi
+
+# delete original cpn file (likely incomplete since the final graph was not generated)
+if [ -s "$cpn_sample" ] ; then
+	echo -e "\n $script_name WARNING: POTENTIALLY CORRUPT $cpn_sample EXISTS \n" >&2
+	rm -fv "$cpn_sample"
+	# delete all output
+	rm -rf "${sample_freec_logs_dir}"
 fi
 
 
 #########################
 
 
-# genome-specific settings (only hg19 supported for now)
+# genome-specific settings
 
 genome_build=$(basename "$genome_dir")
 if [[ "$genome_build" == "hg19" ]] ; then
@@ -147,6 +170,11 @@ if [[ "$genome_build" == "hg19" ]] ; then
 	gem="/gpfs/data/igorlab/ref/hg19/FREEC/out100m2_hg19.gem"
 	snps_vcf="/gpfs/data/igorlab/ref/hg19/dbSNP/common_all_20170710.snv.maf5.vcf"
 	snps_bed="/gpfs/data/igorlab/ref/hg19/dbSNP/common_all_20170710.snv.maf5.bed"
+elif [[ "$genome_build" == "hg38" ]] ; then
+	chr_files_dir="/gpfs/data/igorlab/ref/hg38/chromosomes/"
+	gem="/gpfs/data/igorlab/ref/hg38/genome.len100.mm2.mappability"
+	snps_vcf="/gpfs/data/igorlab/ref/hg38/dbSNP/common_all_20170710.snv.maf5.vcf"
+	snps_bed="/gpfs/data/igorlab/ref/hg38/dbSNP/common_all_20170710.snv.maf5.bed"
 elif [[ "$genome_build" == "mm10" ]] ; then
 	chr_files_dir="/gpfs/data/igorlab/ref/iGenomes/Mus_musculus/UCSC/mm10/Sequence/Chromosomes/"
 	gem="/gpfs/data/igorlab/ref/mm10/FREEC/out100m4_mm10.gem"
@@ -164,18 +192,23 @@ else
 	exit 1
 fi
 
+if [ ! -s "$gem" ] ; then
+	echo -e "\n $script_name ERROR: GEM $gem DOES NOT EXIST \n" >&2
+	exit 1
+fi
+
 
 #########################
 
 
 # generate FREEC-compatible references
 
-# FREEC compiled with GCC 6.1.0
-module load gcc/6.1.0
+# FREEC compiled with GCC 6.1.0 (load same GCC when running)
+module add gcc/6.1.0
 # bedtools to create .pileup files for WES data
-module load bedtools/2.26.0
+module add bedtools/2.27.1
 # samtools to create .pileup files (for BAF) (even with sambamba enabled)
-module load samtools/1.3
+module add samtools/1.3
 
 # clean up probes BED
 fix_probes_cmd="
@@ -207,7 +240,7 @@ bedtools slop -i $probes_bed_fixed -g $chrom_sizes -b 500 \
 echo -e "\n CMD: $fix_snps_bed_cmd \n"
 eval "$fix_snps_bed_cmd"
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -327,7 +360,7 @@ captureRegions = $probes_bed_fixed
 
 echo "$config_contents" > "$config_txt"
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -337,7 +370,7 @@ sleep 30
 
 cd "$sample_freec_logs_dir"
 
-freec_dir="/ifs/home/id460/software/FREEC/FREEC-11.3"
+freec_dir="/gpfs/data/igorlab/software/FREEC/FREEC-11.6"
 freec_bin="${freec_dir}/src/freec"
 
 echo
@@ -361,7 +394,7 @@ freec_cmd="$freec_bin -conf $config_txt"
 echo -e "\n CMD: $freec_cmd \n"
 ($freec_cmd)
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -412,7 +445,10 @@ rm -fv "$minipileup_control"
 
 # post-processing
 
-module load r/3.3.0
+# clean up the environment before loading R module to avoid GCC conflicts
+module purge
+module add default-environment
+module add r/3.6.1
 
 echo
 echo " * R: $(readlink -f $(which R)) "
@@ -484,7 +520,7 @@ echo "#SAMPLE,bins,BAF SNPs,CNAs" > "$summary_csv"
 # summarize log file
 echo "${sample},${num_bins},${num_bafs},${num_cnas}" >> "$summary_csv"
 
-sleep 30
+sleep 5
 
 # combine all sample summaries
 cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.${segment_name}.csv"
@@ -495,7 +531,6 @@ cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "
 
 # annotate
 
-annot_cmd="bash ${code_dir}/segments/annot-regions-annovar.sh $proj_dir $sample $cnvs_fixed"
 echo -e "\n CMD: $annot_cmd \n"
 ($annot_cmd)
 
