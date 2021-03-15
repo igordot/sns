@@ -27,6 +27,8 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
     species = "Homo sapiens"
   } else if (species %in% c("mm9", "mm10")) {
     species = "Mus musculus"
+  } else if (species %in% c("rn6")) {
+    species = "Rattus norvegicus"
   } else {
     warning("unknown species")
     return(NULL)
@@ -49,13 +51,13 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
     tidyr::drop_na() %>%
     dplyr::filter(abs(rank) > 0) %>%
     dplyr::distinct() %>%
-    dplyr::arrange(-rank)
+    dplyr::arrange(desc(rank))
 
   if (length(unique(ranks_tbl$gene)) < length(ranks_tbl$gene)) stop("ranks table contains duplicate genes")
   if (nrow(ranks_tbl) < 100) stop("ranks table too short after removing 0s")
 
   # save the ranks table
-  write_excel_csv(ranks_tbl, path = glue("{file_prefix}.ranks.csv"))
+  write_csv(ranks_tbl, glue("{file_prefix}.ranks.csv"))
   Sys.sleep(1)
 
   # convert the gene ranks data frame to a vector
@@ -71,6 +73,7 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
 
   # specify categories of interest (split C2 and C5 by sub-categories)
   # MSigDB 7.1 split TFT category
+  # MSigDB 7.2 renamed GO categories
   geneset_cats =
     c(
       "Hallmark" = "H",
@@ -82,8 +85,11 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
       "Transcription Factor Targets" = "TFT:TFT_Legacy",
       "GTRD Transcription Factor Targets" = "TFT:GTRD",
       "GO Biological Process" = "BP",
+      "GO Biological Process" = "GO:BP",
       "GO Cellular Component" = "CC",
+      "GO Cellular Component" = "GO:CC",
       "GO Molecular Function" = "MF",
+      "GO Molecular Function" = "GO:MF",
       "Oncogenic" = "C6"
     )
 
@@ -129,7 +135,7 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
     fgsea_tbl =
       fgsea_res %>%
       dplyr::filter(pval < 0.1) %>%
-      dplyr::arrange(padj, pval, -abs(NES)) %>%
+      dplyr::arrange(padj, pval, desc(abs(NES))) %>%
       dplyr::mutate(
         pval = if_else(pval < 0.00001, pval, round(pval, 5)),
         padj = if_else(padj < 0.00001, padj, round(padj, 5)),
@@ -137,7 +143,7 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
         NES = round(NES, 5)
       ) %>%
       dplyr::select(-log2err, -leadingEdge)
-    write_excel_csv(fgsea_tbl, path = glue("{geneset_prefix}.csv"))
+    write_csv(fgsea_tbl, glue("{geneset_prefix}.csv"))
     Sys.sleep(1)
 
     # filter fgsea results table for plotting
@@ -145,10 +151,10 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
       fgsea_tbl %>%
       tidyr::drop_na() %>%
       dplyr::filter(padj < 0.2) %>%
-      dplyr::arrange(padj, pval, -abs(NES)) %>%
+      dplyr::arrange(padj, pval, desc(abs(NES))) %>%
       dplyr::mutate(nes_dir = if_else(NES > 0, "Pos", "Neg")) %>%
       head(50) %>%
-      dplyr::arrange(-NES) %>%
+      dplyr::arrange(desc(NES)) %>%
       dplyr::mutate(pathway = str_trunc(pathway, 50))
 
     # generate bar plot if any pathways remain after filtering
