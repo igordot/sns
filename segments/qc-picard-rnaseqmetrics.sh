@@ -185,7 +185,7 @@ fi
 # splitting by read may not be needed with Picard 2.18
 paste \
 <(echo -e "#SAMPLE\n${sample}") \
-<(cat "${metrics_txt}" | grep -A 1 "PF_ALIGNED_BASES" | cut -f 2,14,15,17,18,19,20,21,27) \
+<(cat "${metrics_txt}" | grep -A 1 "PF_ALIGNED_BASES" | cut -f 2,14,15,16,17,18,19,20,21,27) \
 | tr '\t' ',' \
 > $summary_csv
 
