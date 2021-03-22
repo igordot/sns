@@ -1,7 +1,6 @@
 ##
-## Calculate results and export them in various formats with proper names.
+## Calculate DESeq2 results, generate tables, heatmaps, and gene set enrichment.
 ##
-
 
 
 deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL, genome = NULL) {
@@ -37,13 +36,17 @@ deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL, genome = 
     res = lfcShrink(deseq_dataset, contrast = contrast, res = res_unshrunk, type = "ashr")
     # extract results name
     pattern = paste(".*", contrast[1], " ", sep = "")
-    res_name = gsub(pattern = pattern, replacement = "", x = mcols(res)[2,2])
+    res_name = gsub(pattern = pattern, replacement = "", x = mcols(res)[2, 2])
+    pos_label = contrast[2]
+    neg_label = contrast[3]
     samples_comp = rownames(subset(deseq_dataset@colData, group %in% contrast[2:3]))
     if (length(samples_comp) < 2) stop("no samples in group")
   } else {
     # not tested in combination with lfcShrink
     res = results(deseq_dataset, name = name, cooksCutoff = FALSE, addMLE = TRUE)
     res_name = name
+    pos_label = "Pos"
+    neg_label = "Neg"
   }
 
   # file suffix based on comparison name
@@ -59,16 +62,16 @@ deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL, genome = 
   Sys.sleep(1)
 
   # save the unmodified results table as csv
-  res_tbl = as_tibble(res, rownames = "gene") %>% dplyr::arrange(padj, pvalue, -baseMean)
+  res_tbl = as_tibble(res, rownames = "gene") %>% dplyr::arrange(padj, pvalue, desc(baseMean))
   res_csv = glue("dge.{file_suffix}.csv")
-  write_excel_csv(res_tbl, path = res_csv)
+  write_csv(res_tbl, res_csv)
   message("save results csv: ", res_csv)
   Sys.sleep(1)
 
   # add unshrunk fold change to results
   res_unshrunk_tbl = as_tibble(res_unshrunk, rownames = "gene")
   res_unshrunk_tbl = dplyr::select(res_unshrunk_tbl, gene, log2FCunshrunk = log2FoldChange)
-  res_tbl = left_join(res_tbl, res_unshrunk_tbl, by = "gene") %>% dplyr::arrange(padj, pvalue, -baseMean)
+  res_tbl = left_join(res_tbl, res_unshrunk_tbl, by = "gene") %>% dplyr::arrange(padj, pvalue, desc(baseMean))
 
   # format results for excel export
   res_clean_tbl =
@@ -89,7 +92,7 @@ deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL, genome = 
 
   # save differential expression results in Excel format
   res_xlsx = glue("dge.{file_suffix}.xlsx")
-  write_xlsx(setNames(list(res_clean_tbl), strtrim(res_name, 31)), path = res_xlsx)
+  write_xlsx(setNames(list(res_clean_tbl), strtrim(res_name, 31)), res_xlsx)
   message("results genes: ", nrow(res_clean_tbl))
   message("save results xlsx: ", res_xlsx)
   Sys.sleep(1)
@@ -97,7 +100,7 @@ deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL, genome = 
   # save significant (padj<0.05) differential expression results in Excel format
   res_padj005_xlsx = gsub(pattern = ".xlsx", replacement = ".q005.xlsx", x = res_xlsx)
   res_padj005_df = subset(res_clean_tbl, padj < 0.05)
-  write_xlsx(setNames(list(res_padj005_df), strtrim(res_name, 31)), path = res_padj005_xlsx)
+  write_xlsx(setNames(list(res_padj005_df), strtrim(res_name, 31)), res_padj005_xlsx)
   message("save filtered results xlsx: ", res_padj005_xlsx)
   Sys.sleep(1)
 
@@ -107,8 +110,8 @@ deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL, genome = 
   plot_volcano(
     stats_df = res_tbl, gene_col = "gene", fc_col = "log2FoldChange", p_col = "padj",
     p_cutoff = 0.05, n_top_genes = n_genes_labeled,
-    title = res_name, fc_label = "Fold Change (log2)", p_label = "Adjusted P Value (-log10)",
-    file_prefix = glue("{volcano_dir}/plot.volcano.{file_suffix}")
+    title = res_name, fc_label = "Fold Change (log2)", p_label = "Adjusted P-Value (-log10)",
+    file_prefix = glue("{volcano_dir}/volcano.{file_suffix}")
   )
 
   # heatmap variance stabilized values matrix
@@ -154,7 +157,7 @@ deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL, genome = 
 
     # generate title and file suffix
     hm_title = glue("{res_name} - {hmg[[i]]$title}")
-    hm_file_prefix = glue("{heatmaps_dir}/plot.heatmap.{file_suffix}.{hmg[[i]]$file_suffix}")
+    hm_file_prefix = glue("{heatmaps_dir}/heatmap.{file_suffix}.{hmg[[i]]$file_suffix}")
 
     # generate heatmaps if gene list is not too small or big
     if (length(hmg[[i]]$genes) > 10 && length(hmg[[i]]$genes) < 3000) {
@@ -175,8 +178,11 @@ deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL, genome = 
 
   # run gene set enrichment on detectable genes using shrunk fold changes for ranking
   res_filtered_tbl = res_tbl %>% dplyr::filter(baseMean > 0) %>% tidyr::drop_na(padj)
-  gse_fgsea(stats_df = res_filtered_tbl, gene_col = "gene", rank_col = "log2FoldChange", species = genome,
-            title = res_name, file_prefix = glue("{gse_dir}/gse.{file_suffix}"))
+  gse_fgsea(
+    stats_df = res_filtered_tbl, gene_col = "gene", rank_col = "log2FoldChange", species = genome,
+    title = res_name, pos_label = pos_label, neg_label = neg_label,
+    file_prefix = glue("{gse_dir}/gse.{file_suffix}")
+  )
 
 }
 

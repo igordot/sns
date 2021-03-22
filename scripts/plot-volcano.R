@@ -11,10 +11,10 @@ plot_volcano = function(stats_df,
                         fc_cutoff = 0,
                         p_cutoff = 0.05,
                         fc_label = "Fold Change",
-                        p_label = "P Value",
+                        p_label = "P-Value",
                         title = "Volcano Plot",
                         n_top_genes = 10,
-                        file_prefix = "plot.volcano") {
+                        file_prefix = "volcano") {
 
   suppressPackageStartupMessages({
     library(magrittr)
@@ -32,7 +32,7 @@ plot_volcano = function(stats_df,
   # set up the data frame for the volcano plot and create a column to define the significant genes
   volcano_tbl =
     stats_df %>%
-    dplyr::select(gene = gene_col, fc = fc_col, p = p_col) %>%
+    dplyr::select(gene = .data[[gene_col]], fc = .data[[fc_col]], p = .data[[p_col]]) %>%
     tidyr::drop_na() %>%
     dplyr::mutate(sig = dplyr::if_else(abs(fc) > fc_cutoff & p < p_cutoff, "yes", "no"))
 
@@ -47,7 +47,7 @@ plot_volcano = function(stats_df,
       size = 4,
       point.padding = 0.1
     ) +
-    scale_y_continuous(expand = expand_scale(mult = c(0, 0.05))) +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
     labs(
       title = title,
       x = fc_label,

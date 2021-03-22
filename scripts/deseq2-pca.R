@@ -1,13 +1,12 @@
 ##
-## Modified DESeq2 plotPCA function with sample names and custom condition colors.
-## Sample names will be shown next to each dot with minimal overlapping.
+## Replacement for DESeq2::plotPCA() with sample labels and custom condition colors.
+## Sample names will be shown next to each dot with minimal overlap.
 ## The axis will display proportion of variance for each principal component.
-## Tested using several DESeq2 versions from 1.12.4 to 1.14.0.
+## Tested using DESeq2 versions 1.12 to 1.26.
 ##
 
 
-
-deseq2_pca = function(object, intgroup, ntop = 1000) {
+deseq2_pca = function(object, intgroup, ntop = 1000, point_labels = TRUE) {
 
   suppressPackageStartupMessages({
     library(magrittr)
@@ -39,13 +38,15 @@ deseq2_pca = function(object, intgroup, ntop = 1000) {
     fac = factor(apply(intgroup_df, 1, paste, collapse = " : "))
   } else {
     fac = colData(object)[[intgroup]]
+    # keep groups in the same order as they appear in the object
+    levels(fac) = unique(as.character(fac))
   }
 
   # set color sheme based on number of groups
-  if (nlevels(fac) > 24) {
+  if (nlevels(fac) > 20) {
     colors = rainbow(nlevels(fac))
   } else if (nlevels(fac) > 2) {
-    colors = c(brewer.pal(9, "Set1"), brewer.pal(8, "Accent"), brewer.pal(8, "Dark2"))
+    colors = c(brewer.pal(5, "Set1"), brewer.pal(8, "Dark2"), brewer.pal(8, "Accent"))
     colors = unique(colors)
     colors = head(colors, nlevels(fac))
   } else {
@@ -65,20 +66,16 @@ deseq2_pca = function(object, intgroup, ntop = 1000) {
   }
 
   # PCA data frame for plotting
-  pca_data = data.frame(PC1 = pca$x[,1], PC2 = pca$x[,2], group = fac, stringsAsFactors = FALSE)
+  pca_df = data.frame(PC1 = pca$x[,1], PC2 = pca$x[,2], group = fac, stringsAsFactors = FALSE)
 
   # randomize sample order
-  pca_data = pca_data[sample(rownames(pca_data)), ]
+  set.seed(99)
+  pca_df = pca_df[sample(rownames(pca_df)), ]
 
-  # plot (returned)
-  ggplot(pca_data, aes(x = PC1, y = PC2)) +
+  # plot
+  p =
+    ggplot(pca_df, aes(x = PC1, y = PC2)) +
     geom_point(aes(color = group), size = 4) +
-    geom_text_repel(
-      aes(label = rownames(pca_data)),
-      size = font_size,
-      point.padding = unit(0.5, "lines"),
-      color = "black"
-    ) +
     labs(
       title = "PCA",
       subtitle = glue("{num_samples} samples | {nlevels(fac)} groups"),
@@ -95,6 +92,21 @@ deseq2_pca = function(object, intgroup, ntop = 1000) {
       axis.ticks = element_blank(),
       legend.title = element_blank()
     )
+
+  # add sample labels
+  if (point_labels) {
+    p =
+      p +
+      geom_text_repel(
+        aes(label = rownames(pca_df)),
+        size = font_size,
+        point.padding = unit(0.5, "lines"),
+        color = "black"
+      )
+  }
+
+  # return plot
+  p
 
 }
 

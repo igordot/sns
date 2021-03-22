@@ -3,8 +3,7 @@
 ##
 
 
-
-gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_prefix = "gse") {
+gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", pos_label = "Pos", neg_label = "Neg", file_prefix = "gse") {
 
   suppressPackageStartupMessages({
     library(magrittr)
@@ -47,7 +46,7 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
   # set up the gene ranks data frame
   ranks_tbl =
     stats_df %>%
-    dplyr::select(gene = gene_col, rank = rank_col) %>%
+    dplyr::select(gene = .data[[gene_col]], rank = .data[[rank_col]]) %>%
     tidyr::drop_na() %>%
     dplyr::filter(abs(rank) > 0) %>%
     dplyr::distinct() %>%
@@ -122,7 +121,6 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
     set.seed(99)
     tryCatch(
       {
-        # fgsea_res = fgsea(pathways = geneset_list, stats = ranks, minSize = 10, maxSize = 500, nperm = 1e5, BPPARAM = bpparam)
         fgsea_res = fgseaMultilevel(pathways = geneset_list, stats = ranks, minSize = 10, BPPARAM = bpparam)
       },
       error = function(e) {
@@ -142,7 +140,7 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
         ES = round(ES, 5),
         NES = round(NES, 5)
       ) %>%
-      dplyr::select(-log2err, -leadingEdge)
+      dplyr::select(!c(log2err, leadingEdge))
     write_csv(fgsea_tbl, glue("{geneset_prefix}.csv"))
     Sys.sleep(1)
 
@@ -152,19 +150,19 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
       tidyr::drop_na() %>%
       dplyr::filter(padj < 0.2) %>%
       dplyr::arrange(padj, pval, desc(abs(NES))) %>%
-      dplyr::mutate(nes_dir = if_else(NES > 0, "Pos", "Neg")) %>%
+      dplyr::mutate(nes_dir = if_else(NES > 0, pos_label, neg_label)) %>%
       head(50) %>%
       dplyr::arrange(desc(NES)) %>%
       dplyr::mutate(pathway = str_trunc(pathway, 50))
 
     # generate bar plot if any pathways remain after filtering
-    if (nrow(fgsea_top_tbl) > 1) {
+    if (nrow(fgsea_top_tbl) > 2) {
       fgsea_plot =
         ggplot(fgsea_top_tbl, aes(x = reorder(pathway, NES), y = NES)) +
         geom_col(aes(fill = nes_dir, alpha = padj)) +
         geom_hline(yintercept = 0) +
         labs(
-          title = glue("{title}"),
+          title = title,
           subtitle = glue("MSigDB {geneset_name} Gene Sets\n50 Most Significant"),
           x = "Gene Set",
           y = "Normalized Enrichment Score"
@@ -176,8 +174,8 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", file_pre
           plot.subtitle = element_text(hjust = 0.5)
         ) +
         coord_flip() +
-        scale_fill_manual(name = "NES", values = c(Neg = "#053061", Pos = "#E41A1C")) +
-        scale_alpha_continuous(name = "Adj P-Val", range = c(1, 0.2))
+        scale_fill_manual(name = "NES", values = setNames(c("#053061", "#E41A1C"), nm = c(neg_label, pos_label))) +
+        scale_alpha_continuous(name = "Adj P-Value", range = c(1, 0.2))
       save_plot(filename = glue("{geneset_prefix}.barplot.png"), plot = fgsea_plot, base_height = 10, base_width = 12)
       Sys.sleep(1)
       save_plot(filename = glue("{geneset_prefix}.barplot.pdf"), plot = fgsea_plot, base_height = 10, base_width = 12)

@@ -133,8 +133,8 @@ if ("gene" %in% genes_tbl$type) {
   genes_tbl = dplyr::select(genes_tbl, gene_name, gene_id, everything())
   genes_tbl = dplyr::distinct(genes_tbl)
   genes_tbl = dplyr::arrange(genes_tbl, gene_name, gene_id)
-  write_excel_csv(genes_tbl, path = "genes.csv")
-} 
+  write_csv(genes_tbl, "genes.csv")
+}
 
 message(" ========== normalize ========== ")
 
@@ -163,38 +163,47 @@ Sys.sleep(1)
 
 # export counts
 raw_counts_table = counts(dds, normalized = FALSE) %>% as_tibble(rownames = "gene")
-write_excel_csv(raw_counts_table, path = "counts.raw.csv")
+write_csv(raw_counts_table, "counts.raw.csv.gz")
 norm_counts_table = counts(dds, normalized = TRUE) %>% round(3) %>% as_tibble(rownames = "gene")
-write_excel_csv(norm_counts_table, path = "counts.normalized.csv")
-write_xlsx(list(normalized_counts = norm_counts_table), path = "counts.normalized.xlsx")
+write_csv(norm_counts_table, "counts.normalized.csv.gz")
+write_xlsx(list(normalized_counts = norm_counts_table), "counts.normalized.xlsx")
 Sys.sleep(1)
+
+# export average counts per group
+if (length(group_levels) > 1) {
+  norm_counts_mat = counts(dds, normalized = TRUE)
+  norm_counts_table = sapply(group_levels, function(x) rowMeans(norm_counts_mat[, colData(dds)[, group_name] == x]))
+  norm_counts_table = norm_counts_table %>% round(3) %>% as_tibble(rownames = "gene")
+  write_csv(norm_counts_table, glue("counts.normalized.{group_name}.csv"))
+  Sys.sleep(1)
+}
 
 # export FPMs/CPMs (fragments/counts per million mapped fragments)
 # robust version uses size factors to normalize rather than taking the column sums of the raw counts
 # not using the robust median ratio method to generate the classic values (comparable across experiments)
 cpm_matrix = fpm(dds, robust = FALSE)
 cpm_table = cpm_matrix %>% round(3) %>% as_tibble(rownames = "gene")
-write_excel_csv(cpm_table, path = "counts.cpm.csv")
-write_xlsx(list(CPMs = cpm_table), path = "counts.cpm.xlsx")
+write_csv(cpm_table, "counts.cpm.csv.gz")
+write_xlsx(list(CPMs = cpm_table), "counts.cpm.xlsx")
 Sys.sleep(1)
 
 # export FPKMs (fragment counts normalized per kilobase of feature length per million mapped fragments)
 fpkm_matrix = fpkm(dds, robust = FALSE)
 fpkm_table = fpkm_matrix %>% round(3) %>% as_tibble(rownames = "gene")
-write_excel_csv(fpkm_table, path = "counts.fpkm.csv")
-write_xlsx(list(FPKMs = fpkm_table), path = "counts.fpkm.xlsx")
+write_csv(fpkm_table, "counts.fpkm.csv.gz")
+write_xlsx(list(FPKMs = fpkm_table), "counts.fpkm.xlsx")
 Sys.sleep(1)
 
 # export TPMs (transcripts per million)
 tpm_matrix = apply(fpkm_matrix, 2, function(x) { exp(log(x) - log(sum(x)) + log(1e6)) })
 tpm_table = tpm_matrix %>% round(3) %>% as_tibble(rownames = "gene")
-write_excel_csv(tpm_table, path = "counts.tpm.csv")
-write_xlsx(list(TPMs = tpm_table), path = "counts.tpm.xlsx")
+write_csv(tpm_table, "counts.tpm.csv.gz")
+write_xlsx(list(TPMs = tpm_table), "counts.tpm.xlsx")
 Sys.sleep(1)
 
 # export variance stabilized counts
 vsd_table = assay(vsd) %>% round(3) %>% as_tibble(rownames = "gene")
-write_excel_csv(vsd_table, path = "counts.vst.csv")
+write_csv(vsd_table, "counts.vst.csv.gz")
 Sys.sleep(1)
 
 message(" ========== QC ========== ")
@@ -206,11 +215,20 @@ dev.off()
 Sys.sleep(1)
 
 # PCA plot
-pca_plot = deseq2_pca(vsd, intgroup = group_name, ntop = 1000)
+pca_plot = deseq2_pca(vsd, intgroup = group_name, ntop = 1000, point_labels = TRUE)
 save_plot("plot.pca.png", pca_plot, base_height = 6, base_width = 8, units = "in")
 Sys.sleep(1)
 save_plot("plot.pca.pdf", pca_plot, base_height = 6, base_width = 8, units = "in")
 Sys.sleep(1)
+
+# PCA plot without labels for larger projects
+if (ncol(dds) > 10) {
+  pca_plot = deseq2_pca(vsd, intgroup = group_name, ntop = 1000, point_labels = FALSE)
+  save_plot("plot.pca.nolabels.png", pca_plot, base_height = 6, base_width = 8, units = "in")
+  Sys.sleep(1)
+  save_plot("plot.pca.nolabels.pdf", pca_plot, base_height = 6, base_width = 8, units = "in")
+  Sys.sleep(1)
+}
 
 message(" ========== differential expression ========== ")
 
