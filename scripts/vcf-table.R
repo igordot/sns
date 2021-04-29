@@ -213,20 +213,20 @@ parse_strelka2 = function(vcfr_obj, sample_T, sample_N) {
     # set ref/alt counts
     mutate(
       ref_counts = case_when(
-        is.na(QSS) ~ indel_ref_counts,
-        REF == "A" ~ A_counts,
-        REF == "C" ~ C_counts,
-        REF == "G" ~ G_counts,
-        REF == "T" ~ T_counts
+        is.na(QSS) ~ as.integer(indel_ref_counts),
+        REF == "A" ~ as.integer(A_counts),
+        REF == "C" ~ as.integer(C_counts),
+        REF == "G" ~ as.integer(G_counts),
+        REF == "T" ~ as.integer(T_counts)
       )
     ) %>%
     mutate(
       alt_counts = case_when(
-        is.na(QSS) ~ indel_alt_counts,
-        ALT == "A" ~ A_counts,
-        ALT == "C" ~ C_counts,
-        ALT == "G" ~ G_counts,
-        ALT == "T" ~ T_counts
+        is.na(QSS) ~ as.integer(indel_alt_counts),
+        ALT == "A" ~ as.integer(A_counts),
+        ALT == "C" ~ as.integer(C_counts),
+        ALT == "G" ~ as.integer(G_counts),
+        ALT == "T" ~ as.integer(T_counts)
       )
     ) %>%
     # extract quality
@@ -291,8 +291,8 @@ if (str_detect(sample_name, ":")) {
 # import VCF as a vcfR object
 muts_vcfr = read.vcfR(in_vcf, verbose = FALSE)
 
-# check if there are any variants
-if (nrow(muts_vcfr@fix) == 0) stop("no variants in imported VCF")
+# confirm there are variants in the parsed imported VCF
+if (nrow(muts_vcfr@fix) == 0) stop("no variants in the imported VCF")
 
 # determine variant caller based on VCF contents and parse accordingly
 if (any(str_detect(muts_vcfr@meta, "##GATKCommandLine.HaplotypeCaller"))) {
@@ -329,9 +329,15 @@ if (any(str_detect(muts_vcfr@meta, "##GATKCommandLine.HaplotypeCaller"))) {
 
 }
 
-# check if table is empty (unless there were very few variants in the original VCF)
-if (nrow(muts_vcfr@fix) > 10 && nrow(vcf_tbl) == 0) stop("output table is empty after parsing")
-if (nrow(vcf_tbl) == 0) message("output table is empty after parsing")
+# check if the clean variants table is empty
+if (nrow(vcf_tbl) == 0) {
+  # generate an error if no variants are left (unless there were very few in the original VCF)
+  if (nrow(muts_vcfr@fix) > 25) {
+    stop("output table is empty after parsing")
+  } else {
+    message("output table is empty after parsing")
+  }
+}
 
 # update locale for sorting (to match the rest of the pipeline)
 Sys.setlocale(category = "LC_ALL", locale = "C")

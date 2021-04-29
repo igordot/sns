@@ -136,10 +136,10 @@ if [[ "$genome_build" == "hg19" ]] ; then
 	annovar_argument="'--splicing_threshold 10',,,,,,,,"
 	annovar_cols_grep="^Ref|^Alt|refGene|avsnp|AF_popmax|cancer_AF|controls_AF|Kaviar_AF|cosmic|InterVar|CADD13_PHRED|FATHMM"
 elif [[ "$genome_build" == "hg38" ]] ; then
-	annovar_protocol="refGene,avsnp150,gnomad_exome,gnomad_genome,kaviar_20150923,cosmic90,intervar_20180118,revel,dbnsfp33a"
-	annovar_operation="g,f,f,f,f,f,f,f,f"
-	annovar_argument="'--splicing_threshold 10',,,,,,,,"
-	annovar_cols_grep="^Ref|^Alt|refGene|avsnp|gnomAD_exome_ALL|gnomAD_genome_ALL|Kaviar_AF|cosmic|InterVar|REVEL|CADD|fathmm"
+	annovar_protocol="refGene,avsnp150,gnomad_exome,gnomad_genome,kaviar_20150923,cosmic90,intervar_20180118,clinvar_20210123,revel,dbnsfp33a"
+	annovar_operation="g,f,f,f,f,f,f,f,f,f"
+	annovar_argument="'--splicing_threshold 10',,,,,,,,,"
+	annovar_cols_grep="^Ref|^Alt|refGene|avsnp|gnomAD_exome_ALL|gnomAD_genome_ALL|Kaviar_AF|cosmic|InterVar|CLNSIG|REVEL|CADD|fathmm"
 elif [[ "$genome_build" == "mm10" ]] ; then
 	annovar_protocol="refGene,snp142,snp142Common"
 	annovar_operation="g,f,f"
