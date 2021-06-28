@@ -38,8 +38,10 @@ deseq2_pca = function(object, intgroup, ntop = 1000, point_labels = TRUE) {
     fac = factor(apply(intgroup_df, 1, paste, collapse = " : "))
   } else {
     fac = colData(object)[[intgroup]]
-    # keep groups in the same order as they appear in the object
-    levels(fac) = unique(as.character(fac))
+    # set factor levels if they do not already exist (may never happen in practice)
+    if (is.null(levels(fac))) {
+      levels(fac) = unique(as.character(fac))
+    }
   }
 
   # set color sheme based on number of groups
