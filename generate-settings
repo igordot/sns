@@ -29,6 +29,11 @@ sub main {
 	# settings file
 	my $settings_file = "settings.txt";
 
+	# check if the settings file already exists
+	if ( -e $settings_file ) {
+		die "\n\n ERROR: FILE $settings_file ALREADY EXISTS (DELETE IT TO GENERATE A NEW ONE) \n\n";
+	}
+
 	# set genome setting
 	my $genome_dir_setting;
 	if ($genome_arg =~ m/\//) {
