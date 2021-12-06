@@ -105,7 +105,7 @@ fi
 
 # Salmon
 
-salmon_bin="/gpfs/data/igorlab/software/Salmon/salmon-1.2.1_linux_x86_64/bin/salmon"
+salmon_bin="/gpfs/data/igorlab/software/Salmon/salmon-1.6.0_linux_x86_64/bin/salmon"
 
 #  -l [ --libType ] arg       Format string describing the library type
 #  -i [ --index ] arg         salmon index
