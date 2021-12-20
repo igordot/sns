@@ -5,14 +5,16 @@
 
 
 # script filename
-script_name=$(basename "${BASH_SOURCE[0]}")
+script_path="${BASH_SOURCE[0]}"
+script_name=$(basename "$script_path")
 segment_name=${script_name/%.sh/}
 echo -e "\n ========== SEGMENT: $segment_name ========== \n" >&2
 
 # check for correct number of arguments
 if [ ! $# == 4 ] ; then
 	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
-	echo -e "\n USAGE: $script_name [project dir] [sample] [Bismark BAM] [analysis type] \n" >&2
+	echo -e "\n USAGE: $script_name project_dir sample_name BAM analysis_type \n" >&2
+	if [ $# -gt 0 ] ; then echo -e "\n ARGS: $* \n" >&2 ; fi
 	exit 1
 fi
 
@@ -62,8 +64,12 @@ bismark_report_dir="${proj_dir}/Bismark-report"
 mkdir -p "$bismark_report_dir"
 bismark_report_deduplication="${bismark_report_dir}/${sample}_bismark_bt2_pe.deduplication_report.txt"
 
-bismark_bam_dd_original="${bismark_bam/%.bam/.deduplicated.bam}"
-bismark_dd_report_original="${bismark_bam/%.bam/.deduplication_report.txt}"
+bismark_bam_dd_original="${bismark_dd_logs_dir}/${sample}.deduplicated.bam"
+bismark_dd_report_original="${bismark_dd_logs_dir}/${sample}.deduplication_report.txt"
+
+# unload all loaded modulefiles
+module purge
+module add default-environment
 
 
 #########################
@@ -83,8 +89,10 @@ fi
 
 # run deduplicate_bismark
 
-module load bismark/0.18.1
+# bismark/0.22.1 loads bowtie2 and samtools (no version specified)
+module add bismark/0.22.1
 
+echo
 echo " * Bismark: $(readlink -f $(which deduplicate_bismark)) "
 echo " * Bismark version: $(deduplicate_bismark --version | grep -m 1 'Version' | tr -s '[:blank:]') "
 echo " * BAM IN: $bismark_bam "
@@ -92,6 +100,7 @@ echo " * BAM OUT original : $bismark_bam_dd_original "
 echo " * report original : $bismark_dd_report_original "
 echo " * BAM OUT final : $bismark_bam_dd_final "
 echo " * report final : $bismark_dd_report_final "
+echo
 
 if [ "$analysis_type" == "se" ] ; then
 	bismark_flags="--single"
@@ -104,12 +113,14 @@ fi
 bash_cmd="
 deduplicate_bismark \
 $bismark_flags \
---bam $bismark_bam
+--output_dir $bismark_dd_logs_dir \
+--bam \
+$bismark_bam
 "
 echo "CMD: $bash_cmd"
 eval "$bash_cmd"
 
-sleep 30
+sleep 5
 
 
 #########################
@@ -118,7 +129,7 @@ sleep 30
 # check that output generated
 
 if [ ! -s "$bismark_bam_dd_original" ] ; then
-	echo -e "\n $script_name ERROR: REPORT $bismark_dd_report_original NOT GENERATED \n" >&2
+	echo -e "\n $script_name ERROR: DEDUPLICATED BAM $bismark_bam_dd_original NOT GENERATED \n" >&2
 	exit 1
 fi
 
@@ -170,7 +181,7 @@ echo "#SAMPLE,ALIGNED PAIRS,DEDUPLICATED PAIRS,DUPLICATION RATE" > $summary_csv
 # print the relevant numbers
 echo "${sample},${reads_total},${reads_deduplicated},${reads_duplicated_pct}" >> "$summary_csv"
 
-sleep 30
+sleep 5
 
 # combine all sample summaries
 cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq \
@@ -183,7 +194,7 @@ cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq \
 # add sample and BAM to sample sheet
 echo "${sample},${bismark_bam_dd_final}" >> "$samples_csv"
 
-sleep 30
+sleep 5
 
 
 #########################
