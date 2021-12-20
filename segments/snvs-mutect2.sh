@@ -164,11 +164,11 @@ fi
 module add python/cpu/3.6.5
 
 # command
-gatk_bin="/gpfs/data/igorlab/software/GenomeAnalysisTK/gatk-4.1.9.0/gatk"
+gatk_bin="/gpfs/data/igorlab/software/GenomeAnalysisTK/gatk-4.2.4.0/gatk"
 
 echo
 echo " * GATK: $(readlink -f $gatk_bin) "
-echo " * GATK version: $($gatk_bin Mutect2 --version 2>&1 | grep "Version") "
+echo " * GATK version: $($gatk_bin Mutect2 --version 2>&1 | grep "v4") "
 echo " * sample T : $sample_t "
 echo " * BAM T : $bam_t "
 echo " * sample N : $sample_n "
