@@ -251,7 +251,7 @@ num_active_samples=$(find "$salmon_proj_logs_dir" -type d -name "aux_info" | wc 
 if [[ "$num_active_samples" -lt 3 && "$merged_counts_rds" -ot "${salmon_quant_dir}/${sample}.quant.sf.gz" ]] ; then
 
 	# load relevant modules
-	module add r/3.6.1
+	module add r/4.1.2
 
 	echo
 	echo " * R: $(readlink -f $(which R)) "

@@ -170,6 +170,7 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", pos_labe
         theme_cowplot() +
         theme(
           aspect.ratio = 3,
+          plot.background = element_rect(fill = "white"),
           plot.title = element_text(hjust = 0.5),
           plot.subtitle = element_text(hjust = 0.5)
         ) +

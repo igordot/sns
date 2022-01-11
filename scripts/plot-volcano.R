@@ -56,6 +56,7 @@ plot_volcano = function(stats_df,
     scale_color_manual(values = c("slategrey", "firebrick2")) +
     theme_cowplot() +
     theme(
+      plot.background = element_rect(fill = "white"),
       plot.title = element_text(hjust = 0.5),
       plot.subtitle = element_text(hjust = 0.5),
       legend.position = "none"

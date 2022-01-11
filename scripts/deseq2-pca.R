@@ -88,6 +88,7 @@ deseq2_pca = function(object, intgroup, ntop = 1000, point_labels = TRUE) {
     theme_cowplot() +
     theme(
       aspect.ratio = 1,
+      plot.background = element_rect(fill = "white"),
       plot.title = element_text(hjust = 0.5),
       plot.subtitle = element_text(hjust = 0.5),
       axis.text = element_blank(),
