@@ -187,14 +187,23 @@ fi
 
 # clean up
 
-# clean up the full output table
-# Name	Length	EffectiveLength	TPM	NumReads
+# quant.sf quantification file columns
+# Name: the name of the target transcript provided in the input transcript database
+# Length: the length of the target transcript in nucleotides
+# EffectiveLength: the computed effective length of the target transcript (takes into account all factors being modeled)
+# TPM: estimate of the relative abundance of this transcript in units of TPM (recommended for downstream analysis)
+# NumReads: the expected number of reads that have originated from each transcript
+
+# clean up the full quantification table (usually not relevant since a merged table is generated later)
+# columns: Name, Length, EffectiveLength, TPM, NumReads
+# use NumReads (estimate of the number of reads mapping to each transcript) as counts
 echo -e "#GENE\t${sample}" > "$salmon_counts_txt"
 cat "$salmon_quant_genes_sf" | grep -v "EffectiveLength" | cut -f 1,5 | LC_ALL=C sort -k1,1 >> "$salmon_counts_txt"
+# use TPM (relative abundance of this transcript) as TPMs
 echo -e "#GENE\t${sample}" > "$salmon_tpms_txt"
 cat "$salmon_quant_genes_sf" | grep -v "EffectiveLength" | cut -f 1,4 | LC_ALL=C sort -k1,1 >> "$salmon_tpms_txt"
 
-# rename and gzip the quant.sf quantification file
+# rename (to have all samples in one directory) and compress the quant.sf quantification file
 mv -v "$salmon_quant_sf" "${salmon_quant_dir}/${sample}.quant.sf"
 gzip "${salmon_quant_dir}/${sample}.quant.sf"
 
@@ -235,9 +244,9 @@ cat ${summary_dir}/*.${segment_name}.csv | LC_ALL=C sort -t ',' -k1,1 | uniq > "
 #########################
 
 
-# generate counts matrix for all samples
+# generate a merged counts matrix for all samples with tximport
 # this may be possible with "salmon quantmerge" in the future (does not currently support gene-level output)
-# "tximport is, and has been, the recommended way to aggregate transcript-level abundances to the gene-level"
+# "tximport is ... the recommended way to aggregate transcript-level abundances to the gene-level"
 
 # file base of merged output
 merged_counts_base="${proj_dir}/quant.salmon"
