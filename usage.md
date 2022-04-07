@@ -5,7 +5,7 @@ nav_order: 2
 
 # Usage
 
-## Brief summary
+## Brief overview
 
 Download the code in an empty project directory.
 
@@ -29,12 +29,6 @@ Run the analysis using a specific route.
 
 ```
 sns/run <route>
-```
-
-Check if the jobs are submitted and running.
-
-```
-squeue -u $USER
 ```
 
 Check for problems.

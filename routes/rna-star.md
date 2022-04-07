@@ -22,6 +22,7 @@ For differential expression analysis, follow with [rna-star-groups-dge](rna-star
 ## Usage
 
 Set up a new analysis (common across all routes).
+If running for the first time, check the [detailed usage instructions](../usage) for an explanation of every step.
 
 ```
 cd <project dir>
@@ -39,7 +40,7 @@ sns/run rna-star
 Check for potential problems.
 
 ```
-grep "ERROR:" logs-qsub/*
+grep "ERROR:" logs-sbatch/*
 ```
 
 ## Output

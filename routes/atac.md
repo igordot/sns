@@ -17,6 +17,7 @@ Segments:
 ## Usage
 
 Set up a new analysis (common across all routes).
+If running for the first time, check the [detailed usage instructions](../usage) for an explanation of every step.
 
 ```
 cd <project dir>

@@ -27,13 +27,13 @@ sns/gather-fastqs <fastq dir>
 Run `rna-salmon` route.
 
 ```
-sns/run rna-star
+sns/run rna-salmon
 ```
 
 Check for potential problems.
 
 ```
-grep "ERROR:" logs-qsub/*
+grep "ERROR:" logs-sbatch/*
 ```
 
 ## Output

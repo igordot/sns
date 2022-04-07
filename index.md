@@ -6,6 +6,8 @@ nav_order: 1
 # Seq-N-Slide: sequencing data analysis pipeline
 
 Seq-N-Slide is a set of automated workflows for common sequencing-based (Illumina) protocols, such as RNA-seq, ChIP-seq, ATAC-seq, WGBS/RRBS methylation, whole genome/exome/targeted variant detection, and contaminant screening.
+It was written with novice users in mind and optimized for simplicity of use.
+It is designed to work on the NYULMC HPC BigPurple cluster.
 
 SNS consists of multiple routes (or workflows).
 Each route contains multiple segments (or steps).
@@ -16,8 +18,6 @@ Each project directory can have its own copy of the code in for reproducibility.
 If you modify the code for one project, the changes will not affect other projects.
 If you repeat the analysis with additional samples at a different time, same code will be used.
 
-SNS is designed to work on the NYULMC HPC BigPurple cluster using the SLURM job scheduler.
-It was originally made for the Phoenix cluster with the Sun Grid Engine job scheduler and that version has been archived on the [`phoenix` branch](https://github.com/igordot/sns/tree/phoenix).
-It can work in other environments with modifications.
+Any questions or issues can be posted on [GitHub](https://github.com/igordot/sns/issues).
 
-Source code is available at [github.com/igordot/sns](https://github.com/igordot/sns).
+If this software was helpful in your research, please [cite it](cite).

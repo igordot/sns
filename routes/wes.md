@@ -22,6 +22,7 @@ For somatic variant detection, follow with [wes-pairs-snv](wes-pairs-snv).
 ## Usage
 
 Set up a new analysis (common across all routes).
+If running for the first time, check the [detailed usage instructions](../usage) for an explanation of every step.
 
 ```
 cd <project dir>
@@ -42,7 +43,7 @@ sns/run wes
 Check for potential problems.
 
 ```
-grep "ERROR:" logs-qsub/*
+grep "ERROR:" logs-sbatch/*
 ```
 
 ## Output

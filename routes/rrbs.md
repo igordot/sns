@@ -37,7 +37,7 @@ sns/run rrbs
 Check for potential problems.
 
 ```
-grep "ERROR:" logs-qsub/*
+grep "ERROR:" logs-sbatch/*
 ```
 
 ## Output
