@@ -2,7 +2,7 @@ title: "Seq-N-Slide Docs"
 description: "Documentation for Seq-N-Slide sequencing data analysis pipelines."
 
 # theme
-remote_theme: pmarsceill/just-the-docs
+remote_theme: just-the-docs/just-the-docs
 
 # enable or disable the site search
 search_enabled: true
@@ -18,4 +18,4 @@ aux_links:
 # Heading anchor links appear on hover over h1-h6 tags in page content
 heading_anchors: false
 
-ga_tracking: UA-130263433-2
+ga_tracking: G-WW0CJR3Z9Z
