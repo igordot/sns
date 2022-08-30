@@ -91,7 +91,12 @@ fi
 
 found_bed=$(find "$proj_dir" -maxdepth 1 -type f -iname "*.bed" | grep -v "probes" | sort | head -1)
 bed=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-TARGETS-BED "$found_bed");
-
+# Chek if there is no bed file in the project directory, treat as WGS and create a bed for all chromosome ranges
+if [ ! -s "$bed" ] ; then
+	awk 'OFS="\t"{print $1, "0", $2}' ${ref_fasta}.fai > ${proj_dir}/wgs.bed
+	found_bed=$(find "$proj_dir" -maxdepth 1 -type f -iname "*.bed" | grep -v "probes" | sort | head -1)
+	bed=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-TARGETS-BED "$found_bed");
+fi
 if [ ! -s "$bed" ] ; then
 	echo -e "\n $script_name ERROR: BED $bed DOES NOT EXIST \n" >&2
 	exit 1
