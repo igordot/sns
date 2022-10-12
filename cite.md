@@ -24,4 +24,7 @@ BibTeX:
 }
 ```
 
-A persistent identifier, also known as a Digital Object Identifier (DOI), is available: [10.5281/zenodo.5550459](https://doi.org/10.5281/zenodo.5550459).
+Persistent identifiers are available:
+
+* Digital Object Identifier (DOI): [10.5281/zenodo.5550459](https://doi.org/10.5281/zenodo.5550459)
+* Research Resource Identifier (RRID): [SCR_021752](https://scicrunch.org/resolver/RRID:SCR_021752)
