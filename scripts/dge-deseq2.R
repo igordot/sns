@@ -172,7 +172,7 @@ Sys.sleep(1)
 # export average counts per group
 if (length(group_levels) > 1) {
   norm_counts_mat = counts(dds, normalized = TRUE)
-  norm_counts_table = sapply(group_levels, function(x) rowMeans(norm_counts_mat[, colData(dds)[, group_name] == x]))
+  norm_counts_table = sapply(group_levels, function(x) rowMeans(norm_counts_mat[, colData(dds)[, group_name] == x, drop = FALSE]))
   norm_counts_table = norm_counts_table %>% round(3) %>% as_tibble(rownames = "gene")
   write_csv(norm_counts_table, glue("counts.normalized.{group_name}.csv"))
   Sys.sleep(1)

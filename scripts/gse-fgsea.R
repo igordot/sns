@@ -121,7 +121,7 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", pos_labe
     set.seed(99)
     tryCatch(
       {
-        fgsea_res = fgseaMultilevel(pathways = geneset_list, stats = ranks, minSize = 10, BPPARAM = bpparam)
+        fgsea_res = fgseaMultilevel(pathways = geneset_list, stats = ranks, minSize = 10, nPermSimple = 10000, BPPARAM = bpparam)
       },
       error = function(e) {
         message("fgseaMultilevel error:", conditionMessage(e))
