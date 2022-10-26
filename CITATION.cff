@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
+message: "If you find this software useful, please cite it using these metadata."
 title: "Seq-N-Slide"
 abstract: "Automated workflows for common genomic sequencing-based protocols. Documentation is available at https://igordot.github.io/sns"
 type: software
@@ -10,4 +10,11 @@ authors:
 repository-code: "https://github.com/igordot/sns"
 url: "https://igordot.github.io/sns"
 doi: 10.5281/zenodo.5550459
+identifiers:
+  - description: "Archived snapshots of Seq-N-Slide"
+    type: doi
+    value: "10.5281/zenodo.5550459"
+  - description: "SciCrunch Research Resource Identifier for Seq-N-Slide"
+    type: other
+    value: "RRID:SCR_021752"
 license: MIT
