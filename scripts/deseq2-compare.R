@@ -39,7 +39,7 @@ deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL, genome = 
     res_name = gsub(pattern = pattern, replacement = "", x = mcols(res)[2, 2])
     pos_label = contrast[2]
     neg_label = contrast[3]
-    samples_comp = rownames(subset(deseq_dataset@colData, group %in% contrast[2:3]))
+    samples_comp = rownames(subset(colData(deseq_dataset), group %in% contrast[2:3]))
     if (length(samples_comp) < 2) stop("no samples in group")
   } else {
     # not tested in combination with lfcShrink
@@ -120,7 +120,11 @@ deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL, genome = 
   # all samples and the subset used for the comparison
   samples_all = colnames(deseq_dataset)
   samples_comp = samples_all
-  if(!is.null(contrast)) { samples_comp = rownames(subset(deseq_dataset@colData, group %in% contrast[2:3])) }
+  if(!is.null(contrast)) { samples_comp = rownames(subset(colData(deseq_dataset), group %in% contrast[2:3])) }
+
+  # heatmap sample annotation (colData columns are "group" and "sizeFactor")
+  samples_groups = as.data.frame(colData(deseq_dataset))
+  samples_groups = samples_groups[, "group", drop = FALSE]
 
   # heatmap gene subsets (list with genes, plot title, and file suffix)
   hmg = list()
@@ -156,7 +160,7 @@ deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL, genome = 
   for (i in 1:length(hmg)) {
 
     # generate title and file suffix
-    hm_title = glue("{res_name} - {hmg[[i]]$title}")
+    hm_title = glue("{res_name}\n{hmg[[i]]$title}")
     hm_file_prefix = glue("{heatmaps_dir}/heatmap.{file_suffix}.{hmg[[i]]$file_suffix}")
 
     # generate heatmaps if gene list is not too small or big
@@ -164,12 +168,14 @@ deseq2_compare = function(deseq_dataset, contrast = NULL, name = NULL, genome = 
 
       # generate heatmap using all samples
       plot_heatmap(mat = vsd, row_subset = hmg[[i]]$genes, col_subset = samples_all,
-        title = hm_title, file_prefix = hm_file_prefix)
+        title = hm_title, col_groups = samples_groups, file_prefix = hm_file_prefix)
 
       # generate heatmap using a subset of samples used for the comparison
       if (length(samples_comp) < length(samples_all)) {
-        plot_heatmap(mat = vsd, row_subset = hmg[[i]]$genes, col_subset = samples_comp,
-          title = hm_title, file_prefix = hm_file_prefix)
+        plot_heatmap(
+          mat = vsd, row_subset = hmg[[i]]$genes, col_subset = samples_comp,
+          title = hm_title, col_groups = samples_groups, file_prefix = hm_file_prefix
+        )
       }
 
     }

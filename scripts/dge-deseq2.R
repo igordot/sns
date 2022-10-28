@@ -69,6 +69,7 @@ load_install_packages("pheatmap")
 # for gene set enrichment (pathways)
 load_install_packages("msigdbr")
 load_install_packages("fgsea")
+load_install_packages("sessioninfo")
 
 message(" ========== import inputs ========== ")
 
@@ -99,8 +100,9 @@ message("")
 # group info (use the first column for grouped comparisons)
 group_name = colnames(groups_table)[1]
 message("group name: ", group_name)
-# not using levels() to preserve order
+# reorder groups based on the input groups table (alphabetical by default)
 group_levels = groups_table[, group_name] %>% as.character() %>% unique()
+groups_table[, group_name] = factor(groups_table[, group_name], levels = group_levels)
 message("group levels: ", toString(group_levels))
 message("")
 
@@ -156,10 +158,17 @@ if (identical(sort(names(gene_lengths)), sort(rownames(dds)))) {
 # VST
 vsd = varianceStabilizingTransformation(dds, blind = TRUE)
 
+message(" ========== save data ========== ")
+
+# save session information
+sessioninfo::session_info(to_file = glue("{r_dir}/session-info.txt"))
+
 # save DESeqDataSet and VST DESeqTransform objects
 saveRDS(dds, file = glue("{r_dir}/deseq2.dds.rds"))
 saveRDS(vsd, file = glue("{r_dir}/deseq2.vsd.rds"))
 Sys.sleep(1)
+
+message(" ========== export counts ========== ")
 
 # export counts
 raw_counts_table = counts(dds, normalized = FALSE) %>% as_tibble(rownames = "gene")
@@ -209,10 +218,10 @@ Sys.sleep(1)
 message(" ========== QC ========== ")
 
 # sparsity plot
-png("plot.sparsity.png", width = 6, height = 6, units = "in", res = 300)
-print(plotSparsity(dds, normalized = TRUE))
-dev.off()
-Sys.sleep(1)
+# png("plot.sparsity.png", width = 6, height = 6, units = "in", res = 300)
+# print(plotSparsity(dds, normalized = TRUE))
+# dev.off()
+# Sys.sleep(1)
 
 # PCA plot
 pca_plot = deseq2_pca(vsd, intgroup = group_name, ntop = 1000, point_labels = TRUE)

@@ -44,9 +44,9 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", pos_labe
   }
 
   # set up the gene ranks data frame
-  ranks_tbl =
-    stats_df %>%
-    dplyr::select(gene = .data[[gene_col]], rank = .data[[rank_col]]) %>%
+  ranks_tbl = stats_df[, c(gene_col, rank_col)]
+  names(ranks_tbl) = c("gene", "rank")
+  ranks_tbl = ranks_tbl %>%
     tidyr::drop_na() %>%
     dplyr::filter(abs(rank) > 0) %>%
     dplyr::distinct() %>%

@@ -44,13 +44,12 @@ deseq2_pca = function(object, intgroup, ntop = 1000, point_labels = TRUE) {
     }
   }
 
-  # set color sheme based on number of groups
+  # set color scheme based on the number of groups
   if (nlevels(fac) > 20) {
     colors = rainbow(nlevels(fac))
   } else if (nlevels(fac) > 2) {
-    colors = c(brewer.pal(5, "Set1"), brewer.pal(8, "Dark2"), brewer.pal(8, "Accent"))
-    colors = unique(colors)
-    colors = head(colors, nlevels(fac))
+    colors = unique(c(brewer.pal(5, "Set1"), brewer.pal(8, "Dark2"), brewer.pal(8, "Accent")))
+    colors = colors[1:nlevels(fac)]
   } else {
     colors = c("dodgerblue3", "firebrick3")
   }

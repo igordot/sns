@@ -30,11 +30,10 @@ plot_volcano = function(stats_df,
   if (nrow(stats_df) < 100) stop("stats table too short")
 
   # set up the data frame for the volcano plot and create a column to define the significant genes
-  volcano_tbl =
-    stats_df %>%
-    dplyr::select(gene = .data[[gene_col]], fc = .data[[fc_col]], p = .data[[p_col]]) %>%
-    tidyr::drop_na() %>%
-    dplyr::mutate(sig = dplyr::if_else(abs(fc) > fc_cutoff & p < p_cutoff, "yes", "no"))
+  volcano_tbl = stats_df[, c(gene_col, fc_col, p_col)]
+  names(volcano_tbl) = c("gene", "fc", "p")
+  volcano_tbl = tidyr::drop_na(volcano_tbl)
+  volcano_tbl = dplyr::mutate(volcano_tbl, sig = dplyr::if_else(abs(fc) > fc_cutoff & p < p_cutoff, "yes", "no"))
 
   # plot
   volcano_plot =
