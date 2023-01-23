@@ -46,13 +46,14 @@ grep "ERROR:" logs-sbatch/*
 
 ## Detailed description for new users
 
-Add git to the environment (git is not available on BigPurple by default).
+Add git to the environment (git is not available on UltraViolet/BigPurple by default).
 
 ```
 module add git
 ```
 
-Navigate to a clean new project directory. This is where all the results will end up.
+Navigate to a clean new project directory.
+This is where all the results will end up.
 
 ```
 cd <project_dir>

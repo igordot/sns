@@ -7,7 +7,7 @@ nav_order: 1
 
 Seq-N-Slide is a set of automated workflows for common sequencing-based (Illumina) protocols, such as RNA-seq, ChIP-seq, ATAC-seq, WGBS/RRBS methylation, whole genome/exome/targeted variant detection, and contaminant screening.
 It was written with novice users in mind and optimized for simplicity of use.
-It is designed to work on the NYULH HPC BigPurple cluster.
+It is designed to work on the NYULH HPC UltraViolet (formerly BigPurple) cluster.
 
 Check the [usage instructions](usage) for more details.
 

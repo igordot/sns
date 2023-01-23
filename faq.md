@@ -19,7 +19,7 @@ General notes and tips are available in the [reference genomes](https://github.c
 
 **Can I run SNS anywhere?**
 
-SNS is designed to work on the NYULMC HPC BigPurple cluster using the SLURM job scheduler.
+SNS is designed to work on the NYULMC HPC UltraViolet (formerly BigPurple) cluster using the SLURM job scheduler.
 It was originally made for the Phoenix cluster with the Sun Grid Engine job scheduler and that version has been archived on the [`phoenix` branch](https://github.com/igordot/sns/tree/phoenix).
 It can be modified to work in other environments, but the changes may not be trivial.
 The computational steps expect that certain modules are available and link to various pre-generated reference files.
