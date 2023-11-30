@@ -161,10 +161,12 @@ fi
 
 # GATK Mutect2
 
+# GATK 4.4.0.0 requires Java 17
+module add jdk/17u028
 module add python/cpu/3.6.5
 
 # command
-gatk_bin="/gpfs/data/igorlab/software/GenomeAnalysisTK/gatk-4.3.0.0/gatk"
+gatk_bin="/gpfs/data/igorlab/software/GenomeAnalysisTK/gatk-4.4.0.0/gatk"
 
 echo
 echo " * GATK: $(readlink -f $gatk_bin) "
