@@ -70,11 +70,15 @@ fi
 
 # generate bigWig using deepTools
 
-module add deeptools/3.1.0
+module add deeptools/3.5.1
 # deepTools bamCoverage requires bedGraphToBigWig
 module add ucscutils/374
 
 echo
+echo " * Python: $(readlink -f $(which python)) "
+echo " * Python version: $(python --version 2>&1 | head -1) "
+echo " * deepTools: $(readlink -f $(which deeptools)) "
+echo " * deepTools version: $(deepTools --version 2>&1 | head -1) "
 echo " * bamCoverage: $(readlink -f $(which bamCoverage)) "
 echo " * bamCoverage version: $(bamCoverage --version 2>&1 | head -1) "
 echo " * BAM: $bam "
