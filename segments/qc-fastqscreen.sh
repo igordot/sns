@@ -60,6 +60,7 @@ mkdir -p "$fastqscreen_dir"
 
 fastqscreen_txt="${fastqscreen_dir}/${fastq/*\//}_screen.txt"
 fastqscreen_txt="${fastqscreen_txt/.fastq.gz/}"
+fastqscreen_png="${fastqscreen_txt/_screen.txt/_screen.png}"
 
 # unload all loaded modulefiles
 module purge
@@ -98,6 +99,7 @@ echo " * fastq_screen conf: $fastqscreen_conf "
 echo " * threads: $threads "
 echo " * FASTQ: $fastq "
 echo " * out TXT: $fastqscreen_txt "
+echo " * out PNG: $fastqscreen_png "
 echo
 
 CMD="
@@ -118,8 +120,17 @@ $CMD
 
 # check that output generated
 
+# check if TXT file is present
 if [ ! -s "$fastqscreen_txt" ] ; then
 	echo -e "\n $script_name ERROR: TXT $fastqscreen_txt NOT GENERATED \n" >&2
+	exit 1
+fi
+
+# check if PNG file is present (if there was a problem with graphics devices)
+if [ ! -s "$fastqscreen_png" ] ; then
+	echo -e "\n $script_name ERROR: PNG $fastqscreen_png NOT GENERATED \n" >&2
+	# delete TXT since something went wrong
+	rm -fv "$fastqscreen_txt"
 	exit 1
 fi
 

@@ -105,13 +105,17 @@ echo "CMD: $bash_cmd"
 
 # check that output generated
 
-if [ ! -s "$frag_sizes_png" ] ; then
-	echo -e "\n $script_name ERROR: FILE $frag_sizes_png NOT GENERATED \n" >&2
+# check if CSV file is present
+if [ ! -s "$frag_sizes_csv" ] ; then
+	echo -e "\n $script_name ERROR: FILE $frag_sizes_csv NOT GENERATED \n" >&2
 	exit 1
 fi
 
-if [ ! -s "$frag_sizes_csv" ] ; then
-	echo -e "\n $script_name ERROR: FILE $frag_sizes_csv NOT GENERATED \n" >&2
+# check if PNG file is present (if there was a problem with graphics devices)
+if [ ! -s "$frag_sizes_png" ] ; then
+	echo -e "\n $script_name ERROR: FILE $frag_sizes_png NOT GENERATED \n" >&2
+	# delete CSV since something went wrong
+	rm -fv "$frag_sizes_csv"
 	exit 1
 fi
 
