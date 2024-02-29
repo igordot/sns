@@ -81,7 +81,6 @@ annot_cmd="bash ${code_dir}/segments/annot-annovar.sh $proj_dir $sample $vcf_fix
 
 # unload all loaded modulefiles
 module purge
-module add default-environment
 
 
 #########################
@@ -97,10 +96,14 @@ if [ -s "$vcf_fixed" ] ; then
 	exit 0
 fi
 
-# delete original VCF (likely incomplete since the fixed VCF was not generated)
-if [ -s "$vcf_original" ] ; then
+# delete existing VCFs (likely incomplete since the fixed VCF was not generated)
+if [ -f "$vcf_original" ] ; then
 	echo -e "\n $script_name WARNING: POTENTIALLY CORRUPT VCF $vcf_original EXISTS \n" >&2
 	rm -fv "$vcf_original"
+fi
+if [ -f "$vcf_add_gt" ] ; then
+	echo -e "\n $script_name WARNING: POTENTIALLY CORRUPT VCF $vcf_add_gt EXISTS \n" >&2
+	rm -fv "$vcf_add_gt"
 fi
 
 
@@ -164,6 +167,10 @@ $bam
 echo -e "\n CMD: $lofreq_cmd \n"
 $lofreq_cmd
 
+sleep 5
+
+echo "num variants original: $(cat ${vcf_original} | grep -v '^#' | wc -l) "
+
 
 #########################
 
@@ -184,8 +191,12 @@ fi
 # "you can just add fake columns"
 # http://csb5.github.io/lofreq/2015/11/23/where-are-the-format-and-sample-fields/
 
+module add python/cpu/2.7.15
+
 echo
 echo " * lofreq2_add_fake_gt.py: $(readlink -f $(which $lofreq_gt_py)) "
+echo " * Python: $(readlink -f $(which python)) "
+echo " * Python version: $(python --version 2>&1) "
 echo " * VCF original: $vcf_original "
 echo " * VCF with GT: $vcf_add_gt "
 echo
@@ -198,6 +209,10 @@ python $lofreq_gt_py \
 "
 echo -e "\n CMD: $lofreq_gt_cmd \n"
 $lofreq_gt_cmd
+
+sleep 5
+
+echo "num variants with genotypes: $(cat ${vcf_add_gt} | grep -v '^#' | wc -l) "
 
 
 #########################
@@ -234,10 +249,14 @@ bgzip_cmd="bgzip -c $vcf_add_gt > ${vcf_original}.bgz"
 echo -e "\n CMD: $bgzip_cmd \n"
 eval "$bgzip_cmd"
 
+sleep 5
+
 # index VCF file
 bcf_index_cmd="bcftools index ${vcf_original}.bgz"
 echo -e "\n CMD: $bcf_index_cmd \n"
 eval "$bcf_index_cmd"
+
+sleep 5
 
 # 1) split multi-allelic variants calls into separate lines (uses VCF 4.2 specification)
 # 2) perform indel left-normalization (start position shifted to the left until it is no longer possible to do so)
@@ -251,21 +270,9 @@ bcftools norm --multiallelics -both --output-type v ${vcf_original}.bgz \
 echo -e "\n CMD: $fix_vcf_cmd \n"
 eval "$fix_vcf_cmd"
 
+sleep 5
 
-#########################
-
-
-# check that output generated
-
-if [ ! -s "$vcf_fixed" ] ; then
-	echo -e "\n $script_name ERROR: VCF $vcf_fixed NOT GENERATED \n" >&2
-	# delete all VCFs since something went wrong and they might be corrupted
-	rm -fv "$vcf_original"
-	rm -fv "${vcf_original}.bgz"
-	rm -fv "${vcf_original}.bgz.csi"
-	rm -fv "$vcf_fixed"
-	exit 1
-fi
+echo "num variants final: $(cat ${vcf_fixed} | grep -v '^#' | wc -l) "
 
 
 #########################
@@ -276,6 +283,20 @@ fi
 rm -fv "$vcf_add_gt"
 rm -fv "${vcf_original}.bgz"
 rm -fv "${vcf_original}.bgz.csi"
+
+
+#########################
+
+
+# check that output generated
+
+if [ ! -s "$vcf_fixed" ] ; then
+	echo -e "\n $script_name ERROR: VCF $vcf_fixed NOT GENERATED \n" >&2
+	# delete all VCFs since something went wrong and they might be corrupted
+	rm -fv "$vcf_original"
+	rm -fv "$vcf_fixed"
+	exit 1
+fi
 
 
 #########################
