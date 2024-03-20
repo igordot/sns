@@ -51,7 +51,6 @@ bigwig="${bigwig_dir}/${sample}.bin1.rpkm.bw"
 
 # unload all loaded modulefiles
 module purge
-module add default-environment
 
 
 #########################
@@ -71,16 +70,12 @@ fi
 # generate bigWig using deepTools
 
 module add deeptools/3.5.1
-# deepTools bamCoverage requires bedGraphToBigWig
-module add ucscutils/374
 
 echo
 echo " * Python: $(readlink -f $(which python)) "
 echo " * Python version: $(python --version 2>&1 | head -1) "
 echo " * deepTools: $(readlink -f $(which deeptools)) "
-echo " * deepTools version: $(deepTools --version 2>&1 | head -1) "
-echo " * bamCoverage: $(readlink -f $(which bamCoverage)) "
-echo " * bamCoverage version: $(bamCoverage --version 2>&1 | head -1) "
+echo " * deepTools version: $(deeptools --version 2>&1 | head -1) "
 echo " * BAM: $bam "
 echo " * BIGWIG: $bigwig "
 echo
