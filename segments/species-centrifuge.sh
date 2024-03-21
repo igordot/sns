@@ -68,7 +68,6 @@ report_txt="${logs_dir}/${sample}.report.txt"
 
 # unload all loaded modulefiles
 module purge
-module add default-environment
 
 
 #########################
@@ -87,7 +86,7 @@ fi
 
 # Centrifuge
 
-centrifuge_bin="/gpfs/data/igorlab/software/Centrifuge/centrifuge-1.0.4-beta/bin/centrifuge"
+centrifuge_bin="/gpfs/data/igorlab/software/Centrifuge/centrifuge-1.0.4.1/bin/centrifuge"
 
 echo
 echo " * Centrifuge: $(readlink -f $(which $centrifuge_bin)) "
@@ -97,12 +96,12 @@ echo " * results: $results_txt "
 echo " * report: $report_txt "
 echo
 
-# using 1M reads
+# using 10M reads
 # not using metrics file because it is not very helpful
 
 bash_cmd="
 zcat $fastq \
-| head -4000000 \
+| head -40000000 \
 | $centrifuge_bin \
 --threads $threads \
 -x $centrifuge_index \
@@ -140,7 +139,7 @@ fi
 # col 6: number of reads uniquely classified to this genomic sequence (e.g., 5964)
 # col 7: proportion of this genome normalized by its genomic length (e.g., 0.0152317)
 
-# genomeSize and abundance can be incorrect (https://github.com/infphilo/centrifuge/issues/13)
+# genomeSize and abundance may be incorrect (https://github.com/DaehwanKimLab/centrifuge/issues/13)
 
 # header
 cat "$report_txt" | grep -m 1 "numUniqueReads" | cut -f 1,2,3,5,6 | tr '\t' ',' > $report_csv
