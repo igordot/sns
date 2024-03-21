@@ -2,7 +2,7 @@
 
 
 ##
-## Identify FASTQ contents using Centrifuge
+## Identify species corresponding to the sequencing reads
 ##
 
 
@@ -65,13 +65,20 @@ if [ -z "$fastq_R1" ] ; then
 	exit 1
 fi
 
-# species using fastqscreen (quick and simple scan)
-segment_species="species-fastqscreen"
-bash_cmd="bash ${code_dir}/segments/${segment_species}.sh $proj_dir $sample $threads $fastq_R1"
-($bash_cmd)
-
-# species using centrifuge
+# species using Centrifuge (a scan of the NCBI nt database)
+# separate job due to memory requirements
+# out-of-memory error with 150G (3/2024)
 segment_species="species-centrifuge"
+bash_cmd="bash ${code_dir}/segments/${segment_species}.sh $proj_dir $sample 4 $fastq_R1"
+sbatch_perf="--nodes=1 --ntasks=1 --cpus-per-task=5 --mem=200G"
+sbatch_mail="--mail-user=${USER}@nyulangone.org --mail-type=FAIL,REQUEUE"
+sbatch_name="--job-name=sns.${segment_species}.${sample}"
+sbatch_cmd="sbatch --time=4:00:00 ${sbatch_name} ${sbatch_perf} ${sbatch_mail} --export=NONE --wrap='${bash_cmd}'"
+echo "CMD: $sbatch_cmd"
+(eval $sbatch_cmd)
+
+# species using FastQ Screen (a quick scan of a small set of pre-defined common species)
+segment_species="species-fastqscreen"
 bash_cmd="bash ${code_dir}/segments/${segment_species}.sh $proj_dir $sample $threads $fastq_R1"
 ($bash_cmd)
 
