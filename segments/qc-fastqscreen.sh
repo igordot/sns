@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-# run fastq_screen
+# run FastQ Screen
 
 
 # script filename
@@ -64,13 +64,12 @@ fastqscreen_png="${fastqscreen_txt/_screen.txt/_screen.png}"
 
 # unload all loaded modulefiles
 module purge
-module add default-environment
 
 
 #########################
 
 
-# exit if output exits already
+# exit if output exists already
 
 if [ -s "$fastqscreen_txt" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2

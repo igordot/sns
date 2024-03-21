@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-# run fastq_screen (more generic version of qc-fastqscreen.sh)
+# run FastQ Screen (more generic version of qc-fastqscreen.sh)
 
 
 # script filename
@@ -58,10 +58,10 @@ mkdir -p "$fastqscreen_dir"
 
 fastqscreen_txt="${fastqscreen_dir}/${fastq/*\//}_screen.txt"
 fastqscreen_txt="${fastqscreen_txt/.fastq.gz/}"
+fastqscreen_png="${fastqscreen_txt/_screen.txt/_screen.png}"
 
 # unload all loaded modulefiles
 module purge
-module add default-environment
 
 
 #########################
@@ -82,6 +82,8 @@ fi
 # ignore paired reads (in case of rna-seq, paired reads may be too far apart and will not align)
 
 module add fastq_screen/0.13.0
+# ImageMagick for "montage" for combining plots
+module add imagemagick/7.0.8
 
 bowtie2_bin=$(cat "$fastqscreen_conf" | grep "^BOWTIE2" | head -1 | tr '[:space:]' '\t' | tr -s '\t' | cut -f 2)
 
@@ -90,14 +92,17 @@ echo " * fastq_screen: $(which fastq_screen) "
 echo " * fastq_screen version: $(fastq_screen --version) "
 echo " * bowtie2: $bowtie2_bin "
 echo " * bowtie2 version: $($bowtie2_bin --version 2>&1 | head -1) "
+echo " * fastq_screen conf: $fastqscreen_conf "
+echo " * threads: $threads "
 echo " * FASTQ: $fastq "
 echo " * out TXT: $fastqscreen_txt "
+echo " * out PNG: $fastqscreen_png "
 echo
 
 CMD="
 fastq_screen \
---threads $threads \
 --aligner bowtie2 \
+--threads $threads \
 --subset 1000000 \
 --conf $fastqscreen_conf \
 --outdir $fastqscreen_dir \
@@ -112,8 +117,17 @@ $CMD
 
 # check that output generated
 
+# check if TXT file is present
 if [ ! -s "$fastqscreen_txt" ] ; then
 	echo -e "\n $script_name ERROR: TXT $fastqscreen_txt NOT GENERATED \n" >&2
+	exit 1
+fi
+
+# check if PNG file is present (if there was a problem with graphics devices)
+if [ ! -s "$fastqscreen_png" ] ; then
+	echo -e "\n $script_name ERROR: PNG $fastqscreen_png NOT GENERATED \n" >&2
+	# delete TXT since something went wrong
+	rm -fv "$fastqscreen_txt"
 	exit 1
 fi
 
@@ -123,10 +137,6 @@ fi
 
 # summary
 
-# ImageMagick for "montage" for combining plots
-module add imagemagick/7.0.8
-
-
 # combine charts into a single pdf
 combined_pdf="${proj_dir}/summary.fastqscreen.pdf"
 rm -f "$combined_pdf"
@@ -135,15 +145,15 @@ convert "${fastqscreen_dir}/*screen.png" "$combined_pdf"
 
 # combine charts into a single png
 
-combined_png_3w="${proj_dir}/summary.fastqscreen.3w.png"
+combined_png_2w="${proj_dir}/summary.fastqscreen.2w.png"
 combined_png_4w="${proj_dir}/summary.fastqscreen.4w.png"
 
-rm -f "$combined_png_3w"
+rm -f "$combined_png_2w"
 rm -f "$combined_png_4w"
 
 # -geometry +20+20 = 20px x and y padding
 # -tile 3x = 3 images wide
-montage -geometry +20+20 -tile 3x "${fastqscreen_dir}/*screen.png" "$combined_png_3w"
+montage -geometry +20+20 -tile 2x "${fastqscreen_dir}/*screen.png" "$combined_png_2w"
 montage -geometry +20+20 -tile 4x "${fastqscreen_dir}/*screen.png" "$combined_png_4w"
 
 
