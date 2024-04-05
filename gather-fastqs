@@ -36,7 +36,8 @@ sub main {
 	}
 
 	# find fastqs in given directory
-	my $find_fastq_cmd_names = "-name '*_R1_0*.fastq.gz' -or -name '*_R1.fastq.gz' -or -name '*_1.fastq.gz'";
+	my $find_fastq_cmd_names = "-name '*_R1_0*.fastq.gz' -or -name '*_R1.fastq.gz'";
+	$find_fastq_cmd_names .= " -or -name '*_1.fastq.gz' -or -name '*_1.fq.gz'";
 	my $find_fastq_cmd = "find -L $search_dir -maxdepth 5 -type f $find_fastq_cmd_names | LC_ALL=C sort";
 	my @fastqs = `$find_fastq_cmd`;
 
@@ -63,6 +64,7 @@ sub main {
 		$fastq_r2 =~ s/(.*)_R1_0([0-9]+.fastq.gz)/${1}_R2_0${2}/;
 		$fastq_r2 =~ s/(.*)_R1.fastq.gz/${1}_R2.fastq.gz/;
 		$fastq_r2 =~ s/(.*)_1.fastq.gz/${1}_2.fastq.gz/;
+		$fastq_r2 =~ s/(.*)_1.fq.gz/${1}_2.fq.gz/;
 
 		# blank if R2 does not exist
 		unless ( -e $fastq_r2 ) {
@@ -96,8 +98,8 @@ sub main {
 		$sample =~ s/_L00[0-9]_R[12].*//;
 		# no barcodes or lane
 		$sample =~ s/_R[12].fastq.gz//;
-		# no barcodes or lane
 		$sample =~ s/_[12].fastq.gz//;
+		$sample =~ s/_[12].fq.gz//;
 
 		push @samples, $sample;
 
