@@ -35,13 +35,12 @@ summary_csv="${summary_dir}/${sample}.${segment_name}.csv"
 
 frag_sizes_dir="${proj_dir}/QC-fragment-sizes"
 mkdir -p "$frag_sizes_dir"
-frag_sizes_png="${frag_sizes_dir}/${sample}.png"
+frag_sizes_png="${frag_sizes_dir}/${sample}.sizes.600.png"
 frag_sizes_csv="${frag_sizes_dir}/${sample}.sizes.csv"
 frag_sizes_stats_csv="${frag_sizes_dir}/${sample}.stats.csv"
 
 # unload all loaded modulefiles
 module purge
-module add default-environment
 
 
 #########################
@@ -78,7 +77,7 @@ code_dir=$(dirname $(dirname "$script_path"))
 
 # calculate and plot fragment size distribution
 
-module add r/3.6.1
+module add r/4.1.2
 
 echo
 echo " * R: $(readlink -f $(which R)) "
@@ -131,19 +130,15 @@ module add imagemagick/7.0.8
 # combine charts into a single png
 
 combined_png_2w=${proj_dir}/summary.${segment_name}.2w.png
-combined_png_3w=${proj_dir}/summary.${segment_name}.3w.png
 combined_png_4w=${proj_dir}/summary.${segment_name}.4w.png
 
 rm -f "$combined_png_2w"
-rm -f "$combined_png_3w"
 rm -f "$combined_png_4w"
 
 # -geometry +20+20 = 20px x and y padding
 # -tile 4x = 4 images wide
-montage -geometry +20+20 -tile 2x "${frag_sizes_dir}/*.png" "$combined_png_2w"
-montage -geometry +20+20 -tile 3x "${frag_sizes_dir}/*.png" "$combined_png_3w"
-montage -geometry +20+20 -tile 4x "${frag_sizes_dir}/*.png" "$combined_png_4w"
-
+montage -geometry +20+20 -tile 2x "${frag_sizes_dir}/*.600.png" "$combined_png_2w"
+montage -geometry +20+20 -tile 4x "${frag_sizes_dir}/*.600.png" "$combined_png_4w"
 
 # header for summary file
 echo "#SAMPLE,MEAN FRAGMENT,MEDIAN FRAGMENT,SD FRAGMENT" > "$summary_csv"
