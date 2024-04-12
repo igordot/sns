@@ -37,7 +37,7 @@ echo " * code_dir: $code_dir "
 echo
 
 # specify maximum runtime for sbatch job
-# SBATCHTIME=6:00:00
+# SBATCHTIME=12:00:00
 
 
 #########################
@@ -54,7 +54,8 @@ fi
 peak_type=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-PEAKS-TYPE unknown)
 
 # set q-value cutoff to call significant regions (set to 0.05 by default)
-q_value=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-PEAKS-MACS-Q 0.05)
+q_value=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-PEAKS-MACS2-Q 0.05)
+q_value=$(bash "${code_dir}/scripts/get-set-setting.sh" "${proj_dir}/settings.txt" EXP-PEAKS-MACS3-Q 0.05)
 
 # if peak type is not known, there was a problem
 if [ "$peak_type" == "unknown" ] ; then
@@ -84,8 +85,13 @@ fi
 
 # segments
 
-segment_macs="peaks-macs"
-bash_cmd="bash ${code_dir}/segments/${segment_macs}.sh $proj_dir $peak_type $q_value $sample_treatment $bam_treatment $bam_control"
+segment_macs2="peaks-macs2"
+bash_cmd="bash ${code_dir}/segments/${segment_macs2}.sh $proj_dir $peak_type $q_value $sample_treatment $bam_treatment $bam_control"
+echo "CMD: $bash_cmd"
+($bash_cmd)
+
+segment_macs3="peaks-macs3"
+bash_cmd="bash ${code_dir}/segments/${segment_macs3}.sh $proj_dir $peak_type $q_value $sample_treatment $bam_treatment $bam_control"
 echo "CMD: $bash_cmd"
 ($bash_cmd)
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-# HMMRATAC peak calling for ATAC-seq
+# HMMRATAC peak calling for ATAC-seq (original Java implementation)
 
 
 # script filename
@@ -153,7 +153,8 @@ if [ ! -s "$peaks_gappedpeak" ] ; then
 	exit 1
 fi
 
-if [ ! -s "$summits_bed_original" ] ; then
+# summits file can be empty
+if [ ! -f "$summits_bed_original" ] ; then
 	echo -e "\n $script_name ERROR: summits $summits_bed_original not generated \n" >&2
 	exit 1
 fi
@@ -202,12 +203,12 @@ if [ ! -s "$peaks_gappedpeak" ] ; then
 	exit 1
 fi
 
-if [ ! -s "$summits_bed_final" ] ; then
+if [ ! -f "$summits_bed_final" ] ; then
 	echo -e "\n $script_name ERROR: summits $summits_bed_final not generated \n" >&2
 	exit 1
 fi
 
-if [ ! -s "$summits_bed_padded" ] ; then
+if [ ! -f "$summits_bed_padded" ] ; then
 	echo -e "\n $script_name ERROR: padded summits $summits_bed_padded not generated \n" >&2
 	exit 1
 fi
@@ -216,22 +217,49 @@ fi
 #########################
 
 
+# calculate FRiP (fraction of reads in peaks)
+
+# "ENCODE Consortium scrutinizes experiments in which the FRiP falls below 1%"
+# ENCODE ATAC-seq Data Standards: ">0.3, though values greater than 0.2 are acceptable"
+
+module add samtools/1.16
+
+echo
+echo " * samtools: $(readlink -f $(which samtools))"
+echo " * samtools version: $(samtools version | grep "samtools" | head -1)"
+echo
+
+num_reads=$(samtools view -c $bam)
+echo "num reads: $num_reads"
+
+num_reads_peaks=$(samtools view -c --target-file $peaks_bed $bam)
+echo "num reads in peaks: $num_reads_peaks"
+
+frip=$(echo "(${num_reads_peaks}/${num_reads})" | bc -l | cut -c 1-4)
+echo "FRiP: $frip"
+
+
+#########################
+
+
 # generate summary
 
 num_peaks_unfiltered=$(cat "$peaks_gappedpeak" | wc -l)
-echo "total peaks unfiltered: $num_peaks_unfiltered"
+echo "num peaks unfiltered: $num_peaks_unfiltered"
 
 num_peaks_filtered=$(cat "$peaks_bed" | wc -l)
-echo "total peaks filtered: $num_peaks_filtered"
+echo "num peaks filtered: $num_peaks_filtered"
 
 num_summits=$(cat "$summits_bed_final" | wc -l)
-echo "total summits: $num_summits"
+echo "num summits: $num_summits"
 
 # header for summary file
-echo "#SAMPLE,PEAKS HMMRATAC score ${score}" > "$summary_csv"
+peaks_label="HMMRATAC score ${score}"
+echo "#SAMPLE,PEAKS ${peaks_label},FRIP ${peaks_label}" > "$summary_csv"
 
 # summarize log file
-echo "${sample},${num_peaks_filtered}" >> "$summary_csv"
+echo "${sample},${num_peaks_filtered},${frip}" >> "$summary_csv"
+
 
 sleep 5
 

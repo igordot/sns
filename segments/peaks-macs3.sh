@@ -55,7 +55,7 @@ summary_dir="${proj_dir}/summary"
 mkdir -p "$summary_dir"
 summary_csv="${summary_dir}/${sample}.${segment_name}.csv"
 
-macs_peaks_dir="${proj_dir}/peaks-MACS-${settings_label}"
+macs_peaks_dir="${proj_dir}/peaks-MACS3-${settings_label}"
 mkdir -p "$macs_peaks_dir"
 peaks_bed="${macs_peaks_dir}/${sample}.peaks.bed"
 summits_bed="${macs_peaks_dir}/${sample}.summits.bed"
@@ -72,11 +72,10 @@ macs_bdg_control="${macs_logs_dir}/${sample}_control_lambda.bdg"
 
 bigwig_dir="${proj_dir}/BIGWIG"
 mkdir -p "$bigwig_dir"
-macs_bw="${bigwig_dir}/${sample}.macs.bw"
+macs_bw="${bigwig_dir}/${sample}.macs3.bw"
 
 # unload all loaded modulefiles
 module purge
-module add default-environment
 
 
 #########################
@@ -168,12 +167,14 @@ fi
 
 # MACS
 
-# MACS is part of python/cpu/2.7.15 module
-module add python/cpu/2.7.15
+# MACS3 is part of condaenvs/2023/macs3 module
+module add condaenvs/2023/macs3
 
 echo
-echo " * MACS: $(readlink -f $(which macs2)) "
-echo " * MACS version: $(macs2 --version 2>&1) "
+echo " * MACS: $(readlink -f $(which macs3)) "
+echo " * MACS version: $(macs3 --version 2>&1) "
+echo " * Python: $(readlink -f $(which python)) "
+echo " * Python version: $(python --version 2>&1) "
 echo " * BAM treatment: $bam_treat "
 echo " * BAM control: $bam_control "
 echo " * MACS genome: $macs_genome "
@@ -186,9 +187,9 @@ echo
 cd "$macs_logs_dir" || exit 1
 
 bash_cmd="
-macs2 callpeak \
+macs3 callpeak \
 --verbose 2 \
---bdg --SPMR \
+--bdg --SPMR --call-summits \
 --keep-dup all \
 $analysis_params \
 --gsize $macs_genome \
@@ -222,7 +223,7 @@ fi
 # generate an image about the model based on the data
 # --nomodel will bypass building the shifting model
 
-module add r/3.6.1
+module add r/4.1.2
 
 if [ -s "$model_r" ] ; then
 
@@ -247,7 +248,8 @@ sleep 5
 
 # generate a blacklist-filtered BED file
 
-module add bedtools/2.27.1
+module purge
+module add bedtools/2.30.0
 
 echo
 echo " * bedtools: $(readlink -f $(which bedtools)) "
@@ -270,6 +272,7 @@ if [ -s "$summits_file" ] ; then
 	bash_cmd="
 	bedtools intersect -wa -a $summits_file -b $peaks_bed \
 	| LC_ALL=C sort -k1,1 -k2,2n \
+	| uniq \
 	> $summits_bed
 	"
 	echo -e "\n CMD: $bash_cmd \n"
@@ -298,7 +301,9 @@ if [ ! -s "$macs_bdg_treat" ] ; then
 	exit 1
 fi
 
+# ucscutils/374 requires mariadb/5.5.64 to be loaded
 module add ucscutils/374
+module add mariadb/5.5.64
 
 if [ ! -s "$macs_bw" ] ; then
 
@@ -328,19 +333,48 @@ rm -fv "$macs_bdg_control"
 #########################
 
 
+# calculate FRiP (fraction of reads in peaks)
+
+# "ENCODE Consortium scrutinizes experiments in which the FRiP falls below 1%"
+# ENCODE ATAC-seq Data Standards: ">0.3, though values greater than 0.2 are acceptable"
+
+module add samtools/1.16
+
+echo
+echo " * samtools: $(readlink -f $(which samtools))"
+echo " * samtools version: $(samtools version | grep "samtools" | head -1)"
+echo
+
+num_reads=$(samtools view -c $bam_treat)
+echo "num reads: $num_reads"
+
+num_reads_peaks=$(samtools view -c --target-file $peaks_bed $bam_treat)
+echo "num reads in peaks: $num_reads_peaks"
+
+frip=$(echo "(${num_reads_peaks}/${num_reads})" | bc -l | cut -c 1-4)
+echo "FRiP: $frip"
+
+
+#########################
+
+
 # generate summary
 
 num_peaks_unfiltered=$(cat "$peaks_file" | wc -l)
-echo "total unfiltered peaks: $num_peaks_unfiltered"
+echo "num unfiltered peaks: $num_peaks_unfiltered"
 
 num_peaks_filtered=$(cat "$peaks_bed" | wc -l)
-echo "total filtered peaks: $num_peaks_filtered"
+echo "num filtered peaks: $num_peaks_filtered"
+
+num_summits=$(cat "$summits_bed" | wc -l)
+echo "num summits: $num_summits"
 
 # header for summary file
-echo "#SAMPLE,PEAKS MACS ${peak_type} q ${q_value}" > "$summary_csv"
+peaks_label="MACS3 ${peak_type} q ${q_value}"
+echo "#SAMPLE,PEAKS ${peaks_label},FRIP ${peaks_label}" > "$summary_csv"
 
 # summarize log file
-echo "${sample},${num_peaks_filtered}" >> "$summary_csv"
+echo "${sample},${num_peaks_filtered},${frip}" >> "$summary_csv"
 
 sleep 5
 
