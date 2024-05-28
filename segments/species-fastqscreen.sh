@@ -59,6 +59,7 @@ mkdir -p "$fastqscreen_dir"
 fastqscreen_txt="${fastqscreen_dir}/${fastq/*\//}_screen.txt"
 fastqscreen_txt="${fastqscreen_txt/.fastq.gz/}"
 fastqscreen_png="${fastqscreen_txt/_screen.txt/_screen.png}"
+fastqscreen_html="${fastqscreen_txt/_screen.txt/_screen.html}"
 
 # unload all loaded modulefiles
 module purge
@@ -84,6 +85,12 @@ fi
 module add fastq_screen/0.13.0
 # ImageMagick for "montage" for combining plots
 module add imagemagick/7.0.8
+
+# check that the binary is found
+if [ ! -x "$(command -v fastq_screen)" ]; then
+	echo -e "\n $script_name ERROR: fastq_screen module not loaded properly \n" >&2
+	exit 1
+fi
 
 bowtie2_bin=$(cat "$fastqscreen_conf" | grep "^BOWTIE2" | head -1 | tr '[:space:]' '\t' | tr -s '\t' | cut -f 2)
 
@@ -128,6 +135,7 @@ if [ ! -s "$fastqscreen_png" ] ; then
 	echo -e "\n $script_name ERROR: PNG $fastqscreen_png NOT GENERATED \n" >&2
 	# delete TXT since something went wrong
 	rm -fv "$fastqscreen_txt"
+	rm -fv "$fastqscreen_html"
 	exit 1
 fi
 

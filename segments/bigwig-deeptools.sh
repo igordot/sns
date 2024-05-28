@@ -71,6 +71,12 @@ fi
 
 module add deeptools/3.5.1
 
+# check that the binary is found
+if [ ! -x "$(command -v deeptools)" ]; then
+	echo -e "\n $script_name ERROR: deeptools module not loaded properly \n" >&2
+	exit 1
+fi
+
 echo
 echo " * Python: $(readlink -f $(which python)) "
 echo " * Python version: $(python --version 2>&1 | head -1) "

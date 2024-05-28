@@ -107,9 +107,9 @@ fi
 
 hmmratac_jar="/gpfs/data/igorlab/software/HMMRATAC/HMMRATAC_V1.2.10_exe.jar"
 
-# check if the picard jar file is present
+# check that the HMMRATAC jar file is present
 if [ ! -s "$hmmratac_jar" ] ; then
-	echo -e "\n $script_name ERROR: binary file $hmmratac_jar does not exist \n" >&2
+	echo -e "\n $script_name ERROR: jar file $hmmratac_jar does not exist \n" >&2
 	exit 1
 fi
 
