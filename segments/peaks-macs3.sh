@@ -360,11 +360,14 @@ echo "FRiP: $frip"
 
 # generate summary
 
-num_peaks_unfiltered=$(cat "$peaks_file" | wc -l)
-echo "num unfiltered peaks: $num_peaks_unfiltered"
+num_peaks_unfiltered=$(cat "$peaks_file" | cut -f 1-3 | uniq | wc -l)
+echo "num peaks unfiltered: $num_peaks_unfiltered"
 
-num_peaks_filtered=$(cat "$peaks_bed" | wc -l)
-echo "num filtered peaks: $num_peaks_filtered"
+num_peaks_filtered=$(cat "$peaks_bed" | cut -f 1-3 | uniq | wc -l)
+echo "num peaks filtered: $num_peaks_filtered"
+
+num_subpeaks=$(cat "$peaks_bed" | wc -l)
+echo "num subpeaks: $num_subpeaks"
 
 num_summits=$(cat "$summits_bed" | wc -l)
 echo "num summits: $num_summits"
