@@ -86,17 +86,13 @@ module add fastq_screen/0.13.0
 # ImageMagick for "montage" for combining plots
 module add imagemagick/7.0.8
 
-# check that the binary is found
-if [ ! -x "$(command -v fastq_screen)" ]; then
-	echo -e "\n $script_name ERROR: fastq_screen module not loaded properly \n" >&2
-	exit 1
-fi
-
 bowtie2_bin=$(cat "$fastqscreen_conf" | grep "^BOWTIE2" | head -1 | tr '[:space:]' '\t' | tr -s '\t' | cut -f 2)
 
 echo
 echo " * fastq_screen: $(which fastq_screen) "
 echo " * fastq_screen version: $(fastq_screen --version) "
+echo " * perl: $(which perl) "
+echo " * perl version: $(perl -version | grep "version") "
 echo " * bowtie2: $bowtie2_bin "
 echo " * bowtie2 version: $($bowtie2_bin --version 2>&1 | head -1) "
 echo " * fastq_screen conf: $fastqscreen_conf "
@@ -105,6 +101,22 @@ echo " * FASTQ: $fastq "
 echo " * out TXT: $fastqscreen_txt "
 echo " * out PNG: $fastqscreen_png "
 echo
+
+# check that the binary is found and executable
+if [ ! -x "$(command -v fastq_screen)" ]; then
+	echo -e "\n $script_name ERROR: fastq_screen module not loaded properly \n" >&2
+	exit 1
+fi
+if [ ! -x "$(command -v $bowtie2_bin)" ]; then
+	echo -e "\n $script_name ERROR: bowtie2 not found \n" >&2
+	exit 1
+fi
+
+# check that the appropriate perl module is loaded (should have GD::Graph module)
+if [ ! -s "$(perldoc -l GD::Graph)" ] ; then
+	echo -e "\n $script_name ERROR: perl GD::Graph module not found \n" >&2
+	exit 1
+fi
 
 CMD="
 fastq_screen \
