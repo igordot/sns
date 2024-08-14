@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you find this software useful, please cite it using these metadata."
 title: "Seq-N-Slide"
-abstract: "Automated workflows for common genomic sequencing-based protocols. Documentation is available at https://igordot.github.io/sns"
+abstract: "Seq-N-Slide is a set of streamlined analysis pipelines for common genomic sequencing assays, such as RNA-seq, ATAC-seq, ChIP-seq, WGS/WES, and WGBS/RRBS. Documentation is available at https://igordot.github.io/sns"
 type: software
 authors:
   - orcid: "https://orcid.org/0000-0003-4451-126X"
