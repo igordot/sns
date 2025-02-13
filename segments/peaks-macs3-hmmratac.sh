@@ -42,7 +42,8 @@ mkdir -p "$macs_logs_dir"
 macs_log_txt="${macs_logs_dir}/${sample}.macs3.txt"
 peaks_cutoff_tsv="${macs_logs_dir}/${sample}_cutoff_analysis.tsv"
 peaks_model_json="${macs_logs_dir}/${sample}_model.json"
-peaks_file="${macs_logs_dir}/${sample}_accessible_regions.gappedPeak"
+# gappedPeak in MACS 3.0.1, narrowPeak in MACS 3.0.2
+peaks_file="${macs_logs_dir}/${sample}_accessible_regions.narrowPeak"
 
 # unload all loaded modulefiles
 module purge
@@ -118,6 +119,7 @@ macs3 hmmratac \
 --name $sample \
 --blacklist $blacklist \
 --outdir $macs_logs_dir \
+--hmm-type poisson \
 2> $macs_log_txt \
 "
 echo -e "\n CMD: $bash_cmd \n"
@@ -140,7 +142,7 @@ if [ ! -s "$peaks_model_json" ] ; then
 fi
 
 if [ ! -s "$peaks_file" ] ; then
-	echo -e "\n $script_name ERROR: gappedPeak $peaks_file not generated \n" >&2
+	echo -e "\n $script_name ERROR: narrowPeak $peaks_file not generated \n" >&2
 	exit 1
 fi
 
@@ -148,34 +150,26 @@ fi
 #########################
 
 
-# generate a blacklist-filtered BED file
+# generate a clean BED file from a narrowPeak file
 
-# module add bedtools/2.27.1
+# narrowPeak format:
+# chrom start end name score strand signalValue pValue qValue peak
 
-# echo
-# echo " * bedtools path: $(readlink -f $(which bedtools)) "
-# echo " * bedtools version: $(bedtools --version) "
-# echo " * blacklist: $blacklist "
-# echo
-
-# gappedPeak format:
-# 1-5: chrom start end name score
-# 6-10: strand thickStart thickEnd itemRgb blockCount
-# 11-15: blockSizes blockStarts signalValue pValue qValue
-# MACS3 score, signalValue, pValue, and qValue are always set to 0
-
-# keep only peaks that do not overlap blacklist regions
-# bash_cmd="
-# cut -f 1,2,3,4 $peaks_file \
-# | grep -v 'type=gappedPeak' \
-# | bedtools intersect -v -a stdin -b $blacklist \
-# | LC_ALL=C sort -k1,1 -k2,2n \
-# > $peaks_bed
-# "
+# hmmratac narrowPeak format (accessible regions or HMM open state):
+# 1: chromosome name
+# 2: start position of the accessible region
+# 3: end position of the accessible region
+# 4: peak name
+# 5: peak score - maximum fold change (signal/average signal) within the peak
+# 6: not used
+# 7: not used
+# 8: not used
+# 9: peak summit position - relative position from the start to the peak summit (maximum fold change)
 
 bash_cmd="
 cut -f 1,2,3,4 $peaks_file \
-| grep -v 'type=gappedPeak' \
+| grep -v 'type=narrowPeak' \
+| cut -f 1-6 \
 | LC_ALL=C sort -k1,1 -k2,2n \
 > $peaks_bed
 "
@@ -223,12 +217,6 @@ echo "FRiP: $frip"
 
 
 # generate summary
-
-# num_peaks_unfiltered=$(cat "$peaks_file" | grep -v "type=gappedPeak" | wc -l)
-# echo "num peaks unfiltered: $num_peaks_unfiltered"
-
-# num_peaks_filtered=$(cat "$peaks_bed" | wc -l)
-# echo "num peaks filtered: $num_peaks_filtered"
 
 num_peaks=$(cat "$peaks_bed" | wc -l)
 echo "num peaks: $num_peaks"
