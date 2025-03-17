@@ -144,23 +144,29 @@ done
 
 reads_R1="0"
 reads_R2="0"
+length_R1="0"
+length_R2="0"
 
 if [ -s "$fastq_R1_clean" ] ; then
 	lines_R1=$(zcat "$fastq_R1_clean" | wc -l)
 	reads_R1=$(echo "${lines_R1}/4" | bc)
+	length_R1=$(zcat "$fastq_R1_clean" | head -4000000 | sed -n '2~4p' | wc -L)
 fi
 
 if [ -s "$fastq_R2_clean" ] ; then
 	lines_R2=$(zcat "$fastq_R2_clean" | wc -l)
 	reads_R2=$(echo "${lines_R2}/4" | bc)
+	length_R2=$(zcat "$fastq_R2_clean" | head -4000000 | sed -n '2~4p' | wc -L)
 else
 	fastq_R2_clean=""
 fi
 
 echo "FASTQ R1: $fastq_R1_clean"
 echo "FASTQ R2: $fastq_R2_clean"
-echo "READS R1: $reads_R1"
-echo "READS R2: $reads_R2"
+echo "num reads R1: $reads_R1"
+echo "num reads R2: $reads_R2"
+echo "read length R1: $length_R1"
+echo "read length R2: $length_R2"
 
 
 #########################
@@ -169,8 +175,8 @@ echo "READS R2: $reads_R2"
 # generate summary
 # problematic samples are included so there is a record of them in the summary tables
 
-echo "#SAMPLE,R1 RAW READS,R2 RAW READS" > "$summary_csv"
-echo "${sample},${reads_R1},${reads_R2}" >> "$summary_csv"
+echo "#SAMPLE,R1 RAW READS,R2 RAW READS,READ LENGTH" > "$summary_csv"
+echo "${sample},${reads_R1},${reads_R2},${length_R1}+${length_R2}" >> "$summary_csv"
 
 sleep 5
 
