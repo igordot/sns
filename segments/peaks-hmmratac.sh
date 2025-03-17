@@ -49,7 +49,6 @@ summits_bed_original="${hmmratac_logs_dir}/${sample}_summits.bed"
 
 # unload all loaded modulefiles
 module purge
-module add default-environment
 
 
 #########################
@@ -131,7 +130,7 @@ echo " * out summits BED final: $summits_bed_final "
 echo
 
 bash_cmd="
-java -Xms32G -Xmx32G -jar $hmmratac_jar \
+java -Xms64G -Xmx64G -jar $hmmratac_jar \
 --genome $chrom_sizes \
 --blacklist $blacklist \
 --bam $bam \
