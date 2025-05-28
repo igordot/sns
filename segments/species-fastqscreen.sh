@@ -82,9 +82,9 @@ fi
 # fastq_screen
 # ignore paired reads (in case of rna-seq, paired reads may be too far apart and will not align)
 
-module add fastq_screen/0.13.0
+module add fastq_screen/0.16.0
 # ImageMagick for "montage" for combining plots
-module add imagemagick/7.0.8
+module add imagemagick/7.1.1
 
 bowtie2_bin=$(cat "$fastqscreen_conf" | grep "^BOWTIE2" | head -1 | tr '[:space:]' '\t' | tr -s '\t' | cut -f 2)
 
