@@ -52,7 +52,6 @@ star_prefix="${star_logs_dir}/${sample}_"
 
 # unload all loaded modulefiles
 module purge
-module add default-environment
 
 
 #########################
@@ -112,6 +111,7 @@ fi
 # STAR
 
 # star/2.7.3a loads samtools/1.9
+# reference genome version 2.7.1a (updated in 2.7.4a)
 module add star/2.7.3a
 
 echo
@@ -162,13 +162,6 @@ eval "$bash_cmd"
 
 sleep 5
 
-# index bam
-bash_cmd="samtools index $bam"
-echo "CMD: $bash_cmd"
-eval "$bash_cmd"
-
-sleep 5
-
 
 #########################
 
@@ -188,20 +181,37 @@ if [ ! -s "$bam" ] ; then
 	exit 1
 fi
 
-# check if BAM index is present (generated only if BAM is valid)
-if [ ! -s "$bai" ] ; then
-	echo -e "\n $script_name ERROR: BAM index $bai not generated \n" >&2
-	# delete BAM since something went wrong and it might be corrupted
-	rm -fv "$bam"
-	exit 1
-fi
-
 # check if gene counts file is present
 if [ ! -s "${star_prefix}ReadsPerGene.out.tab" ] ; then
 	echo -e "\n $script_name ERROR: counts ${star_prefix}ReadsPerGene.out.tab not generated \n" >&2
 	# delete BAM and BAI since something went wrong and they might be corrupted
 	rm -fv "$bam"
-	rm -fv "$bai"
+	exit 1
+fi
+
+
+#########################
+
+
+# index BAM
+
+bash_cmd="samtools index $bam"
+echo "CMD: $bash_cmd"
+eval "$bash_cmd"
+
+sleep 5
+
+
+#########################
+
+
+# check that output generated
+
+# check if BAM index is present (generated only if BAM is valid)
+if [ ! -s "$bai" ] ; then
+	echo -e "\n $script_name ERROR: BAM index $bai not generated \n" >&2
+	# delete BAM since something went wrong and it might be corrupted
+	rm -fv "$bam"
 	exit 1
 fi
 
