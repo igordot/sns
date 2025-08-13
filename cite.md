@@ -5,13 +5,11 @@ nav_order: 7
 
 # Citation info
 
-If you use Seq-N-Slide in published research, please cite it using the following metadata.
+Please cite Seq-N-Slide if you use it in published research.
 
-APA:
-
-```
-Dolgalev, I. Seq-N-Slide [Computer software]. https://doi.org/10.5281/zenodo.5550459
-```
+You can [download a RIS file](CITATION.ris) that can be imported into a reference manager such as EndNote, Zotero, or Paperpile.
+For EndNote, the file should be recognized automatically when you try to open it.
+Otherwise, go to File > Import and set the import option to Reference Manager (RIS) if prompted.
 
 BibTeX:
 
