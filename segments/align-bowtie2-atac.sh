@@ -80,7 +80,6 @@ flagstat_txt="${logs_dir}/${sample}.flagstat.txt"
 
 # unload all loaded modulefiles
 module purge
-module add default-environment
 
 
 #########################
@@ -119,8 +118,8 @@ fi
 # step 3: sort BAM
 # to do: add Picard AddOrReplaceReadGroups for extra compatibility
 
-module add bowtie2/2.3.4.1
-module add samtools/1.9
+module add bowtie2/2.5.3
+module add samtools/1.20
 module add sambamba/0.6.8
 
 sambamba_bin="sambamba-0.6.8"
