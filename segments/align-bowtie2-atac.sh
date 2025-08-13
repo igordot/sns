@@ -120,9 +120,7 @@ fi
 
 module add bowtie2/2.5.3
 module add samtools/1.20
-module add sambamba/0.6.8
-
-sambamba_bin="sambamba-0.6.8"
+sambamba_bin="/gpfs/share/apps/sambamba/1.0.1/sambamba"
 
 echo
 echo " * bowtie2: $(readlink -f $(which bowtie2)) "

@@ -63,7 +63,6 @@ bam_dd_flagstat="${dedup_logs_dir}/${sample}.flagstat.txt"
 
 # unload all loaded modulefiles
 module purge
-module add default-environment
 
 
 #########################
@@ -92,9 +91,8 @@ fi
 
 # sambamba markdup
 
-module add sambamba/0.6.8
-
-sambamba_bin="sambamba-0.6.8"
+# module add sambamba/0.6.8
+sambamba_bin="/gpfs/share/apps/sambamba/1.0.1/sambamba"
 
 echo
 echo " * sambamba: $(readlink -f $(which $sambamba_bin)) "
