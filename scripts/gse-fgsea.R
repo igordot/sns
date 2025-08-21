@@ -34,7 +34,8 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", pos_labe
   }
 
   # extract species-specific gene sets
-  genesets_tbl = msigdbr(species = species) %>% dplyr::mutate(gs_name = str_trunc(gs_name, 100))
+  genesets_tbl = msigdbr(species = species) %>% dplyr::mutate(gs_name = str_trunc(gs_name, 150))
+  message("msigdb version: ", unique(genesets_tbl$db_version))
 
   # check for sufficient number of gene set genes
   genes_msigdb = genesets_tbl %>% dplyr::pull(gene_symbol) %>% unique()
@@ -70,49 +71,55 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", pos_labe
     stop("most ranked genes are not represented in the gene set genes")
   }
 
-  # specify categories of interest (split C2 and C5 by sub-categories)
+  # specify collections/categories of interest
   # MSigDB 7.1 split TFT category
   # MSigDB 7.2 renamed GO categories
-  geneset_cats =
+  # MSigDB 2023.2.Hs added KEGG_MEDICUS and renamed C2:CP:KEGG to C2:CP:KEGG_LEGACY
+  geneset_colls =
     c(
       "Hallmark" = "H",
       "Chemical and Genetic Perturbations" = "CGP",
-      "KEGG" = "CP:KEGG",
+      "BioCarta" = "CP:BIOCARTA",
+      "KEGG" = "CP:KEGG_MEDICUS",
       "Pathway Interaction Database" = "CP:PID",
       "Reactome" = "CP:REACTOME",
-      "Transcription Factor Targets" = "TFT",
-      "Transcription Factor Targets" = "TFT:TFT_Legacy",
+      "WikiPathways" = "CP:WIKIPATHWAYS",
+      "Transcription Factor Targets" = "TFT:TFT_LEGACY",
       "GTRD Transcription Factor Targets" = "TFT:GTRD",
-      "GO Biological Process" = "BP",
+      "Curated Cancer Cell Atlas" = "3CA",
       "GO Biological Process" = "GO:BP",
-      "GO Cellular Component" = "CC",
       "GO Cellular Component" = "GO:CC",
-      "GO Molecular Function" = "MF",
       "GO Molecular Function" = "GO:MF",
+      "ImmuneSigDB" = "IMMUNESIGDB",
       "Oncogenic" = "C6"
     )
 
+  unknown_geneset_colls = setdiff(geneset_colls, c(genesets_tbl$gs_collection, genesets_tbl$gs_subcollection))
+  if (length(unknown_geneset_colls) > 0) {
+    message("unknown collections: ", toString(sort(unique(unknown_geneset_colls))))
+  }
+
   # get the available gene set categories (varies depending on the MSigDB version)
-  geneset_cats_msigdb = c(dplyr::pull(genesets_tbl, gs_cat), dplyr::pull(genesets_tbl, gs_subcat))
-  geneset_cats_msigdb = unique(geneset_cats_msigdb)
-  geneset_cats = geneset_cats[geneset_cats %in% geneset_cats_msigdb]
+  geneset_colls_msigdb = c(dplyr::pull(genesets_tbl, gs_collection), dplyr::pull(genesets_tbl, gs_subcollection))
+  geneset_colls_msigdb = unique(geneset_colls_msigdb)
+  geneset_colls = geneset_colls[geneset_colls %in% geneset_colls_msigdb]
 
   # run gene set enrichment for each category
-  for (geneset_name in names(geneset_cats)) {
+  for (geneset_name in names(geneset_colls)) {
 
     message("geneset enrichment: ", geneset_name)
 
     # define output file names
-    geneset_cat = geneset_cats[geneset_name]
-    geneset_cat_str = geneset_cat
-    geneset_cat_str = str_replace(geneset_cat_str, ":", "-")
-    geneset_cat_str = str_replace(geneset_cat_str, "_", "-")
-    geneset_prefix = glue("{file_prefix}.fgsea.{geneset_cat_str}")
+    geneset_coll = geneset_colls[geneset_name]
+    geneset_coll_str = geneset_coll
+    geneset_coll_str = str_replace(geneset_coll_str, ":", "-")
+    geneset_coll_str = str_replace(geneset_coll_str, "_", "-")
+    geneset_prefix = glue("{file_prefix}.fgsea.{geneset_coll_str}")
 
     # extract relevant gene sets
-    geneset_list = genesets_tbl %>% filter(gs_cat == geneset_cat)
+    geneset_list = genesets_tbl %>% filter(gs_collection == geneset_coll)
     if (nrow(geneset_list) == 0) {
-      geneset_list = genesets_tbl %>% filter(gs_subcat == geneset_cat)
+      geneset_list = genesets_tbl %>% filter(gs_subcollection == geneset_coll)
     }
     geneset_list = split(x = geneset_list$gene_symbol, f = geneset_list$gs_name)
 
@@ -132,7 +139,7 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", pos_labe
     fgsea_res$leading_edge_genes = sapply(fgsea_res$leadingEdge, paste, collapse = "|")
     fgsea_tbl =
       fgsea_res %>%
-      dplyr::filter(pval < 0.1) %>%
+      dplyr::filter(pval < 0.2) %>%
       dplyr::arrange(padj, pval, desc(abs(NES))) %>%
       dplyr::mutate(
         pval = if_else(pval < 0.00001, pval, round(pval, 5)),
@@ -163,7 +170,7 @@ gse_fgsea = function(stats_df, gene_col, rank_col, species, title = "", pos_labe
         geom_hline(yintercept = 0) +
         labs(
           title = title,
-          subtitle = glue("MSigDB {geneset_name} Gene Sets\n50 Most Significant"),
+          subtitle = glue("MSigDB {geneset_name} Gene Sets\nMost Significant"),
           x = "Gene Set",
           y = "Normalized Enrichment Score"
         )  +
