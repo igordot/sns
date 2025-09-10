@@ -40,7 +40,7 @@ echo " * command threads: $threads "
 echo
 
 # specify maximum runtime for sbatch job
-# SBATCHTIME=99:00:00
+# SBATCHTIME=120:00:00
 
 
 #########################
