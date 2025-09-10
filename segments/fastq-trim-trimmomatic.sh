@@ -66,7 +66,6 @@ trimmomatic_log="${trimmomatic_logs_dir}/${sample}.txt"
 
 # unload all loaded modulefiles
 module purge
-module add default-environment
 
 
 #########################
@@ -111,9 +110,9 @@ fi
 
 # Trimmomatic
 
-module add trimmomatic/0.36
+module add trimmomatic/0.40
 
-trimmomatic_jar="${TRIMMOMATIC_ROOT}/trimmomatic-0.36.jar"
+trimmomatic_jar="${TRIMMOMATIC_ROOT}/trimmomatic-0.40.jar"
 
 # check if the trimmomatic jar file is present
 if [ ! -s "$trimmomatic_jar" ] ; then
@@ -132,7 +131,10 @@ else
 fi
 
 echo
-echo " * Trimmomatic: $trimmomatic_jar "
+echo " * Java bin: $(readlink -f $(which java)) "
+echo " * Java version: $(java -version 2>&1 | grep -m 1 'version') "
+echo " * Trimmomatic jar: $trimmomatic_jar "
+echo " * Trimmomatic version: $(java -jar $trimmomatic_jar -version) "
 echo " * run type: $run_type_arg "
 echo " * FASTQ R1: $fastq_R1 "
 echo " * FASTQ R2: $fastq_R2 "
@@ -143,11 +145,11 @@ echo " * FASTQ R2 trimmed unpaired: $fastq_R2_trim_unpaired "
 echo
 
 bash_cmd="
-java -Xms8G -Xmx8G -jar $trimmomatic_jar \
+java -Xms32G -Xmx32G -jar $trimmomatic_jar \
 $run_type_arg \
 -threads $threads \
 $files_arg \
-ILLUMINACLIP:/gpfs/data/igorlab/ref/contaminants/trimmomatic.fa:2:30:10:1:true \
+ILLUMINACLIP:/gpfs/data/igorlab/ref/contaminants/trimmomatic.040.fa:2:30:10:2:True \
 TRAILING:5 SLIDINGWINDOW:4:15 MINLEN:35 \
 2> $trimmomatic_log
 "
