@@ -230,7 +230,8 @@ sub run_groups {
 	my $sbatch_name = "--job-name=sns.${route}";
 	my $sbatch_mail = "--mail-user=${email} --mail-type=FAIL,REQUEUE";
 	my $sbatch_res = "--time=10:00:00 --nodes=1 --ntasks=1 --cpus-per-task=5 --mem=50G";
-	my $sbatch_cmd = "sbatch $sbatch_res $sbatch_name $sbatch_mail --export=NONE --wrap='${cmd}'";
+	my $sbatch_part = "--partition=cpu_short,fn_short,gpu4_short,gpu8_short";
+	my $sbatch_cmd = "sbatch $sbatch_res $sbatch_part $sbatch_name $sbatch_mail --export=NONE --wrap='${cmd}'";
 
 	print "\n CMD: $sbatch_cmd \n";
 	system($sbatch_cmd);
