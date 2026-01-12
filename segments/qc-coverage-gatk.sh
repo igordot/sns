@@ -40,7 +40,6 @@ gatk_sample_summary="${out_prefix}.sample_summary"
 
 # unload all loaded modulefiles
 module purge
-module add default-environment
 
 
 #########################
@@ -99,6 +98,8 @@ fi
 
 # GATK settings
 
+module add java/1.8
+
 # command
 # this segment failed for canFam3 WES (1.1M targets) with error "adjust the maximum heap size provided to Java"
 gatk_jar="/gpfs/data/igorlab/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-1/GenomeAnalysisTK.jar"
@@ -119,6 +120,8 @@ gatk_log_level_arg="--logging_level ERROR"
 # on-target coverage
 
 echo
+echo " * Java bin: $(readlink -f $(which java)) "
+echo " * Java version: $(java -version 2>&1 | grep -m 1 'version') "
 echo " * GATK: $(readlink -f $gatk_jar) "
 echo " * GATK version: $($gatk_cmd --version) "
 echo " * BAM: $bam "

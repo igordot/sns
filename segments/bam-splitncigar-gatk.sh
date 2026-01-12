@@ -80,7 +80,6 @@ bam_split="${bam_split_dir}/${bam_base}.bam"
 
 # unload all loaded modulefiles
 module purge
-module add default-environment
 
 
 #########################
@@ -100,6 +99,7 @@ fi
 
 # GATK settings
 
+module add java/1.8
 module add r/3.6.1
 
 # command
@@ -121,6 +121,8 @@ gatk_log_level_arg="--logging_level ERROR"
 # GATK SplitNCigarReads
 
 echo
+echo " * Java bin: $(readlink -f $(which java)) "
+echo " * Java version: $(java -version 2>&1 | grep -m 1 'version') "
 echo " * GATK: $(readlink -f $gatk_jar) "
 echo " * GATK version: $($gatk_cmd --version) "
 echo " * BAM in: $bam "

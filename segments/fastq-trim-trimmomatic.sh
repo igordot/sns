@@ -110,6 +110,7 @@ fi
 
 # Trimmomatic
 
+module add java/1.8
 module add trimmomatic/0.40
 
 trimmomatic_jar="${TRIMMOMATIC_ROOT}/trimmomatic-0.40.jar"

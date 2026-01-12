@@ -44,7 +44,6 @@ out_prefix_bed="${out_prefix}.bed"
 
 # unload all loaded modulefiles
 module purge
-module add default-environment
 
 
 #########################
@@ -103,6 +102,8 @@ fi
 
 # GATK settings
 
+module add java/1.8
+
 # command
 gatk_jar="/gpfs/data/igorlab/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-1/GenomeAnalysisTK.jar"
 gatk_cmd="java -Xms8G -Xmx8G -jar $gatk_jar"
@@ -129,6 +130,8 @@ fi
 # on-target coverage
 
 echo
+echo " * Java bin: $(readlink -f $(which java)) "
+echo " * Java version: $(java -version 2>&1 | grep -m 1 'version') "
 echo " * GATK: $(readlink -f $gatk_jar) "
 echo " * GATK version: $($gatk_cmd --version) "
 echo " * BAM in: $bam "

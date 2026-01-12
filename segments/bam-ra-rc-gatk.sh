@@ -55,7 +55,6 @@ gatk_rc_pdf="${gatk_logs_dir}/${sample}.pdf"
 
 # unload all loaded modulefiles
 module purge
-module add default-environment
 
 
 #########################
@@ -146,6 +145,7 @@ fi
 
 # GATK settings
 
+module add java/1.8
 module add r/3.6.1
 
 # command
@@ -232,6 +232,8 @@ Rscript --vanilla "${code_dir}/scripts/test-package.R" naturalsort
 # realignment
 
 echo
+echo " * Java bin: $(readlink -f $(which java)) "
+echo " * Java version: $(java -version 2>&1 | grep -m 1 'version') "
 echo " * GATK: $(readlink -f $gatk_jar) "
 echo " * GATK version: $($gatk_cmd --version) "
 echo " * BAM IN: $bam "
