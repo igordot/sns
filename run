@@ -156,13 +156,14 @@ sub run_samples {
 		}
 	}
 
-	# request fewer threads per sample for larger projects (extra thread for overhead)
-	my $num_samples = @unique_samples;
+	# sbatch settings
+	my $email = '${USER}@nyulangone.org';
+	$email = `echo $email`;
+	chomp($email);
 	my $threads = "9";
-	if ($num_samples > 50) {
-		# deactivated due to causing memory issues in rare cases
-		# $threads = "5";
-	}
+	my $mem = $threads * 8;
+	my $sbatch_mail = "--mail-user=${email} --mail-type=FAIL,REQUEUE";
+	my $sbatch_res = "--time=${route_time} --nodes=1 --ntasks=1 --cpus-per-task=${threads} --mem=${mem}G";
 
 	# process each sample
 	my $current_sample = 1;
@@ -188,15 +189,8 @@ sub run_samples {
 		}
 
 		# sbatch command
-		my $email = '${USER}@nyulangone.org';
-		$email = `echo $email`;
-		chomp($email);
 		my $sbatch_name = "--job-name=sns.${route}.${sample}";
-		my $sbatch_mail = "--mail-user=${email} --mail-type=FAIL,REQUEUE";
-		my $mem = $threads * 8;
-		my $sbatch_res = "--time=${route_time} --nodes=1 --ntasks=1 --cpus-per-task=${threads} --mem=${mem}G";
 		my $sbatch_cmd = "sbatch $sbatch_res $sbatch_name $sbatch_mail --export=NONE --wrap='${cmd}'";
-
 		print "\n CMD: $sbatch_cmd \n";
 		system($sbatch_cmd);
 
