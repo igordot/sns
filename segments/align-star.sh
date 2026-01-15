@@ -114,8 +114,19 @@ fi
 # reference genome version 2.7.1a (updated in 2.7.4a)
 module add star/2.7.3a
 
+# check that the binary can be run
+if ! STAR --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: STAR cannot be executed \n" >&2
+	exit 1
+fi
+if ! samtools --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: samtools cannot be executed \n" >&2
+	exit 1
+fi
+
 echo
 echo " * STAR: $(readlink -f $(which STAR)) "
+echo " * STAR version: $(STAR --version) "
 echo " * samtools: $(readlink -f $(which samtools)) "
 echo " * samtools version: $(samtools --version | head -1) "
 echo " * STAR ref: $ref_star "
@@ -127,10 +138,10 @@ echo
 # change dir because STAR and samtools may generate temp or log files in working dir
 cd "$star_logs_dir"
 
-# --outFilterType BySJout - ENCODE standard option
-# --outSAMstrandField intronMotif - add XS strand tags to spliced reads
-# --outSAMattrRGline - first word contains the read group identifier and must start with "ID:"
-# --outSAMmapqUnique - int: 0 to 255: the MAPQ value for unique mappers
+# --outFilterType BySJout : ENCODE standard option
+# --outSAMstrandField intronMotif : add XS strand tags to spliced reads
+# --outSAMattrRGline : first word contains the read group identifier and must start with "ID:"
+# --outSAMmapqUnique : MAPQ value for unique mappers (0 to 255)
 
 # relevant errors:
 # "HTseq cannot deal with jM:B:c,-1 and jI:B:i,-1 SAM attributes which are output if you use (non-default) --outSAMmode Full"
