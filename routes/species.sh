@@ -30,13 +30,16 @@ code_dir=$(dirname $(dirname "$script_path"))
 threads=$SLURM_CPUS_PER_TASK
 threads=$(( threads - 1 ))
 
-# display settings
+# show settings
 echo
 echo " * proj_dir: $proj_dir "
 echo " * sample: $sample "
 echo " * code_dir: $code_dir "
 echo " * slurm threads: $SLURM_CPUS_PER_TASK "
 echo " * command threads: $threads "
+echo " * slurm nodename: $SLURMD_NODENAME "
+echo " * hostname: $(hostname) "
+echo " * time: $(date "+%Y-%m-%d %H:%M") "
 echo
 
 # specify maximum runtime for sbatch job
