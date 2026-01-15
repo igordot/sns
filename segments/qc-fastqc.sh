@@ -75,9 +75,9 @@ fi
 
 module add fastqc/0.11.7
 
-# check that the binary is found
-if [ ! -x "$(command -v fastqc)" ]; then
-	echo -e "\n $script_name ERROR: fastqc module not loaded properly \n" >&2
+# check that the binary can be run
+if ! fastqc --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: fastqc cannot be executed \n" >&2
 	exit 1
 fi
 
