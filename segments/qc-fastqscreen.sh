@@ -85,10 +85,26 @@ fi
 # ignore paired reads (in case of rna-seq, paired reads may be too far apart and will not align)
 
 module add fastq_screen/0.16.0
-# ImageMagick for "montage" for combining plots
+# ImageMagick (convert/montage) for combining plots
 module add imagemagick/7.1.1
 
 bowtie2_bin=$(cat "$fastqscreen_conf" | grep "^BOWTIE2" | head -1 | tr '[:space:]' '\t' | tr -s '\t' | cut -f 2)
+
+# check that the binary can be run
+if ! fastq_screen --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: fastq_screen cannot be executed \n" >&2
+	exit 1
+fi
+if ! $bowtie2_bin --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: bowtie2 cannot be executed \n" >&2
+	exit 1
+fi
+
+# check that the appropriate perl module is loaded (should have GD::Graph module)
+if [ ! -s "$(perldoc -l GD::Graph)" ] ; then
+	echo -e "\n $script_name ERROR: perl GD::Graph module not found \n" >&2
+	exit 1
+fi
 
 echo
 echo " * fastq_screen: $(which fastq_screen) "
@@ -104,22 +120,6 @@ echo " * out TXT: $fastqscreen_txt "
 echo " * out PNG: $fastqscreen_png "
 echo " * out HTML: $fastqscreen_html "
 echo
-
-# check that the binary is found and executable
-if [ ! -x "$(command -v fastq_screen)" ]; then
-	echo -e "\n $script_name ERROR: fastq_screen module not loaded properly \n" >&2
-	exit 1
-fi
-if [ ! -x "$(command -v $bowtie2_bin)" ]; then
-	echo -e "\n $script_name ERROR: bowtie2 not found \n" >&2
-	exit 1
-fi
-
-# check that the appropriate perl module is loaded (should have GD::Graph module)
-if [ ! -s "$(perldoc -l GD::Graph)" ] ; then
-	echo -e "\n $script_name ERROR: perl GD::Graph module not found \n" >&2
-	exit 1
-fi
 
 CMD="
 fastq_screen \
@@ -163,21 +163,17 @@ fi
 # combine charts into a single pdf
 combined_pdf="${proj_dir}/summary.fastqscreen.pdf"
 rm -f "$combined_pdf"
-convert "${fastqscreen_dir}/*screen.png" "$combined_pdf"
-
+magick "${fastqscreen_dir}/*screen.png" "$combined_pdf"
 
 # combine charts into a single png
-
+# -geometry +20+20 : 20px x and y padding
+# -tile 3x : 3 images wide
 combined_png_2w="${proj_dir}/summary.fastqscreen.2w.png"
-combined_png_4w="${proj_dir}/summary.fastqscreen.4w.png"
-
 rm -f "$combined_png_2w"
+magick montage -geometry +20+20 -tile 2x "${fastqscreen_dir}/*screen.png" "$combined_png_2w"
+combined_png_4w="${proj_dir}/summary.fastqscreen.4w.png"
 rm -f "$combined_png_4w"
-
-# -geometry +20+20 = 20px x and y padding
-# -tile 3x = 3 images wide
-montage -geometry +20+20 -tile 2x "${fastqscreen_dir}/*screen.png" "$combined_png_2w"
-montage -geometry +20+20 -tile 4x "${fastqscreen_dir}/*screen.png" "$combined_png_4w"
+magick montage -geometry +20+20 -tile 4x "${fastqscreen_dir}/*screen.png" "$combined_png_4w"
 
 
 #########################
