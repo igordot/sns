@@ -4,9 +4,8 @@ use strict;
 use warnings;
 use File::Basename;
 use File::Spec;
-use Cwd;
-use Cwd 'abs_path';
-use Time::HiRes;
+use Cwd qw(getcwd abs_path);
+use Time::HiRes qw(sleep);
 
 my $HELP = <<HELP;
 
@@ -14,12 +13,12 @@ my $HELP = <<HELP;
   Must be executed from a project directory that contains the samples.fastq-raw.csv file.
 
   usage: run route
-  * route = name of pipeline (corresponds to a file in routes directory)
+  * route = name of pipeline (corresponds to one of the files in the routes directory)
 
 HELP
 
-if (!$ARGV[0]) {
-	die $HELP;
+if ( !$ARGV[0] ) {
+    die $HELP;
 }
 
 main();
@@ -27,211 +26,214 @@ main();
 # main subroutine
 sub main {
 
-	my $route = $ARGV[0];
+    my $route = $ARGV[0];
 
-	# current dir (should be the project dir)
-	my $project_dir = getcwd();
-	print "project dir: $project_dir \n";
+    # current dir (should be the project dir)
+    my $project_dir = getcwd();
+    print "project dir: $project_dir \n";
 
-	# code ("sns") dir (where this file is)
-	my $code_dir = File::Spec->rel2abs(__FILE__);
-	$code_dir = dirname($code_dir);
-	chomp($code_dir);
-	print "code dir: $code_dir \n";
-	sleep(1);
+    # code ("sns") dir (where this file is)
+    my $code_dir = File::Spec->rel2abs(__FILE__);
+    $code_dir = dirname($code_dir);
+    print "code dir: $code_dir \n";
+    sleep(1);
 
-	# check that the specified route exists
-	my $route_script = "${code_dir}/routes/${route}.sh";
-	unless ( -e $route_script ) {
-		die "\n\n ERROR: $route DOES NOT EXIST \n\n";
-	}
+    # check that the specified route exists
+    my $route_script = "${code_dir}/routes/${route}.sh";
+    unless ( -e $route_script ) {
+        die "\n\n ERROR: $route does not exist \n\n";
+    }
 
-	# check that settings file exists
-	my $settings_txt = "${project_dir}/settings.txt";
-	unless ( -e $settings_txt ) {
-		die "\n\n ERROR: $settings_txt DOES NOT EXIST \n\n";
-	}
+    # check that settings file exists
+    my $settings_txt = "${project_dir}/settings.txt";
+    unless ( -e $settings_txt ) {
+        die "\n\n ERROR: $settings_txt does not exist \n\n";
+    }
 
-	# move to sbatch logs dir so the sbatch output ends up there
-	my $sbatch_logs_dir = "${project_dir}/logs-sbatch";
-	system("mkdir -p $sbatch_logs_dir");
-	print "logs dir: $sbatch_logs_dir \n";
-	chdir($sbatch_logs_dir);
+    # move to sbatch logs dir so the sbatch output ends up there
+    my $sbatch_logs_dir = "${project_dir}/logs-sbatch";
+    system( "mkdir", "-p", $sbatch_logs_dir ) == 0
+      or die "\n\n ERROR: failed to create logs dir $sbatch_logs_dir: $! \n\n";
+    print "logs dir: $sbatch_logs_dir \n";
+    chdir($sbatch_logs_dir);
 
-	# determine sample sheet depending on route type
-	my $samples_csv = get_sample_sheet($project_dir, $code_dir, $route);
-	print "sample sheet: $samples_csv \n";
-	sleep(1);
+    # determine sample sheet depending on route type
+    my $samples_csv = get_sample_sheet( $project_dir, $code_dir, $route );
+    print "sample sheet: $samples_csv \n";
+    sleep(1);
 
-	if ($route =~ "-groups-") {
-		# grouped samples route (all samples processed together)
-		run_groups($project_dir, $route, $route_script);
-	}
-	else {
-		# generic single-sample route or paired samples route (each sample or pair processed separately)
-		run_samples($project_dir, $route, $route_script, $samples_csv);
-	}
+    if ( $route =~ "-groups-" ) {
+
+        # grouped samples route (all samples processed together)
+        run_groups( $project_dir, $route, $route_script );
+    }
+    else {
+        # generic single-sample route or paired samples route (each sample or pair processed separately)
+        run_samples( $project_dir, $route, $route_script, $samples_csv );
+    }
 
 }
 
 # get the sample sheet depending on the route type
 sub get_sample_sheet {
-	my $project_dir = $_[0];
-	my $code_dir = $_[1];
-	my $route = $_[2];
+    my ( $project_dir, $code_dir, $route ) = @_;
 
-	my $samples_csv;
+    my $samples_csv;
 
-	if ($route =~ "-groups-") {
-		$samples_csv = abs_path("${project_dir}/samples.groups.csv");
-	}
-	elsif ($route =~ "-pairs-") {
-		$samples_csv = abs_path("${project_dir}/samples.pairs.csv");
-	}
-	else {
-		$samples_csv = abs_path("${project_dir}/samples.fastq-raw.csv");
+    if ( $route =~ "-groups-" ) {
+        $samples_csv = abs_path("${project_dir}/samples.groups.csv");
+    }
+    elsif ( $route =~ "-pairs-" ) {
+        $samples_csv = abs_path("${project_dir}/samples.pairs.csv");
+    }
+    else {
+        $samples_csv = abs_path("${project_dir}/samples.fastq-raw.csv");
 
-		# remove problematic characters from all existing samples sheets
-		my @all_samples_csvs = `ls -1 ${project_dir}/samples.*.csv`;
-		chomp(@all_samples_csvs);
-		while (my $csv = shift(@all_samples_csvs)) {
-			system("bash ${code_dir}/scripts/fix-csv.sh $csv");
-		}
+        # remove problematic characters from all existing samples sheets
+        my @all_samples_csvs = `ls -1 ${project_dir}/samples.*.csv`;
+        chomp(@all_samples_csvs);
+        while ( my $csv = shift(@all_samples_csvs) ) {
+            system( "bash", "${code_dir}/scripts/fix-csv.sh", $csv ) == 0
+              or die "\n\n ERROR: failed to fix CSV $csv: $! \n\n";
+        }
 
-		sleep(1);
-	}
+        sleep(1);
+    }
 
-	# check that sample sheet exists
-	unless ( -e $samples_csv ) {
-		die "\n\n ERROR: SAMPLE SHEET $samples_csv DOES NOT EXIST \n\n";
-	}
+    # check that sample sheet exists
+    unless ( -e $samples_csv ) {
+        die "\n\n ERROR: sample sheet $samples_csv does not exist \n\n";
+    }
 
-	# check that sample sheet is not empty
-	if ( -z $samples_csv ) {
-		die "\n\n ERROR: SAMPLE SHEET $samples_csv IS EMPTY \n\n";
-	}
+    # check that sample sheet is not empty
+    if ( -z $samples_csv ) {
+        die "\n\n ERROR: sample sheet $samples_csv is empty \n\n";
+    }
 
-	# remove problematic characters from sample sheet
-	system("bash ${code_dir}/scripts/fix-csv.sh $samples_csv");
+    # remove problematic characters from sample sheet
+    system( "bash", "${code_dir}/scripts/fix-csv.sh", $samples_csv ) == 0
+      or die "\n\n ERROR: failed to fix CSV $samples_csv: $! \n\n";
 
-	return($samples_csv);
+    return ($samples_csv);
 
+}
+
+# build and execute an sbatch command
+sub run_sbatch {
+    my ( $cpus, $mem, $time, $partitions, $job_name, $cmd ) = @_;
+
+    my $email = $ENV{USER} . '@nyulangone.org';
+
+    my @sbatch_cmd = (
+        "sbatch",
+        "--time=${time}",
+        "--nodes=1",
+        "--ntasks=1",
+        "--cpus-per-task=${cpus}",
+        "--mem=${mem}",
+        "--partition=${partitions}",
+        "--job-name=${job_name}",
+        "--mail-user=${email}",
+        "--mail-type=FAIL,REQUEUE",
+        "--export=NONE",
+        "--wrap=${cmd}",
+    );
+
+    print "\n CMD: " . join( " ", @sbatch_cmd ) . " \n";
+    system(@sbatch_cmd) == 0
+      or die "\n\n ERROR: failed to submit sbatch job for $job_name: $! \n\n";
 }
 
 # process samples and submit a job for each
 sub run_samples {
-	my $project_dir = $_[0];
-	my $route = $_[1];
-	my $route_script = $_[2];
-	my $samples_csv = $_[3];
+    my ( $project_dir, $route, $route_script, $samples_csv ) = @_;
 
-	# get the maximum runtime for route (for sbatch)
-	my $route_time = `cat $route_script | grep -m 1 "SBATCHTIME="`;
-	chomp($route_time);
-	$route_time =~ s/.*=//;
-	if (length($route_time) < 3 || length($route_time) > 15) {
-		die "\n\n ERROR: ROUTE RUNTIME $route_time NOT PROPERLY SPECIFIED IN ROUTE \n\n";
-	}
+    # get the maximum runtime for route (for sbatch)
+    my $route_time = `cat $route_script | grep -m 1 "SBATCHTIME="`;
+    chomp($route_time);
+    $route_time =~ s/.*=//;
+    if ( length($route_time) < 3 || length($route_time) > 15 ) {
+        die "\n\n ERROR: route runtime $route_time not properly specified in route \n\n";
+    }
 
-	# find unique samples based on the sample sheet
-	my @unique_samples = `cat $samples_csv | cut -d ',' -f 1 | LC_ALL=C sort | uniq`;
-	if ($route =~ "-pairs-") {
-		@unique_samples = `cat $samples_csv | grep -v "#SAMPLE" | tr ',' ':' | LC_ALL=C sort | uniq`;
-	}
-	chomp(@unique_samples);
+    # find unique samples based on the sample sheet
+    my @unique_samples = `cat $samples_csv | cut -d ',' -f 1 | LC_ALL=C sort | uniq`;
+    if ( $route =~ "-pairs-" ) {
+        @unique_samples = `cat $samples_csv | grep -v "#SAMPLE" | tr ',' ':' | LC_ALL=C sort | uniq`;
+    }
+    chomp(@unique_samples);
 
-	# check that sample names do not contain problematic characters
-	my @invalid_samples = grep(/[^\w\-\.\:\~]/, @unique_samples);
-	if (@invalid_samples) {
-		my $invalid_samples_str = join(', ', @invalid_samples);
-		die "\n\n ERROR: SAMPLES $invalid_samples_str CONTAIN PROBLEMATIC CHARACTERS \n\n";
-	}
+    # check that sample names do not contain problematic characters
+    my @invalid_samples = grep( /[^\w\-\.\:\~]/, @unique_samples );
+    if (@invalid_samples) {
+        my $invalid_samples_str = join( ', ', @invalid_samples );
+        die "\n\n ERROR: samples $invalid_samples_str contain problematic characters \n\n";
+    }
 
-	# check that pairs are valid (default sample sheet has normals as "NA")
-	if ($route =~ "-pairs-") {
-		my @invalid_pairs = grep(/:NA$/, @unique_samples);
-		if (@invalid_pairs) {
-			my $invalid_pairs_str = join(', ', @invalid_pairs);
-			die "\n\n ERROR: PAIRS $invalid_pairs_str CONTAIN MISSING SAMPLES (LABELED NA) \n\n";
-		}
-	}
+    # check that pairs are valid (default sample sheet has normals as "NA")
+    if ( $route =~ "-pairs-" ) {
+        my @invalid_pairs = grep( /:NA$/, @unique_samples );
+        if (@invalid_pairs) {
+            my $invalid_pairs_str = join( ', ', @invalid_pairs );
+            die "\n\n ERROR: pairs $invalid_pairs_str contain missing samples (labeled NA) \n\n";
+        }
+    }
 
-	# sbatch settings
-	my $email = '${USER}@nyulangone.org';
-	$email = `echo $email`;
-	chomp($email);
-	my $threads = "9";
-	my $mem = $threads * 8;
-	my $sbatch_mail = "--mail-user=${email} --mail-type=FAIL,REQUEUE";
-	my $sbatch_res = "--time=${route_time} --nodes=1 --ntasks=1 --cpus-per-task=${threads} --mem=${mem}G";
+    # sbatch settings
+    my $partitions = "cpu_short,gpu4_short,cpu_medium,gpu4_medium";
 
-	# process each sample
-	my $current_sample = 1;
-	while (my $sample = shift(@unique_samples)) {
+    # process each sample
+    my $current_sample = 1;
+    while ( my $sample = shift(@unique_samples) ) {
 
-		print "\n process sample $sample \n";
+        print "\n process sample $sample \n";
 
-		# route command
-		my $cmd = "bash $route_script $project_dir $sample";
+        # route command
+        my $cmd = "bash $route_script $project_dir $sample";
 
-		# split paired samples for command (needs two samples)
-		if ($route =~ "-pairs-") {
-			$sample =~ s/:/-/;
-			$cmd =~ s/:/ /;
-		}
+        # split paired samples for command (needs two samples)
+        if ( $route =~ "-pairs-" ) {
+            $sample =~ s/:/-/;
+            $cmd    =~ s/:/ /;
+        }
 
-		# check for "test" argument to test one sample without sbatch (for troubleshooting)
-		if (defined($ARGV[1]) && $ARGV[1] eq "test") {
-			print "\n\n test run started \n\n";
-			system("export SLURM_CPUS_PER_TASK=5 && $cmd");
-			print "\n\n test run finished \n\n";
-			exit;
-		}
+        # check for "test" argument to run one sample without sbatch (for troubleshooting)
+        if ( defined( $ARGV[1] ) && $ARGV[1] eq "test" ) {
+            print "\n\n test run started \n\n";
+            $ENV{SLURM_CPUS_PER_TASK} = 5;
+            system( "bash", $route_script, $project_dir, $sample ) == 0
+              or die "\n\n Test run failed: $! \n\n";
+            print "\n\n test run finished \n\n";
+            exit;
+        }
 
-		# sbatch command
-		my $sbatch_name = "--job-name=sns.${route}.${sample}";
-		my $sbatch_cmd = "sbatch $sbatch_res $sbatch_name $sbatch_mail --export=NONE --wrap='${cmd}'";
-		print "\n CMD: $sbatch_cmd \n";
-		system($sbatch_cmd);
+        # run sbatch job
+		my $job_name = "sns.${route}.${sample}";
+        run_sbatch( 9, "80G", $route_time, $partitions, $job_name, $cmd );
 
-		# pause between samples (sometimes job scheduler gets overwhelmed)
-		sleep(0.2);
+        # pause between samples (sometimes job scheduler gets overwhelmed)
+        sleep(0.2);
 
-		# extra pause for the first few samples so it's easier to fix obvious errors
-		if ($current_sample < 5) {
-			sleep(15);
-		}
+        # extra pause for the first few samples so it's easier to fix obvious errors
+        if ( $current_sample < 5 ) {
+            sleep(15);
+        }
 
-		$current_sample++;
+        $current_sample++;
 
-	}
+    }
 }
 
 # process sample groups (all samples processed together)
 sub run_groups {
-	my $project_dir = $_[0];
-	my $route = $_[1];
-	my $route_script = $_[2];
+    my ( $project_dir, $route, $route_script ) = @_;
 
-	# route command
-	my $cmd = "bash $route_script $project_dir";
-	# system($cmd);
+    # route command
+    my $cmd = "bash $route_script $project_dir";
 
-	# sbatch command
-	my $email = '${USER}@nyulangone.org';
-	$email = `echo $email`;
-	chomp($email);
-	my $sbatch_name = "--job-name=sns.${route}";
-	my $sbatch_mail = "--mail-user=${email} --mail-type=FAIL,REQUEUE";
-	my $sbatch_res = "--time=10:00:00 --nodes=1 --ntasks=1 --cpus-per-task=5 --mem=50G";
-	my $sbatch_part = "--partition=cpu_short,fn_short,gpu4_short,gpu8_short";
-	my $sbatch_cmd = "sbatch $sbatch_res $sbatch_part $sbatch_name $sbatch_mail --export=NONE --wrap='${cmd}'";
-
-	print "\n CMD: $sbatch_cmd \n";
-	system($sbatch_cmd);
+    # sbatch
+	my $job_name = "sns.${route}";
+    my $partitions = "cpu_short,fn_short,gpu4_short,gpu8_short";
+    run_sbatch( 5, "50G", "10:00:00", $partitions, $job_name, $cmd );
 
 }
-
-
-
-# end

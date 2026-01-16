@@ -13,55 +13,53 @@ my $HELP = <<HELP;
 
 HELP
 
-if (!$ARGV[0]) {
-	die $HELP;
+if ( !$ARGV[0] ) {
+    die $HELP;
 }
 
 main();
 
 # main subroutine
 sub main {
-	my $genome_arg = $ARGV[0];
+    my $genome_arg = $ARGV[0];
 
-	# pipeline directory (the directory that this file is in)
-	my $pipeline_dir = dirname(__FILE__);
+    # pipeline directory (the directory that this file is in)
+    my $pipeline_dir = dirname(__FILE__);
 
-	# settings file
-	my $settings_file = "settings.txt";
+    # settings file
+    my $settings_file = "settings.txt";
 
-	# check if the settings file already exists
-	if ( -e $settings_file ) {
-		die "\n\n ERROR: FILE $settings_file ALREADY EXISTS (DELETE IT TO GENERATE A NEW ONE) \n\n";
-	}
+    # check if the settings file already exists
+    if ( -e $settings_file ) {
+        die "\n\n ERROR: file $settings_file already exists (delete it to generate a new one) \n\n";
+    }
 
-	# set genome setting
-	my $genome_dir_setting;
-	if ($genome_arg =~ m/\//) {
-		# use directory if given
-		$genome_dir_setting = "GENOME-DIR|${genome_arg}\n";
-	}
-	else {
-		# use /gpfs/data/igorlab/ref if genome name is provided
-		$genome_dir_setting = "GENOME-DIR|/gpfs/data/igorlab/ref/${genome_arg}\n";
-	}
+    # set genome setting
+    my $genome_dir_setting;
+    if ( $genome_arg =~ m/\// ) {
+        # use directory if given
+        $genome_dir_setting = "GENOME-DIR|${genome_arg}\n";
+    }
+    else {
+        # use /gpfs/data/igorlab/ref if genome name is provided
+        $genome_dir_setting = "GENOME-DIR|/gpfs/data/igorlab/ref/${genome_arg}\n";
+    }
 
-	# save genome setting
-	open(my $fh, ">", $settings_file);
-	# print $fh $genome_setting;
-	print $fh $genome_dir_setting;
-	close $fh;
+    # save genome setting
+    open( my $fh, ">", $settings_file ) or die "\n\n ERROR: cannot open $settings_file: $! \n\n";
+    print $fh $genome_dir_setting;
+    close $fh;
 
-	# get values to make sure they were set properly
-	my $settings_genome = `bash ${pipeline_dir}/scripts/get-set-setting.sh $settings_file GENOME-DIR`;
-	my $settings_fasta = `bash ${pipeline_dir}/scripts/get-set-setting.sh $settings_file REF-FASTA`;
+    # get values to make sure they were set properly
+    my $settings_genome = `bash ${pipeline_dir}/scripts/get-set-setting.sh $settings_file GENOME-DIR`;
+    my $settings_fasta  = `bash ${pipeline_dir}/scripts/get-set-setting.sh $settings_file REF-FASTA`;
+    chomp($settings_genome);
+    chomp($settings_fasta);
 
-	# print values
-	print STDERR "\n";
-	print STDERR " REF DIR : $settings_genome \n";
-	print STDERR " REF FASTA : $settings_fasta \n";
+    # print values
+    print STDERR "\n";
+    print STDERR " REF DIR : $settings_genome \n";
+    print STDERR " REF FASTA : $settings_fasta \n";
+    print STDERR "\n";
 
 }
-
-
-
-# end
