@@ -124,21 +124,18 @@ fi
 
 # summary
 
-# "montage" is part of ImageMagick
-module add imagemagick/7.0.8
+# ImageMagick (convert/montage) for combining plots
+module add imagemagick/7.1.1
 
 # combine charts into a single png
-
+# -geometry +20+20 : 20px x and y padding
+# -tile 3x : 3 images wide
 combined_png_2w=${proj_dir}/summary.${segment_name}.2w.png
-combined_png_4w=${proj_dir}/summary.${segment_name}.4w.png
-
 rm -f "$combined_png_2w"
+magick montage -geometry +20+20 -tile 2x "${frag_sizes_dir}/*screen.png" "$combined_png_2w"
+combined_png_4w=${proj_dir}/summary.${segment_name}.4w.png
 rm -f "$combined_png_4w"
-
-# -geometry +20+20 = 20px x and y padding
-# -tile 4x = 4 images wide
-montage -geometry +20+20 -tile 2x "${frag_sizes_dir}/*.600.png" "$combined_png_2w"
-montage -geometry +20+20 -tile 4x "${frag_sizes_dir}/*.600.png" "$combined_png_4w"
+magick montage -geometry +20+20 -tile 4x "${frag_sizes_dir}/*screen.png" "$combined_png_4w"
 
 # header for summary file
 echo "#SAMPLE,MEAN FRAGMENT,MEDIAN FRAGMENT,SD FRAGMENT" > "$summary_csv"

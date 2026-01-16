@@ -39,7 +39,6 @@ summary_csv="${summary_dir}/${sample}.${segment_name}.csv"
 
 # unload all loaded modulefiles
 module purge
-module add default-environment
 
 
 #########################
@@ -90,18 +89,17 @@ fi
 
 # run Picard CollectRnaSeqMetrics
 
+module add java/1.8
 module add picard-tools/2.18.20
 # Picard requires R for some plotting
 module add r/4.1.2
-# ImageMagick for "montage" for combining plots
-module add imagemagick/7.0.8
 
 picard_jar="${PICARD_ROOT}/libs/picard.jar"
 
-# check if the picard jar file is present
-if [ ! -s "$picard_jar" ] ; then
-	echo -e "\n $script_name ERROR: FILE $picard_jar DOES NOT EXIST \n" >&2
-	exit 1
+# check that the binary can be run
+if ! java -jar "$picard_jar" -h 2>&1 | grep -q "USAGE" >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: picard cannot be executed \n" >&2
+	# exit 1
 fi
 
 # strand                       | cufflinks       | htseq   | picard      |
@@ -109,7 +107,12 @@ fi
 # rev (rev comp of transcript) | fr-firststrand  | reverse | SECOND_READ |
 
 echo
+echo " * Java bin: $(readlink -f $(which java)) "
+echo " * Java version: $(java -version 2>&1 | grep -m 1 'version') "
 echo " * Picard: $picard_jar "
+echo " * Picard version: $(java -jar $picard_jar CollectRnaSeqMetrics --version 2>&1) "
+echo " * R: $(readlink -f $(which R)) "
+echo " * R version: $(R --version | head -1) "
 echo " * BAM: $bam "
 echo " * refFlat: $refflat "
 echo " * ribosomal intervals: $rrna_interval_list "
@@ -117,7 +120,7 @@ echo " * out TXT: $metrics_txt "
 echo " * out PDF: $metrics_pdf "
 echo
 
-picard_base_cmd="java -Xms8G -Xmx8G -jar $picard_jar CollectRnaSeqMetrics \
+picard_base_cmd="java -Xms32G -Xmx32G -jar $picard_jar CollectRnaSeqMetrics \
 VERBOSITY=WARNING QUIET=true VALIDATION_STRINGENCY=LENIENT MAX_RECORDS_IN_RAM=2500000 \
 REF_FLAT=${refflat} \
 INPUT=${bam}"
@@ -145,7 +148,13 @@ fi
 #########################
 
 
-# generate a summary file
+# summary
+
+# Ghostscript and ImageMagick for combining plots
+# r/4.1.2 loads imagemagick/7.0.8
+module purge
+module add imagemagick/7.1.1
+module add ghostscript/10.04
 
 # RnaSeqMetrics output
 # https://broadinstitute.github.io/picard/picard-metric-definitions.html#RnaSeqMetrics
@@ -189,29 +198,22 @@ paste \
 | tr '\t' ',' \
 > $summary_csv
 
-
 # combine charts into a single pdf
-
+# using ghostscript because magick converts pdf to images and reduces quality
 combined_pdf="${proj_dir}/summary.${segment_name}.pdf"
-
 rm -f "$combined_pdf"
-
 # do not use quotes in filenames for ghostscript
 gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=${combined_pdf} ${metrics_dir}/*.pdf
 
 # combine charts into a single png
-
+# -geometry +20+20 : 20px x and y padding
+# -tile 3x : 3 images wide
 combined_png_3w="${proj_dir}/summary.${segment_name}.3w.png"
-combined_png_5w="${proj_dir}/summary.${segment_name}.5w.png"
-
 rm -f "$combined_png_3w"
+magick montage -geometry +20+20 -tile 3x "${metrics_dir}/*.pdf" "$combined_png_3w"
+combined_png_5w="${proj_dir}/summary.${segment_name}.5w.png"
 rm -f "$combined_png_5w"
-
-# -geometry +20+20 = 20px x and y padding
-# -tile 4x = 4 images wide
-montage -geometry +20+20 -tile 3x "${metrics_dir}/*.pdf" "$combined_png_3w"
-montage -geometry +20+20 -tile 5x "${metrics_dir}/*.pdf" "$combined_png_5w"
-
+magick montage -geometry +20+20 -tile 5x "${metrics_dir}/*.pdf" "$combined_png_5w"
 
 # combine all sample summaries
 cat ${summary_dir}/*.${segment_name}.csv| LC_ALL=C sort -t ',' -k1,1 | uniq > "${proj_dir}/summary.${segment_name}.csv"
