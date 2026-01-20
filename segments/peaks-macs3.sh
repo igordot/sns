@@ -170,6 +170,16 @@ fi
 # MACS3 is part of condaenvs/2023/macs3 module
 module add condaenvs/2023/macs3
 
+# check that the binary can be run
+if ! macs3 --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: macs3 cannot be executed \n" >&2
+	exit 1
+fi
+if [ -z "$(macs3 --version 2>/dev/null)" ]; then
+	echo -e "\n $script_name ERROR: macs3 cannot be executed \n" >&2
+	exit 1
+fi
+
 echo
 echo " * MACS: $(readlink -f $(which macs3)) "
 echo " * MACS version: $(macs3 --version 2>&1) "
@@ -251,6 +261,12 @@ sleep 5
 module purge
 module add bedtools/2.30.0
 
+# check that the binary can be run
+if ! bedtools --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: bedtools cannot be executed \n" >&2
+	exit 1
+fi
+
 echo
 echo " * bedtools: $(readlink -f $(which bedtools)) "
 echo " * bedtools version: $(bedtools --version) "
@@ -301,9 +317,15 @@ if [ ! -s "$macs_bdg_treat" ] ; then
 	exit 1
 fi
 
+# bedGraphToBigWig is part of UCSC Genome Browser Group's suite of programs
 # ucscutils/374 requires mariadb/5.5.64 to be loaded
-module add ucscutils/374
-module add mariadb/5.5.64
+module add ucscutils/398
+
+# check that the binary can be run
+if ! bedGraphToBigWig 2>&1 | grep -q "usage"; then
+	echo -e "\n $script_name ERROR: bedGraphToBigWig cannot be executed \n" >&2
+	exit 1
+fi
 
 if [ ! -s "$macs_bw" ] ; then
 
@@ -333,12 +355,29 @@ rm -fv "$macs_bdg_control"
 #########################
 
 
+# check that output generated
+
+if [ ! -s "$macs_bw" ] ; then
+	echo -e "\n $script_name ERROR: bigWig $macs_bw not generated \n" >&2
+	exit 1
+fi
+
+
+#########################
+
+
 # calculate FRiP (fraction of reads in peaks)
 
 # "ENCODE Consortium scrutinizes experiments in which the FRiP falls below 1%"
 # ENCODE ATAC-seq Data Standards: ">0.3, though values greater than 0.2 are acceptable"
 
 module add samtools/1.20
+
+# check that the binary can be run
+if ! samtools --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: samtools cannot be executed \n" >&2
+	exit 1
+fi
 
 echo
 echo " * samtools: $(readlink -f $(which samtools))"

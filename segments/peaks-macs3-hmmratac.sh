@@ -100,6 +100,12 @@ fi
 # MACS3 is part of condaenvs/2023/macs3 module
 module add condaenvs/2023/macs3
 
+# check that the binary can be run
+if ! macs3 --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: macs3 cannot be executed \n" >&2
+	exit 1
+fi
+
 echo
 echo " * MACS path: $(readlink -f $(which macs3)) "
 echo " * MACS version: $(macs3 --version 2>&1) "
@@ -197,6 +203,12 @@ fi
 # ENCODE ATAC-seq Data Standards: ">0.3, though values greater than 0.2 are acceptable"
 
 module add samtools/1.20
+
+# check that the binary can be run
+if ! samtools --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: samtools cannot be executed \n" >&2
+	exit 1
+fi
 
 echo
 echo " * samtools: $(readlink -f $(which samtools))"
