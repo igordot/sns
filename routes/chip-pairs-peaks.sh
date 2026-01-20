@@ -28,12 +28,16 @@ sample_control=$3
 code_dir=$(dirname $(dirname "$script_path"))
 sbatch_dir="${proj_dir}/logs-sbatch"
 
-# display settings
+# show settings
 echo
 echo " * proj_dir: $proj_dir "
 echo " * treatment sample: $sample_treatment "
 echo " * control sample: $sample_control "
 echo " * code_dir: $code_dir "
+echo " * slurm threads: $SLURM_CPUS_PER_TASK "
+echo " * slurm nodename: $SLURMD_NODENAME "
+echo " * hostname: $(hostname) "
+echo " * time: $(date "+%Y-%m-%d %H:%M") "
 echo
 
 # specify maximum runtime for sbatch job

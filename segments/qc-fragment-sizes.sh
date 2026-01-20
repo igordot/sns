@@ -79,6 +79,12 @@ code_dir=$(dirname $(dirname "$script_path"))
 
 module add r/4.1.2
 
+# check that the binary can be run
+if ! R --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: R cannot be executed \n" >&2
+	exit 1
+fi
+
 echo
 echo " * R: $(readlink -f $(which R)) "
 echo " * R version: $(R --version | head -1) "
@@ -125,6 +131,8 @@ fi
 # summary
 
 # ImageMagick (convert/montage) for combining plots
+# r/4.1.2 loads imagemagick/7.0.8
+module purge
 module add imagemagick/7.1.1
 
 # combine charts into a single png
@@ -132,10 +140,10 @@ module add imagemagick/7.1.1
 # -tile 3x : 3 images wide
 combined_png_2w=${proj_dir}/summary.${segment_name}.2w.png
 rm -f "$combined_png_2w"
-magick montage -geometry +20+20 -tile 2x "${frag_sizes_dir}/*screen.png" "$combined_png_2w"
+magick montage -geometry +20+20 -tile 2x "${frag_sizes_dir}/*.600.png" "$combined_png_2w"
 combined_png_4w=${proj_dir}/summary.${segment_name}.4w.png
 rm -f "$combined_png_4w"
-magick montage -geometry +20+20 -tile 4x "${frag_sizes_dir}/*screen.png" "$combined_png_4w"
+magick montage -geometry +20+20 -tile 4x "${frag_sizes_dir}/*.600.png" "$combined_png_4w"
 
 # header for summary file
 echo "#SAMPLE,MEAN FRAGMENT,MEDIAN FRAGMENT,SD FRAGMENT" > "$summary_csv"

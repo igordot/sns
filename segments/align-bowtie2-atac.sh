@@ -122,6 +122,20 @@ module add bowtie2/2.5.3
 module add samtools/1.20
 sambamba_bin="/gpfs/share/apps/sambamba/1.0.1/sambamba"
 
+# check that the binary can be run
+if ! bowtie2 --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: bowtie2 cannot be executed \n" >&2
+	exit 1
+fi
+if ! $sambamba_bin --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: sambamba cannot be executed \n" >&2
+	exit 1
+fi
+if ! samtools --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: samtools cannot be executed \n" >&2
+	exit 1
+fi
+
 echo
 echo " * bowtie2: $(readlink -f $(which bowtie2)) "
 echo " * bowtie2 version: $(bowtie2 --version 2>&1 | head -1) "

@@ -112,7 +112,15 @@ fi
 
 # create padded bed if needed
 
-# two steps in case orginal BED file does not end in ".bed"
+module add bedtools/2.27.1
+
+# check that the binary can be run
+if ! bedtools --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: bedtools cannot be executed \n" >&2
+	exit 1
+fi
+
+# two steps in case original BED file does not end in ".bed"
 bed_padded="${bed}.pad10"
 bed_padded=${bed_padded/%.bed.pad10/.pad10.bed}
 
@@ -125,7 +133,6 @@ cat $bed \
 "
 
 if [ ! -s "$bed_padded" ] ; then
-	module add bedtools/2.27.1
 	echo -e "\n CMD: $bed_pad_cmd \n"
 	eval "$bed_pad_cmd"
 	sleep 5
@@ -142,11 +149,23 @@ fi
 
 # LoFreq
 
+module add python/cpu/3.6.5
+
 lofreq_bin="/gpfs/data/igorlab/software/LoFreq/lofreq_star-2.1.3.1/bin/lofreq"
 lofreq_gt_py="/gpfs/data/igorlab/software/LoFreq/lofreq2_add_fake_gt.py"
 
+# check that the binary can be run
+if ! python --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: python cannot be executed \n" >&2
+	exit 1
+fi
+if ! $lofreq_bin version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: lofreq cannot be executed \n" >&2
+	exit 1
+fi
+
 echo
-echo " * LoFreq: $(readlink -f $(which $lofreq_bin)) "
+echo " * LoFreq: $(readlink -f $lofreq_bin) "
 echo " * LoFreq version: $($lofreq_bin version 2>&1 | head -1) "
 echo " * Python: $(readlink -f $(which python)) "
 echo " * Python version: $(python --version 2>&1) "
@@ -169,7 +188,7 @@ $lofreq_cmd
 
 sleep 5
 
-echo "num variants original: $(cat ${vcf_original} | grep -v '^#' | wc -l) "
+echo "num variants original: $(grep -cv '^#' "${vcf_original}") "
 
 
 #########################
@@ -191,7 +210,14 @@ fi
 # "you can just add fake columns"
 # http://csb5.github.io/lofreq/2015/11/23/where-are-the-format-and-sample-fields/
 
+module purge
 module add python/cpu/2.7.15
+
+# check that the binary can be run
+if ! python --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: python cannot be executed \n" >&2
+	exit 1
+fi
 
 echo
 echo " * lofreq2_add_fake_gt.py: $(readlink -f $(which $lofreq_gt_py)) "
@@ -231,8 +257,19 @@ fi
 
 # adjust the vcf for annovar compatibility (http://www.openbioinformatics.org/annovar/annovar_vcf.html)
 
+module purge
 module add htslib/1.9
 module add samtools/1.9
+
+# check that the binary can be run
+if ! samtools --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: samtools cannot be executed \n" >&2
+	exit 1
+fi
+if ! bcftools --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: bcftools cannot be executed \n" >&2
+	exit 1
+fi
 
 echo
 echo " * samtools: $(readlink -f $(which samtools)) "

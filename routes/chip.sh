@@ -107,6 +107,12 @@ if [ -z "$bam_dd" ] ; then
 	exit 1
 fi
 
+# check that sbatch can be run
+if ! sbatch --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: sbatch cannot be executed \n" >&2
+	exit 1
+fi
+
 # generate BigWig (deeptools)
 segment_bw_deeptools="bigwig-deeptools"
 bash_cmd="bash ${code_dir}/segments/${segment_bw_deeptools}.sh $proj_dir $sample 4 $bam_dd"

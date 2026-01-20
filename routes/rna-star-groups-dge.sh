@@ -29,6 +29,10 @@ code_dir=$(dirname $(dirname "$script_path"))
 echo
 echo " * proj_dir: $proj_dir "
 echo " * code_dir: $code_dir "
+echo " * slurm threads: $SLURM_CPUS_PER_TASK "
+echo " * slurm nodename: $SLURMD_NODENAME "
+echo " * hostname: $(hostname) "
+echo " * time: $(date "+%Y-%m-%d %H:%M") "
 echo
 
 

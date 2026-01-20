@@ -52,7 +52,6 @@ vcf_table="${annovar_out_prefix}.vcf.txt"
 
 # unload all loaded modulefiles
 module purge
-module add default-environment
 
 
 #########################
@@ -178,6 +177,12 @@ fi
 
 module add r/3.6.1
 
+# check that the binary can be run
+if ! R --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: R cannot be executed \n" >&2
+	exit 1
+fi
+
 echo
 echo " * R: $(readlink -f $(which R)) "
 echo " * R version: $(R --version | head -1) "
@@ -213,7 +218,15 @@ fi
 
 # ANNOVAR convert2annovar - convert VCF to ANNOVAR input format
 
+module load perl/5.28.0
+
+if ! perl --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: perl cannot be executed \n" >&2
+fi
+
 echo
+echo " * perl: $(readlink -f $(which perl)) "
+echo " * perl version: $(perl --version | grep 'version') "
 echo " * convert2annovar path: $(readlink -f ${annovar_path}/convert2annovar.pl) "
 echo " * ANNOVAR out dir: $annovar_dir "
 echo " * convert2annovar out : $annovar_input "

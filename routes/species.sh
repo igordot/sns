@@ -68,6 +68,12 @@ if [ -z "$fastq_R1" ] ; then
 	exit 1
 fi
 
+# check that sbatch can be run
+if ! sbatch --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: sbatch cannot be executed \n" >&2
+	exit 1
+fi
+
 # species using Centrifuge (a scan of the NCBI nt database)
 # separate job due to memory requirements
 # out-of-memory error with 150G (3/2024)
