@@ -179,7 +179,7 @@ module add r/3.6.1
 
 # check that the binary can be run
 if ! R --version >/dev/null 2>&1; then
-	echo -e "\n $script_name ERROR: R cannot be executed \n" >&2
+	echo -e "\n $script_name ERROR: R cannot be executed at $(which R) \n" >&2
 	exit 1
 fi
 
@@ -221,7 +221,7 @@ fi
 module load perl/5.28.0
 
 if ! perl --version >/dev/null 2>&1; then
-	echo -e "\n $script_name ERROR: perl cannot be executed \n" >&2
+	echo -e "\n $script_name ERROR: perl cannot be executed at $(which perl) \n" >&2
 fi
 
 echo

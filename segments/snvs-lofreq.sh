@@ -116,7 +116,7 @@ module add bedtools/2.27.1
 
 # check that the binary can be run
 if ! bedtools --version >/dev/null 2>&1; then
-	echo -e "\n $script_name ERROR: bedtools cannot be executed \n" >&2
+	echo -e "\n $script_name ERROR: bedtools cannot be executed at $(which bedtools) \n" >&2
 	exit 1
 fi
 
@@ -156,11 +156,11 @@ lofreq_gt_py="/gpfs/data/igorlab/software/LoFreq/lofreq2_add_fake_gt.py"
 
 # check that the binary can be run
 if ! python --version >/dev/null 2>&1; then
-	echo -e "\n $script_name ERROR: python cannot be executed \n" >&2
+	echo -e "\n $script_name ERROR: python cannot be executed at $(which python) \n" >&2
 	exit 1
 fi
 if ! $lofreq_bin version >/dev/null 2>&1; then
-	echo -e "\n $script_name ERROR: lofreq cannot be executed \n" >&2
+	echo -e "\n $script_name ERROR: lofreq cannot be executed at $lofreq_bin \n" >&2
 	exit 1
 fi
 
@@ -215,7 +215,7 @@ module add python/cpu/2.7.15
 
 # check that the binary can be run
 if ! python --version >/dev/null 2>&1; then
-	echo -e "\n $script_name ERROR: python cannot be executed \n" >&2
+	echo -e "\n $script_name ERROR: python cannot be executed at $(which python) \n" >&2
 	exit 1
 fi
 
@@ -263,11 +263,11 @@ module add samtools/1.9
 
 # check that the binary can be run
 if ! samtools --version >/dev/null 2>&1; then
-	echo -e "\n $script_name ERROR: samtools cannot be executed \n" >&2
+	echo -e "\n $script_name ERROR: samtools cannot be executed at $(which samtools) \n" >&2
 	exit 1
 fi
 if ! bcftools --version >/dev/null 2>&1; then
-	echo -e "\n $script_name ERROR: bcftools cannot be executed \n" >&2
+	echo -e "\n $script_name ERROR: bcftools cannot be executed at $(which bcftools) \n" >&2
 	exit 1
 fi
 

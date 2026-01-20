@@ -124,15 +124,15 @@ sambamba_bin="/gpfs/share/apps/sambamba/1.0.1/sambamba"
 
 # check that the binary can be run
 if ! bowtie2 --version >/dev/null 2>&1; then
-	echo -e "\n $script_name ERROR: bowtie2 cannot be executed \n" >&2
+	echo -e "\n $script_name ERROR: bowtie2 cannot be executed at $(which bowtie2) \n" >&2
 	exit 1
 fi
 if ! $sambamba_bin --version >/dev/null 2>&1; then
-	echo -e "\n $script_name ERROR: sambamba cannot be executed \n" >&2
+	echo -e "\n $script_name ERROR: sambamba cannot be executed at $sambamba_bin \n" >&2
 	exit 1
 fi
 if ! samtools --version >/dev/null 2>&1; then
-	echo -e "\n $script_name ERROR: samtools cannot be executed \n" >&2
+	echo -e "\n $script_name ERROR: samtools cannot be executed at $(which samtools) \n" >&2
 	exit 1
 fi
 
