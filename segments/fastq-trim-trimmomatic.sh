@@ -115,9 +115,13 @@ module add trimmomatic/0.40
 
 trimmomatic_jar="${TRIMMOMATIC_ROOT}/trimmomatic-0.40.jar"
 
-# check if the trimmomatic jar file is present
-if [ ! -s "$trimmomatic_jar" ] ; then
-	echo -e "\n $script_name ERROR: FILE $trimmomatic_jar DOES NOT EXIST \n" >&2
+# check that the binary can be run
+if [ ! -s "$trimmomatic_jar" ]; then
+	echo -e "\n $script_name ERROR: $trimmomatic_jar does not exist \n" >&2
+	exit 1
+fi
+if ! java -jar "$trimmomatic_jar" -version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: trimmomatic cannot be executed at $trimmomatic_jar \n" >&2
 	exit 1
 fi
 

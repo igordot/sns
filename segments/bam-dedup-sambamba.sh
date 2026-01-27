@@ -91,11 +91,16 @@ fi
 
 # sambamba markdup
 
-# module add sambamba/0.6.8
 sambamba_bin="/gpfs/share/apps/sambamba/1.0.1/sambamba"
 
+# check that the binary can be run
+if ! $sambamba_bin --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: sambamba cannot be executed at $sambamba_bin \n" >&2
+	exit 1
+fi
+
 echo
-echo " * sambamba: $(readlink -f $(which $sambamba_bin)) "
+echo " * sambamba: $(readlink -f $sambamba_bin) "
 echo " * sambamba version: $($sambamba_bin 2>&1 | grep -m 1 'sambamba') "
 echo " * BAM in: $bam "
 echo " * BAM out temp: $bam_dd_temp "

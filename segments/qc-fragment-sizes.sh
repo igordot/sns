@@ -81,7 +81,7 @@ module add r/4.1.2
 
 # check that the binary can be run
 if ! R --version >/dev/null 2>&1; then
-	echo -e "\n $script_name ERROR: R cannot be executed \n" >&2
+	echo -e "\n $script_name ERROR: R cannot be executed at $(which R) \n" >&2
 	exit 1
 fi
 

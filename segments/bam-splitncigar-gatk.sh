@@ -102,12 +102,18 @@ fi
 module add java/1.8
 module add r/3.6.1
 
+# check that the binary can be run
+if ! R --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: R cannot be executed at $(which R) \n" >&2
+	exit 1
+fi
+
 # command
 gatk_jar="/gpfs/data/igorlab/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-1/GenomeAnalysisTK.jar"
-gatk_cmd="java -Xms8G -Xmx8G -jar ${gatk_jar}"
+gatk_cmd="java -Xms32G -Xmx32G -jar ${gatk_jar}"
 
 if [ ! -s "$gatk_jar" ] ; then
-	echo -e "\n $script_name ERROR: GATK $gatk_jar DOES NOT EXIST \n" >&2
+	echo -e "\n $script_name ERROR: $gatk_jar does not exist \n" >&2
 	exit 1
 fi
 

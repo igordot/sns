@@ -218,7 +218,7 @@ fi
 
 # ANNOVAR convert2annovar - convert VCF to ANNOVAR input format
 
-module load perl/5.28.0
+module add perl/5.28.0
 
 if ! perl --version >/dev/null 2>&1; then
 	echo -e "\n $script_name ERROR: perl cannot be executed at $(which perl) \n" >&2

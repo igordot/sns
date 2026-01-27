@@ -93,7 +93,6 @@ fi
 
 # unload all loaded modulefiles
 module purge
-module add default-environment
 
 
 #########################
@@ -155,6 +154,12 @@ echo -e "\n ========== test R environment ========== \n"
 
 # load relevant modules
 module add r/4.1.2
+
+# check that the binary can be run
+if ! R --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: R cannot be executed at $(which R) \n" >&2
+	exit 1
+fi
 
 echo
 echo " * R: $(readlink -f $(which R)) "

@@ -97,9 +97,17 @@ module add r/4.1.2
 picard_jar="${PICARD_ROOT}/libs/picard.jar"
 
 # check that the binary can be run
+if [ ! -s "$picard_jar" ]; then
+	echo -e "\n $script_name ERROR: $picard_jar does not exist \n" >&2
+	exit 1
+fi
 if ! java -jar "$picard_jar" -h 2>&1 | grep -q "USAGE" >/dev/null 2>&1; then
-	echo -e "\n $script_name ERROR: picard cannot be executed \n" >&2
-	# exit 1
+	echo -e "\n $script_name ERROR: picard cannot be executed at $picard_jar \n" >&2
+	exit 1
+fi
+if ! R --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: R cannot be executed at $(which R) \n" >&2
+	exit 1
 fi
 
 # strand                       | cufflinks       | htseq   | picard      |

@@ -258,8 +258,9 @@ fi
 # adjust the vcf for annovar compatibility (http://www.openbioinformatics.org/annovar/annovar_vcf.html)
 
 module purge
-module add htslib/1.9
-module add samtools/1.9
+module add htslib/1.20
+module add samtools/1.20
+module add bcftools/1.20
 
 # check that the binary can be run
 if ! samtools --version >/dev/null 2>&1; then
@@ -270,12 +271,18 @@ if ! bcftools --version >/dev/null 2>&1; then
 	echo -e "\n $script_name ERROR: bcftools cannot be executed at $(which bcftools) \n" >&2
 	exit 1
 fi
+if ! bgzip --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: bgzip cannot be executed at $(which bgzip) \n" >&2
+	exit 1
+fi
 
 echo
 echo " * samtools: $(readlink -f $(which samtools)) "
 echo " * samtools version: $(samtools --version | head -1) "
 echo " * bcftools: $(readlink -f $(which bcftools)) "
+echo " * bcftools version: $(bcftools --version | head -1) "
 echo " * bgzip: $(readlink -f $(which bgzip)) "
+echo " * bgzip version: $(bgzip --version 2>&1 | head -1) "
 echo
 
 # create indexed VCF file

@@ -172,11 +172,11 @@ module add python/cpu/2.7.15
 
 # check that the binary can be run
 if ! macs2 --version >/dev/null 2>&1; then
-	echo -e "\n $script_name ERROR: macs2 cannot be executed \n" >&2
+	echo -e "\n $script_name ERROR: macs2 cannot be executed at $(which macs2) \n" >&2
 	exit 1
 fi
 if macs2 --version 2>&1 | grep -q "ERROR"; then
-	echo -e "\n $script_name ERROR: macs2 cannot be executed \n" >&2
+	echo -e "\n $script_name ERROR: macs2 cannot be executed at $(which macs2) \n" >&2
 	exit 1
 fi
 
@@ -235,6 +235,12 @@ fi
 
 module add r/4.1.2
 
+# check that the binary can be run
+if ! R --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: R cannot be executed at $(which R) \n" >&2
+	exit 1
+fi
+
 if [ -s "$model_r" ] ; then
 
 	echo
@@ -263,7 +269,7 @@ module add bedtools/2.30.0
 
 # check that the binary can be run
 if ! bedtools --version >/dev/null 2>&1; then
-	echo -e "\n $script_name ERROR: bedtools cannot be executed \n" >&2
+	echo -e "\n $script_name ERROR: bedtools cannot be executed at $(which bedtools) \n" >&2
 	exit 1
 fi
 
@@ -327,7 +333,7 @@ module add ucscutils/398
 
 # check that the binary can be run
 if ! bedGraphToBigWig 2>&1 | grep -q "usage"; then
-	echo -e "\n $script_name ERROR: bedGraphToBigWig cannot be executed \n" >&2
+	echo -e "\n $script_name ERROR: bedGraphToBigWig cannot be executed at $(which bedGraphToBigWig) \n" >&2
 	exit 1
 fi
 
@@ -379,7 +385,7 @@ module add samtools/1.20
 
 # check that the binary can be run
 if ! samtools --version >/dev/null 2>&1; then
-	echo -e "\n $script_name ERROR: samtools cannot be executed \n" >&2
+	echo -e "\n $script_name ERROR: samtools cannot be executed at $(which samtools) \n" >&2
 	exit 1
 fi
 

@@ -105,13 +105,13 @@ module add java/1.8
 
 # command
 gatk_jar="/gpfs/data/igorlab/software/GenomeAnalysisTK/GenomeAnalysisTK-3.8-1/GenomeAnalysisTK.jar"
-gatk_cmd="java -Xms8G -Xmx8G -jar ${gatk_jar}"
+gatk_cmd="java -Xms32G -Xmx32G -jar ${gatk_jar}"
 
 # error log (DEBUG, INFO (default), WARN, ERROR, FATAL, OFF)
 gatk_log_level_arg="--logging_level ERROR"
 
 if [ ! -s "$gatk_jar" ] ; then
-	echo -e "\n $script_name ERROR: GATK $gatk_jar DOES NOT EXIST \n" >&2
+	echo -e "\n $script_name ERROR: $gatk_jar does not exist \n" >&2
 	exit 1
 fi
 
@@ -173,12 +173,25 @@ fi
 
 # adjust the vcf for annovar compatibility (http://www.openbioinformatics.org/annovar/annovar_vcf.html)
 
-module add samtools/1.9
+module add samtools/1.20
+module add bcftools/1.20
 
 echo
 echo " * samtools: $(readlink -f $(which samtools)) "
 echo " * samtools version: $(samtools --version | head -1) "
+echo " * bcftools: $(readlink -f $(which bcftools)) "
+echo " * bcftools version: $(bcftools --version | head -1) "
 echo
+
+# check that the binary can be run
+if ! samtools --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: samtools cannot be executed at $(which samtools) \n" >&2
+	exit 1
+fi
+if ! bcftools --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: bcftools cannot be executed at $(which bcftools) \n" >&2
+	exit 1
+fi
 
 # 1) GATK HC is defining the AD field as "Number=." (VCF 4.1 specification) rather than "Number=R" (VCF 4.2 specification)
 # CMD: sed 's/AD,Number=./AD,Number=R/g' $vcf_original

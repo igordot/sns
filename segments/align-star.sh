@@ -116,11 +116,11 @@ module add star/2.7.3a
 
 # check that the binary can be run
 if ! STAR --version >/dev/null 2>&1; then
-	echo -e "\n $script_name ERROR: STAR cannot be executed \n" >&2
+	echo -e "\n $script_name ERROR: STAR cannot be executed at $(which STAR) \n" >&2
 	exit 1
 fi
 if ! samtools --version >/dev/null 2>&1; then
-	echo -e "\n $script_name ERROR: samtools cannot be executed \n" >&2
+	echo -e "\n $script_name ERROR: samtools cannot be executed at $(which samtools) \n" >&2
 	exit 1
 fi
 

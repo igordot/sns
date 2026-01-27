@@ -103,14 +103,22 @@ fi
 # BWA
 
 module add bwa/0.7.17
-module add sambamba/0.6.8
+sambamba_bin="/gpfs/share/apps/sambamba/1.0.1/sambamba"
 
-sambamba_bin="sambamba-0.6.8"
+# check that the binary can be run
+if ! bwa 2>&1 | grep -q "Version"; then
+	echo -e "\n $script_name ERROR: bwa cannot be executed at $(which bwa) \n" >&2
+	exit 1
+fi
+if ! $sambamba_bin --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: sambamba cannot be executed at $sambamba_bin \n" >&2
+	exit 1
+fi
 
 echo
 echo " * BWA: $(readlink -f $(which bwa)) "
 echo " * BWA version: $(bwa 2>&1 | grep -m 1 'Version') "
-echo " * sambamba: $(readlink -f $(which $sambamba_bin)) "
+echo " * sambamba: $(readlink -f $sambamba_bin) "
 echo " * sambamba version: $($sambamba_bin 2>&1 | grep -m 1 'sambamba') "
 echo " * BWA index: $ref_bwa "
 echo " * FASTQ R1: $fastq_R1 "

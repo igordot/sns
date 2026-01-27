@@ -71,9 +71,13 @@ fi
 
 module add deeptools/3.5.1
 
-# check that the binary is found
+# check that the binary can be run
 if [ ! -x "$(command -v deeptools)" ]; then
-	echo -e "\n $script_name ERROR: deeptools module not loaded properly \n" >&2
+	echo -e "\n $script_name ERROR: deeptools binary not available \n" >&2
+	exit 1
+fi
+if ! deeptools --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: deeptools cannot be executed at $(which deeptools) \n" >&2
 	exit 1
 fi
 
