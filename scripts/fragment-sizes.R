@@ -39,20 +39,21 @@ scanned_sizes = scanBam(file = bam_file, param = scan_params)
 
 # convert to vector
 sizes = unlist(scanned_sizes[[1]]["isize"], use.names = FALSE)
-message("num read pairs: ", length(sizes))
 
 # make all sizes positive (half should be negative)
 sizes = abs(sizes)
 
 # remove unreasonable values
+message("num detected fragments: ", length(sizes))
 sizes = sizes[!is.na(sizes)]
 sizes = sizes[sizes > 0]
+message("num fragments with size: ", length(sizes))
 sizes = sizes[sizes < 5000]
 message("num fragments 0-5kb: ", length(sizes))
 
 # display stats
 message("mean size: ", round(mean(sizes), digits = 1))
-message("median size: ", round(median(sizes)), digits = 1)
+message("median size: ", round(median(sizes), digits = 1))
 message("size sd: ", round(sd(sizes), digits = 1))
 
 # save stats table
@@ -65,6 +66,9 @@ stats_table =
   )
 stats_table_file = paste0(sample_name, ".stats.csv")
 write_csv(stats_table, file = stats_table_file)
+
+# check that enough fragments are present
+if (length(sizes) < 100) stop("not enough fragments with size information")
 
 # create a table of fragment sizes
 sizes_tbl = tibble(size = sizes) %>% count(size, name = "n")
