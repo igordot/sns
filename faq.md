@@ -5,12 +5,13 @@ nav_order: 6
 
 # FAQs
 
+Please post questions or feedback on [GitHub Discussions](https://github.com/igordot/sns/discussions) and report bugs or errors on [GitHub Issues](https://github.com/igordot/sns/issues).
+
 **Is it possible to use a custom reference genome?**
 
-Yes.
-Before using a custom reference, try using a commonly used genome like hg38 or mm10 to familiarize yourself with the workflow and the expected output.
-Check `settings.txt` to see which reference files were actually used.
-You can run the pipeline from a new project directory with a pre-filled `settings.txt` that includes custom reference files.
+Yes, custom reference genomes are supported.
+Before using a custom reference, try using a commonly used genome such as hg38 or mm10 to familiarize yourself with the workflow and the expected output.
+You can run the pipeline from a new project directory with a modified `settings.txt` that includes custom reference files.
 
 The `settings.txt` file is created by the `generate-settings` step and additional entries are automatically added as needed while the pipeline runs for the first time.
 The pipeline will look for relevant reference files in the specified genome directory.
@@ -19,7 +20,7 @@ General notes and tips are available in the [reference genomes](https://github.c
 
 **Can I run SNS anywhere?**
 
-SNS is designed to work on the NYULMC HPC UltraViolet (formerly BigPurple) cluster using the SLURM job scheduler.
+SNS is designed to work on the NYULH HPC UltraViolet (formerly BigPurple) cluster using the SLURM job scheduler.
 It was originally made for the Phoenix cluster with the Sun Grid Engine job scheduler and that version has been archived on the [`phoenix` branch](https://github.com/igordot/sns/tree/phoenix).
 It can be modified to work in other environments, but the changes may not be trivial.
 The computational steps expect that certain modules are available and link to various pre-generated reference files.
@@ -27,7 +28,7 @@ The computational steps expect that certain modules are available and link to va
 **Why not use a "proper" workflow system (such as Snakemake, Nextflow, CWL, etc.)?**
 
 Workflow systems tend to be designed by developers for developers.
-SNS is designed with novice users in mind and optimized for ease of use (assuming some familiarity with the linux/unix command-line interface):
+SNS is designed with novice users in mind and optimized for ease of use (assuming some familiarity with the Linux/Unix command-line interface):
 
 * Simple to run: no installation, no setup, no dependencies.
 This applies not only to the pipeline code, but also to the software tools and reference files.
@@ -35,7 +36,3 @@ This applies not only to the pipeline code, but also to the software tools and r
 The pipeline also includes custom checks to detect problems with the input data beyond simply checking if the tools ran successfully and generated valid output.
 * Simple to troubleshoot: the executed commands are not hidden by wrappers and can be run independently of the pipeline.
 * Simple to read and modify: written in standard bash, so learning new languages is not required.
-
-**What if I have other questions?**
-
-Any issues or concerns can be posted on [GitHub](https://github.com/igordot/sns/issues).
