@@ -5,7 +5,7 @@ parent: Routes
 
 # Route: rna-star
 
-Alignment and quantification of RNA-seq data.
+Alignment and quantification of RNA-seq data using STAR.
 
 Segments:
 
