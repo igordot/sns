@@ -50,6 +50,10 @@ sub main {
         die "\n\n ERROR: $settings_txt does not exist \n\n";
     }
 
+    # check that sbatch is available
+    system("command -v sbatch > /dev/null 2>&1") == 0
+      or die "\n\n ERROR: sbatch is not available (try `module add default-environment`) \n\n";
+
     # move to sbatch logs dir so the sbatch output ends up there
     my $sbatch_logs_dir = "${project_dir}/logs-sbatch";
     system( "mkdir", "-p", $sbatch_logs_dir ) == 0
@@ -63,7 +67,6 @@ sub main {
     sleep(1);
 
     if ( $route =~ "-groups-" ) {
-
         # grouped samples route (all samples processed together)
         run_groups( $project_dir, $route, $route_script );
     }
@@ -141,7 +144,7 @@ sub run_sbatch {
 
     print "\n CMD: " . join( " ", @sbatch_cmd ) . " \n";
     system(@sbatch_cmd) == 0
-      or die "\n\n ERROR: failed to submit sbatch job for $job_name: $! \n\n";
+      or die "\n\n ERROR: failed to submit sbatch job $job_name: $! \n\n";
 }
 
 # process samples and submit a job for each
