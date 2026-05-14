@@ -202,7 +202,7 @@ fi
 # "ENCODE Consortium scrutinizes experiments in which the FRiP falls below 1%"
 # ENCODE ATAC-seq Data Standards: ">0.3, though values greater than 0.2 are acceptable"
 
-module add samtools/1.20
+module add condaenvs/gpu/samtools1.23
 
 # check that the binary can be run
 if ! samtools --version >/dev/null 2>&1; then

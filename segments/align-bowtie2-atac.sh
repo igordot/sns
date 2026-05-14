@@ -119,7 +119,7 @@ fi
 # to do: add Picard AddOrReplaceReadGroups for extra compatibility
 
 module add bowtie2/2.5.3
-module add samtools/1.20
+module add condaenvs/gpu/samtools1.23
 sambamba_bin="/gpfs/share/apps/sambamba/1.0.1/sambamba"
 
 # check that the binary can be run
@@ -137,11 +137,11 @@ if ! samtools --version >/dev/null 2>&1; then
 fi
 
 echo
-echo " * bowtie2: $(readlink -f $(which bowtie2)) "
+echo " * bowtie2 path: $(readlink -f $(which bowtie2)) "
 echo " * bowtie2 version: $(bowtie2 --version 2>&1 | head -1) "
-echo " * sambamba: $(readlink -f $(which $sambamba_bin)) "
+echo " * sambamba path: $(readlink -f $(which $sambamba_bin)) "
 echo " * sambamba version: $($sambamba_bin 2>&1 | grep -m 1 'sambamba') "
-echo " * samtools: $(readlink -f $(which samtools)) "
+echo " * samtools path: $(readlink -f $(which samtools)) "
 echo " * samtools version: $(samtools --version | head -1) "
 echo " * bowtie2 ref: $ref_bowtie2 "
 echo " * FASTQ R1: $fastq_R1 "
