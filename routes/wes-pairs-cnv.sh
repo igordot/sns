@@ -6,6 +6,9 @@
 ##
 
 
+# specify maximum runtime for sbatch job
+# SBATCHTIME=24:00:00
+
 # script filename
 script_path="${BASH_SOURCE[0]}"
 script_name=$(basename "$script_path")
@@ -35,9 +38,6 @@ echo " * tumor sample: $sample_t "
 echo " * normal sample: $sample_n "
 echo " * code_dir: $code_dir "
 echo
-
-# specify maximum runtime for sbatch job
-# SBATCHTIME=24:00:00
 
 
 #########################

@@ -6,6 +6,9 @@
 ##
 
 
+# specify maximum runtime for sbatch job
+# SBATCHTIME=0:05:00
+
 # script filename
 script_path="${BASH_SOURCE[0]}"
 script_name=$(basename "$script_path")
@@ -37,8 +40,9 @@ echo " * normal sample: $sample_n "
 echo " * code_dir: $code_dir "
 echo
 
-# specify maximum runtime for sbatch job
-# SBATCHTIME=0:05:00
+# default-environment module is needed to run sbatch, but not loaded by default on all nodes
+module purge
+module add default-environment
 
 
 #########################

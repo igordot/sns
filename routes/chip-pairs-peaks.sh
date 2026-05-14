@@ -6,6 +6,9 @@
 ##
 
 
+# specify maximum runtime for sbatch job
+# SBATCHTIME=12:00:00
+
 # script filename
 script_path="${BASH_SOURCE[0]}"
 script_name=$(basename "$script_path")
@@ -39,9 +42,6 @@ echo " * slurm nodename: $SLURMD_NODENAME "
 echo " * hostname: $(hostname) "
 echo " * time: $(date "+%Y-%m-%d %H:%M") "
 echo
-
-# specify maximum runtime for sbatch job
-# SBATCHTIME=12:00:00
 
 
 #########################
