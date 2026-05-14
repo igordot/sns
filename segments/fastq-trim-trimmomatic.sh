@@ -113,11 +113,15 @@ fi
 module add java/1.8
 module add trimmomatic/0.40
 
-trimmomatic_jar="${TRIMMOMATIC_ROOT}/trimmomatic-0.40.jar"
+trimmomatic_jar=$(find "${TRIMMOMATIC_ROOT}" -maxdepth 1 -name "trimmomatic-*.jar" | head -1)
 
 # check that the binary can be run
+if [ ! -d "$TRIMMOMATIC_ROOT" ]; then
+	echo -e "\n $script_name ERROR: trimmomatic root $TRIMMOMATIC_ROOT does not exist \n" >&2
+	exit 1
+fi
 if [ ! -s "$trimmomatic_jar" ]; then
-	echo -e "\n $script_name ERROR: $trimmomatic_jar does not exist \n" >&2
+	echo -e "\n $script_name ERROR: trimmomatic jar $trimmomatic_jar does not exist \n" >&2
 	exit 1
 fi
 if ! java -jar "$trimmomatic_jar" -version >/dev/null 2>&1; then
@@ -136,9 +140,9 @@ else
 fi
 
 echo
-echo " * Java bin: $(readlink -f $(which java)) "
+echo " * Java path: $(readlink -f $(which java)) "
 echo " * Java version: $(java -version 2>&1 | grep -m 1 'version') "
-echo " * Trimmomatic jar: $trimmomatic_jar "
+echo " * Trimmomatic path: $trimmomatic_jar "
 echo " * Trimmomatic version: $(java -jar $trimmomatic_jar -version) "
 echo " * run type: $run_type_arg "
 echo " * FASTQ R1: $fastq_R1 "
