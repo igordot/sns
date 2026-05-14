@@ -9,7 +9,7 @@
 # specify maximum runtime for sbatch job
 # SBATCHTIME=48:00:00
 
-# standard route header (validate args and print settings)
+# standard route header (validate args, print settings, prepare environment)
 code_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 source "${code_dir}/scripts/route-header.sh" "$@"
 
