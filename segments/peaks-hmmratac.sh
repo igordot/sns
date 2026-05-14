@@ -104,11 +104,17 @@ fi
 
 # run HMMRATAC
 
+module add java/1.8
+
 hmmratac_jar="/gpfs/data/igorlab/software/HMMRATAC/HMMRATAC_V1.2.10_exe.jar"
 
-# check that the HMMRATAC jar file is present
+# check that the binary can be run
 if [ ! -s "$hmmratac_jar" ] ; then
-	echo -e "\n $script_name ERROR: jar file $hmmratac_jar does not exist \n" >&2
+	echo -e "\n $script_name ERROR: hmmratac jar file $hmmratac_jar does not exist \n" >&2
+	exit 1
+fi
+if ! java -jar "$hmmratac_jar" --help >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: hmmratac cannot be executed at $hmmratac_jar \n" >&2
 	exit 1
 fi
 
@@ -119,7 +125,10 @@ fi
 # --threshold <double> peaks with score is >= this value will be reported (default: 30)
 
 echo
+echo " * Java bin: $(readlink -f $(which java)) "
+echo " * Java version: $(java -version 2>&1 | grep -m 1 'version') "
 echo " * HMMRATAC: $hmmratac_jar "
+echo " * HMMRATAC version: $(java -jar $hmmratac_jar --help | grep -m 1 'Version') "
 echo " * genome file: $chrom_sizes "
 echo " * blacklist: $blacklist "
 echo " * BAM: $bam "
@@ -164,6 +173,14 @@ fi
 
 # clean up
 
+module add bedtools/2.30.0
+
+# check that the binary can be run
+if ! bedtools --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: bedtools cannot be executed \n" >&2
+	exit 1
+fi
+
 # convert peaks gappedPeak to BED format and sort
 # "all skipped high coverage regions are added back to the gappedPeak output file"
 # "91% of the high coverage regions that are masked in the GM12878 cells are blacklist regions"
@@ -186,7 +203,6 @@ eval "$bash_cmd"
 
 # generate padded summits files to call differentially accessible peaks
 # https://github.com/LiuLabUB/HMMRATAC/issues/40
-module add bedtools/2.27.1
 bash_cmd="bedtools slop -i $summits_bed_final -g $chrom_sizes -b 50 > $summits_bed_padded"
 echo -e "\n CMD: $bash_cmd \n"
 eval "$bash_cmd"
@@ -221,7 +237,7 @@ fi
 # "ENCODE Consortium scrutinizes experiments in which the FRiP falls below 1%"
 # ENCODE ATAC-seq Data Standards: ">0.3, though values greater than 0.2 are acceptable"
 
-module add samtools/1.20
+module add condaenvs/gpu/samtools1.23
 
 echo
 echo " * samtools: $(readlink -f $(which samtools))"
