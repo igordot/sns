@@ -6,44 +6,12 @@
 ##
 
 
-# script filename
-script_path="${BASH_SOURCE[0]}"
-script_name=$(basename "$script_path")
-route_name=${script_name/%.sh/}
-echo -e "\n ========== ROUTE: $route_name ========== \n" >&2
-
-# check for correct number of arguments
-if [ ! $# == 2 ] ; then
-	echo -e "\n $script_name ERROR: WRONG NUMBER OF ARGUMENTS SUPPLIED \n" >&2
-	echo -e "\n USAGE: $script_name project_dir sample_name \n" >&2
-	exit 1
-fi
-
-# standard route arguments
-proj_dir=$(readlink -f "$1")
-sample=$2
-
-# paths
-code_dir=$(dirname $(dirname "$script_path"))
-
-# reserve a thread for overhead
-threads=$SLURM_CPUS_PER_TASK
-threads=$(( threads - 1 ))
-
-# show settings
-echo
-echo " * proj_dir: $proj_dir "
-echo " * sample: $sample "
-echo " * code_dir: $code_dir "
-echo " * slurm threads: $SLURM_CPUS_PER_TASK "
-echo " * command threads: $threads "
-echo " * slurm nodename: $SLURMD_NODENAME "
-echo " * hostname: $(hostname) "
-echo " * time: $(date "+%Y-%m-%d %H:%M") "
-echo
-
 # specify maximum runtime for sbatch job
 # SBATCHTIME=6:00:00
+
+# standard route header (validate args, print settings, prepare environment)
+code_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+source "${code_dir}/scripts/route-header.sh" "$@"
 
 
 #########################
