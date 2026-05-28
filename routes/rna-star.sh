@@ -99,7 +99,7 @@ fi
 # generate BigWig (deeptools)
 segment_bw_deeptools="bigwig-deeptools"
 bash_cmd="bash ${code_dir}/segments/${segment_bw_deeptools}.sh $proj_dir $sample 4 $bam_star"
-sbatch_perf="--nodes=1 --ntasks=1 --cpus-per-task=5 --mem=25G"
+sbatch_perf="--nodes=1 --ntasks=1 --cpus-per-task=5 --mem=25G --partition=cpu_short,fn_short,gpu4_short"
 sbatch_mail="--mail-user=${USER}@nyulangone.org --mail-type=FAIL,REQUEUE"
 sbatch_name="--job-name=sns.${segment_bw_deeptools}.${sample}"
 sbatch_cmd="sbatch --time=8:00:00 ${sbatch_name} ${sbatch_perf} ${sbatch_mail} --export=NONE --wrap='${bash_cmd}'"
