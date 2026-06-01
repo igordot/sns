@@ -110,15 +110,43 @@ fi
 #########################
 
 
+# check modules
+
+module add condaenvs/gpu/samtools1.23
+
+# check that the binary can be run
+if ! samtools --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: samtools cannot be executed at $(which samtools) \n" >&2
+	exit 1
+fi
+if ! bcftools --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: bcftools cannot be executed at $(which bcftools) \n" >&2
+	exit 1
+fi
+if ! bgzip --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: bgzip cannot be executed at $(which bgzip) \n" >&2
+	exit 1
+fi
+
+
+#########################
+
+
 # create padded bed if needed
 
-module add bedtools/2.27.1
+module purge
+module add bedtools/2.30.0
 
 # check that the binary can be run
 if ! bedtools --version >/dev/null 2>&1; then
 	echo -e "\n $script_name ERROR: bedtools cannot be executed at $(which bedtools) \n" >&2
 	exit 1
 fi
+
+echo
+echo " * bedtools path: $(readlink -f $(which bedtools)) "
+echo " * bedtools version: $(bedtools --version) "
+echo
 
 # two steps in case original BED file does not end in ".bed"
 bed_padded="${bed}.pad10"
@@ -165,9 +193,9 @@ if ! $lofreq_bin version >/dev/null 2>&1; then
 fi
 
 echo
-echo " * LoFreq: $(readlink -f $lofreq_bin) "
+echo " * LoFreq path: $(readlink -f $lofreq_bin) "
 echo " * LoFreq version: $($lofreq_bin version 2>&1 | head -1) "
-echo " * Python: $(readlink -f $(which python)) "
+echo " * Python path: $(readlink -f $(which python)) "
 echo " * Python version: $(python --version 2>&1) "
 echo " * BAM: $bam "
 echo " * BED: $bed_padded "
@@ -220,8 +248,8 @@ if ! python --version >/dev/null 2>&1; then
 fi
 
 echo
-echo " * lofreq2_add_fake_gt.py: $(readlink -f $(which $lofreq_gt_py)) "
-echo " * Python: $(readlink -f $(which python)) "
+echo " * lofreq2_add_fake_gt.py path: $(readlink -f $(which $lofreq_gt_py)) "
+echo " * Python path: $(readlink -f $(which python)) "
 echo " * Python version: $(python --version 2>&1) "
 echo " * VCF original: $vcf_original "
 echo " * VCF with GT: $vcf_add_gt "
@@ -258,9 +286,7 @@ fi
 # adjust the vcf for annovar compatibility (http://www.openbioinformatics.org/annovar/annovar_vcf.html)
 
 module purge
-module add htslib/1.20
-module add samtools/1.20
-module add bcftools/1.20
+module add condaenvs/gpu/samtools1.23
 
 # check that the binary can be run
 if ! samtools --version >/dev/null 2>&1; then
@@ -277,11 +303,11 @@ if ! bgzip --version >/dev/null 2>&1; then
 fi
 
 echo
-echo " * samtools: $(readlink -f $(which samtools)) "
+echo " * samtools path: $(readlink -f $(which samtools)) "
 echo " * samtools version: $(samtools --version | head -1) "
-echo " * bcftools: $(readlink -f $(which bcftools)) "
+echo " * bcftools path: $(readlink -f $(which bcftools)) "
 echo " * bcftools version: $(bcftools --version | head -1) "
-echo " * bgzip: $(readlink -f $(which bgzip)) "
+echo " * bgzip path: $(readlink -f $(which bgzip)) "
 echo " * bgzip version: $(bgzip --version 2>&1 | head -1) "
 echo
 
@@ -347,6 +373,11 @@ fi
 
 
 # annotate
+
+# clear the environment to avoid conda-related warnings in annot-annovar.sh
+conda deactivate
+conda() { :; }
+module purge
 
 echo -e "\n CMD: $annot_cmd \n"
 ($annot_cmd)

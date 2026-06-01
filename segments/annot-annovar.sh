@@ -184,9 +184,9 @@ if ! R --version >/dev/null 2>&1; then
 fi
 
 echo
-echo " * R: $(readlink -f $(which R)) "
+echo " * R path: $(readlink -f $(which R)) "
 echo " * R version: $(R --version | head -1) "
-echo " * Rscript: $(readlink -f $(which Rscript)) "
+echo " * Rscript path: $(readlink -f $(which Rscript)) "
 echo " * Rscript version: $(Rscript --version 2>&1) "
 echo
 
@@ -225,7 +225,7 @@ if ! perl --version >/dev/null 2>&1; then
 fi
 
 echo
-echo " * perl: $(readlink -f $(which perl)) "
+echo " * perl path: $(readlink -f $(which perl)) "
 echo " * perl version: $(perl --version | grep 'version') "
 echo " * convert2annovar path: $(readlink -f ${annovar_path}/convert2annovar.pl) "
 echo " * ANNOVAR out dir: $annovar_dir "

@@ -99,6 +99,28 @@ fi
 #########################
 
 
+# check modules
+
+module add condaenvs/gpu/samtools1.23
+
+# check that the binary can be run
+if ! samtools --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: samtools cannot be executed at $(which samtools) \n" >&2
+	exit 1
+fi
+if ! bcftools --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: bcftools cannot be executed at $(which bcftools) \n" >&2
+	exit 1
+fi
+if ! bgzip --version >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: bgzip cannot be executed at $(which bgzip) \n" >&2
+	exit 1
+fi
+
+
+#########################
+
+
 # GATK settings
 
 module add java/1.8
@@ -122,9 +144,9 @@ fi
 # GATK HaplotypeCaller
 
 echo
-echo " * Java bin: $(readlink -f $(which java)) "
+echo " * Java path: $(readlink -f $(which java)) "
 echo " * Java version: $(java -version 2>&1 | grep -m 1 'version') "
-echo " * GATK: $(readlink -f $gatk_jar) "
+echo " * GATK path: $(readlink -f $gatk_jar) "
 echo " * GATK version: $($gatk_cmd --version) "
 echo " * BAM: $bam "
 echo " * INTERVALS: $bed "
@@ -173,26 +195,6 @@ fi
 
 # adjust the vcf for annovar compatibility (http://www.openbioinformatics.org/annovar/annovar_vcf.html)
 
-module add samtools/1.20
-module add bcftools/1.20
-
-echo
-echo " * samtools: $(readlink -f $(which samtools)) "
-echo " * samtools version: $(samtools --version | head -1) "
-echo " * bcftools: $(readlink -f $(which bcftools)) "
-echo " * bcftools version: $(bcftools --version | head -1) "
-echo
-
-# check that the binary can be run
-if ! samtools --version >/dev/null 2>&1; then
-	echo -e "\n $script_name ERROR: samtools cannot be executed at $(which samtools) \n" >&2
-	exit 1
-fi
-if ! bcftools --version >/dev/null 2>&1; then
-	echo -e "\n $script_name ERROR: bcftools cannot be executed at $(which bcftools) \n" >&2
-	exit 1
-fi
-
 # 1) GATK HC is defining the AD field as "Number=." (VCF 4.1 specification) rather than "Number=R" (VCF 4.2 specification)
 # CMD: sed 's/AD,Number=./AD,Number=R/g' $vcf_original
 # fixed in GATK 3.6
@@ -230,6 +232,11 @@ fi
 
 
 # annotate
+
+# clear the environment to avoid conda-related warnings in annot-annovar.sh
+conda deactivate
+conda() { :; }
+module purge
 
 echo -e "\n CMD: $annot_cmd \n"
 ($annot_cmd)
