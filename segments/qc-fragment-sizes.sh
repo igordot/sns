@@ -133,7 +133,12 @@ fi
 # ImageMagick (convert/montage) for combining plots
 # r/4.1.2 loads imagemagick/7.0.8
 module purge
-module add imagemagick/7.1.1
+module add imagemagick/7.1.2
+
+# check if magick can read the PNG file
+if ! magick identify "$frag_sizes_png" >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: magick cannot describe $frag_sizes_png \n" >&2
+fi
 
 # combine charts into a single png
 # -geometry +20+20 : 20px x and y padding

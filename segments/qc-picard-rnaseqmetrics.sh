@@ -115,11 +115,11 @@ fi
 # rev (rev comp of transcript) | fr-firststrand  | reverse | SECOND_READ |
 
 echo
-echo " * Java bin: $(readlink -f $(which java)) "
+echo " * Java path: $(readlink -f $(which java)) "
 echo " * Java version: $(java -version 2>&1 | grep -m 1 'version') "
-echo " * Picard: $picard_jar "
+echo " * Picard path: $picard_jar "
 echo " * Picard version: $(java -jar $picard_jar CollectRnaSeqMetrics --version 2>&1) "
-echo " * R: $(readlink -f $(which R)) "
+echo " * R path: $(readlink -f $(which R)) "
 echo " * R version: $(R --version | head -1) "
 echo " * BAM: $bam "
 echo " * refFlat: $refflat "
@@ -152,6 +152,10 @@ if [ ! -s "$metrics_txt" ] ; then
 	exit 1
 fi
 
+if [ ! -s "$metrics_pdf" ] ; then
+	echo -e "\n $script_name ERROR: CHART $metrics_pdf NOT GENERATED \n" >&2
+	exit 1
+fi
 
 #########################
 
@@ -161,8 +165,13 @@ fi
 # Ghostscript and ImageMagick for combining plots
 # r/4.1.2 loads imagemagick/7.0.8
 module purge
-module add imagemagick/7.1.1
+module add imagemagick/7.1.2
 module add ghostscript/10.04
+
+# check if magick can read the PDF file
+if ! magick identify "$metrics_pdf" >/dev/null 2>&1; then
+	echo -e "\n $script_name ERROR: magick cannot describe $metrics_pdf \n" >&2
+fi
 
 # RnaSeqMetrics output
 # https://broadinstitute.github.io/picard/picard-metric-definitions.html#RnaSeqMetrics

@@ -84,7 +84,7 @@ fi
 
 module add fastq_screen/0.16.0
 # ImageMagick (convert/montage) for combining plots
-module add imagemagick/7.1.1
+module add imagemagick/7.1.2
 
 bowtie2_bin=$(cat "$fastqscreen_conf" | grep "^BOWTIE2" | head -1 | tr '[:space:]' '\t' | tr -s '\t' | cut -f 2)
 
