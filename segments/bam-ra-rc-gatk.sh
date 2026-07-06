@@ -65,30 +65,23 @@ module purge
 # skip if final BAM and BAI exist
 if [ -s "$bam_ra_rc" ] && [ -s "${bam_ra_rc}.bai" ] ; then
 	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
+	echo -e "\n $script_name ADD $sample TO $samples_csv \n" >&2
 	echo "${sample},${bam_ra_rc}" >> "$samples_csv"
 	exit 0
 fi
 
-# delete potentially incomplete files (since the corresponding BAM index was not generated)
+# delete potentially incomplete files (BAI was not generated)
 if [ -s "$bam_ra_rc" ] ; then
 	echo -e "\n $script_name WARNING: POTENTIALLY CORRUPT BAM $bam_ra_rc EXISTS \n" >&2
-	# delete BAMs
+	# delete recalibration files
 	rm -fv "$bam_ra_rc"
-	rm -fv "$bam_ra"
-	# delete realignment files that are no longer needed
+	rm -fv "$bai_ra_rc"
+	rm -fv "$gatk_rc_table1"
+	rm -fv "$gatk_rc_table2"
+	# delete realignment files
 	rm -fv "$bam_ra"
 	rm -fv "$bai_ra"
 	rm -fv "$gatk_ra_intervals"
-	# delete recalibration files that are no longer needed
-	rm -fv "$gatk_rc_table1"
-	rm -fv "$gatk_rc_table2"
-fi
-
-# if realigned BAM exists, assume that there is another process that is currently running and skip
-if [ -s "$bam_ra" ] ; then
-	echo -e "\n $script_name WARNING: $bam_ra EXISTS (SAMPLE IS POTENTIALLY BEING PROCESSED) \n" >&2
-	echo -e "\n $script_name SKIP SAMPLE $sample \n" >&2
-	exit 1
 fi
 
 
@@ -211,9 +204,9 @@ fi
 # test R (GATK uses R for plotting)
 
 echo
-echo " * R: $(readlink -f $(which R)) "
+echo " * R path: $(readlink -f $(which R)) "
 echo " * R version: $(R --version | head -1) "
-echo " * Rscript: $(readlink -f $(which Rscript)) "
+echo " * Rscript path: $(readlink -f $(which Rscript)) "
 echo " * Rscript version: $(Rscript --version 2>&1) "
 echo
 
@@ -238,12 +231,12 @@ Rscript --vanilla "${code_dir}/scripts/test-package.R" naturalsort
 # realignment
 
 echo
-echo " * Java bin: $(readlink -f $(which java)) "
+echo " * Java path: $(readlink -f $(which java)) "
 echo " * Java version: $(java -version 2>&1 | grep -m 1 'version') "
-echo " * GATK: $(readlink -f $gatk_jar) "
+echo " * GATK path: $(readlink -f $gatk_jar) "
 echo " * GATK version: $($gatk_cmd --version) "
-echo " * BAM IN: $bam "
-echo " * BAM RA: $bam_ra "
+echo " * BAM input: $bam "
+echo " * BAM realigned: $bam_ra "
 echo
 
 gatk_ra1_cmd="
@@ -255,8 +248,6 @@ $gatk_ra_known_arg \
 --input_file $bam \
 --out $gatk_ra_intervals
 "
-echo "CMD: $gatk_ra1_cmd"
-$gatk_ra1_cmd
 
 gatk_ra2_cmd="
 $gatk_cmd -T IndelRealigner -dt NONE $gatk_log_level_arg \
@@ -267,8 +258,16 @@ $gatk_ra_known_arg \
 --input_file $bam \
 --out $bam_ra
 "
-echo "CMD: $gatk_ra2_cmd"
-$gatk_ra2_cmd
+
+# check if realignment was previously completed and some recalibration output already exists
+if [ -s "$bam_ra" ] && [ -f "$gatk_rc_table1" ] ; then
+	echo -e "\n $script_name WARNING: recalibration table exists so skip realignment for $sample \n" >&2
+else
+	echo "CMD: $gatk_ra1_cmd"
+	$gatk_ra1_cmd
+	echo "CMD: $gatk_ra2_cmd"
+	$gatk_ra2_cmd
+fi
 
 sleep 5
 
@@ -298,6 +297,11 @@ fi
 
 
 # recalibration
+
+echo
+echo " * BAM realigned: $bam_ra "
+echo " * BAM realigned recalibrated: $bam_ra_rc "
+echo
 
 # first pass recalibration table file
 gatk_rc1_cmd="
