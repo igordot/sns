@@ -25,6 +25,7 @@ fi
 
 # check modules
 
+echo "testing fastqc"
 module purge
 module add fastqc/0.11.7
 if ! fastqc --version >/dev/null 2>&1; then
@@ -32,6 +33,7 @@ if ! fastqc --version >/dev/null 2>&1; then
 	exit 1
 fi
 
+echo "testing fastq_screen"
 module purge
 module add fastq_screen/0.16.0
 if ! fastq_screen --version >/dev/null 2>&1; then
@@ -43,6 +45,7 @@ if [ ! -s "$(perldoc -l GD::Graph)" ] ; then
 	exit 1
 fi
 
+echo "testing trimmomatic"
 module purge
 module add java/1.8
 module add trimmomatic/0.40
@@ -60,6 +63,7 @@ if ! java -jar "$trimmomatic_jar" -version >/dev/null 2>&1; then
 	exit 1
 fi
 
+echo "testing star"
 module purge
 module add star/2.7.3a
 # star/2.7.3a loads samtools/1.9
@@ -72,6 +76,7 @@ if ! samtools --version >/dev/null 2>&1; then
 	exit 1
 fi
 
+echo "testing bwa"
 module purge
 module add bwa/0.7.17
 sambamba_bin="/gpfs/share/apps/sambamba/1.0.1/sambamba"
@@ -84,6 +89,7 @@ if ! $sambamba_bin --version >/dev/null 2>&1; then
 	exit 1
 fi
 
+echo "testing bowtie+samtools"
 module purge
 module add bowtie2/2.5.3
 module add condaenvs/gpu/samtools1.23
@@ -101,6 +107,7 @@ if ! samtools --version >/dev/null 2>&1; then
 	exit 1
 fi
 
+echo "testing samtools+bedtools"
 module purge
 module add condaenvs/gpu/samtools1.23
 module add bedtools/2.30.0
