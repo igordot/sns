@@ -183,7 +183,7 @@ sub run_samples {
     }
 
     # sbatch settings (check `scontrol show partition` occasionally to optimize)
-    my $partitions = "cpu_short,cpu_medium,cpu_long,fn_short,fn_medium,gpu4_medium,gpu4_long,gl40s_short,gl40s_long";
+    my $partitions = "cpu_short,cpu_medium,cpu_long,fn_short,fn_medium,gl40s_short,gl40s_long";
 
     # process each sample
     my $current_sample = 1;
@@ -236,7 +236,7 @@ sub run_groups {
 
     # sbatch
     my $job_name   = "sns.${route}";
-    my $partitions = "cpu_short,fn_short,gpu4_short,gpu4_medium,gl40s_short";
+    my $partitions = "cpu_short,cpu_medium,cpu_long,fn_short,fn_medium";
     run_sbatch( 5, "50G", "10:00:00", $partitions, $job_name, $cmd );
 
 }
